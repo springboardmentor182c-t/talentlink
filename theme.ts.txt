@@ -1,0 +1,29 @@
+// theme.ts
+export const theme = {
+  colors: {
+    primary: "#007bff",   // Main blue
+    secondary: "#6c757d", // Gray
+    success: "#28a745",   // Green
+    danger: "#dc3545",    // Red
+    warning: "#ffc107",   // Yellow
+    info: "#17a2b8",      // Cyan
+    light: "#f8f9fa",     // White-gray
+    dark: "#343a40",      // Dark gray
+  },
+  fonts: {
+    heading: "Poppins, sans-serif",
+    body: "Roboto, sans-serif",
+  },
+  fontSizes: {
+    small: "12px",
+    medium: "16px",
+    large: "20px",
+  },
+  spacing: {
+    xs: "4px",
+    sm: "8px",
+    md: "16px",
+    lg: "24px",
+    xl: "32px",
+  },
+};
