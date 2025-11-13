@@ -1,14 +1,13 @@
-// theme.ts
 export const theme = {
   colors: {
-    primary: "#007bff",   // Main blue
-    secondary: "#6c757d", // Gray
-    success: "#28a745",   // Green
-    danger: "#dc3545",    // Red
-    warning: "#ffc107",   // Yellow
-    info: "#17a2b8",      // Cyan
-    light: "#f8f9fa",     // White-gray
-    dark: "#343a40",      // Dark gray
+    primary: "#007bff",   
+    secondary: "#6c757d",
+    success: "#28a745",  
+    danger: "#dc3545",    
+    warning: "#ffc107",   
+    info: "#17a2b8",      
+    light: "#f8f9fa",     
+    dark: "#343a40",    
   },
   fonts: {
     heading: "Poppins, sans-serif",
@@ -27,3 +26,4 @@ export const theme = {
     xl: "32px",
   },
 };
+
