@@ -1,0 +1,39 @@
+# ------------------------
+# Node / React (client)
+# ------------------------
+client/node_modules/
+client/build/
+client/.env
+client/.DS_Store
+client/*.log
+
+# ------------------------
+# Python / Django (server)
+# ------------------------
+server/venv/
+server/__pycache__/
+server/*.pyc
+server/*.pyo
+server/.DS_Store
+server/*.sqlite3
+server/.env
+
+# ------------------------
+# Docker
+# ------------------------
+# (Usually you DO want Dockerfile tracked, so no need to ignore it)
+# Ignore Docker image / compose caches if any
+docker-compose.override.yml
+*.dockerignore
+
+# ------------------------
+# VS Code / IDE
+# ------------------------
+.vscode/
+*.code-workspace
+
+# ------------------------
+# OS files
+# ------------------------
+Thumbs.db
+.DS_Store
