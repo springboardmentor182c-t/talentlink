@@ -1,0 +1,28 @@
+/* Default safe styles for App.css
+   (Works perfectly with your current dashboard layout)
+*/
+
+#root {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+/* Generic utility styles (optional) */
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page {
+  padding: 20px;
+}
+
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-radius: 8px;
+}
+
