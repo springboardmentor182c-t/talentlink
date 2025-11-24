@@ -1,0 +1,88 @@
+:root{
+	--sidebar-start: #0b84ff;
+	--sidebar-end: #0077d6;
+	--muted: #eef6fb;
+	--card: #ffffff;
+	--accent: #6b46ff; /* purple for Post button */
+	--btn-grey: #bdbdbd;
+	--invite: #f6c34d; /* yellow invite button */
+	--text-dark: #1f2937;
+}
+
+*{ box-sizing: border-box }
+body{ font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin:0; color:var(--text-dark); background:#f5f7fb }
+
+/* Sidebar */
+.sidebar{ position: fixed; left:0; top:0; bottom:0; width:220px; background:linear-gradient(180deg,var(--sidebar-start),var(--sidebar-end)); color:white; padding:28px 18px }
+.sidebar h2{ margin:0 0 18px; font-size:20px; letter-spacing:0.6px }
+.sidebar nav a{ display:block; color:white; margin:12px 0; text-decoration:none; font-weight:600 }
+.sidebar nav a:hover{ opacity:0.95 }
+
+/* Main layout */
+main{ margin-left:240px; padding:28px }
+.container{ margin-left:0; padding:8px 28px }
+
+/* Top bar used on freelancer dashboard */
+.topbar{ background:var(--sidebar-start); color:white; padding:12px 20px; border-radius:6px 6px 0 0; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between }
+.topbar h1{ margin:0; font-size:18px }
+
+/* Cards */
+.card-row{ display:flex; gap:16px; flex-wrap:wrap }
+.card{ background:var(--card); padding:16px; border-radius:8px; box-shadow:0 6px 18px rgba(16,24,40,0.06); min-width:220px }
+.stat{ font-size:28px; font-weight:700 }
+.card small{ color:#6b7280 }
+
+/* Forms */
+form{ background:transparent; padding:18px; border-radius:6px; max-width:860px }
+label{ display:block; margin-top:12px; font-weight:600 }
+input, textarea{ width:100%; padding:12px 14px; border-radius:14px; border:1px solid #d6e6ea; background:#dfeff0 }
+textarea{ min-height:100px; resize:vertical }
+.row{ display:flex; gap:12px }
+.row > div{ flex:1 }
+
+.skills{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px }
+.skills label{ display:flex; align-items:center; gap:6px; background:#e6f2f6; padding:6px 10px; border-radius:8px; font-weight:600 }
+
+.actions{ margin-top:18px; display:flex; gap:12px }
+.btn{ padding:10px 16px; border-radius:8px; border:none; cursor:pointer; font-weight:700 }
+.btn-primary{ background:var(--accent); color:white; box-shadow:0 8px 20px rgba(107,70,255,0.18) }
+.btn-secondary{ background:#cfcfcf; color:#222 }
+.btn-warning{ background:var(--invite); color:#2b2b2b }
+
+.choose{ background:#e6f2f6; color:#0b84ff; border-radius:8px; padding:8px 12px; border:1px solid rgba(11,132,255,0.08); margin-left:8px }
+
+/* form card */
+.form-card{ background:#ffffff; padding:22px; border-radius:12px }
+
+/* client post specific layout tweaks */
+.file-row{ display:flex; align-items:center; gap:10px; margin-top:8px }
+
+/* freelancer topbar styling to match screenshot */
+.topbar{ background:var(--sidebar-start); color:white; padding:14px 20px; border-radius:6px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between }
+.topbar h1{ margin:0; font-size:18px }
+
+/* invitation button style */
+.card .btn-warning{ border-radius:6px; padding:8px 12px }
+
+/* project cards styling */
+.project-card{ padding:14px; border-radius:8px; background:#ffffff; box-shadow:0 6px 18px rgba(16,24,40,0.06); margin-bottom:12px }
+.project-title{ font-weight:700 }
+.tag{ display:inline-block; background:#e6f2f6; color:#0b84ff; padding:6px 8px; border-radius:6px; margin-right:6px; font-weight:700 }
+
+
+/* Lists */
+ul{ list-style:none; padding:0 }
+li{ background:var(--card); margin:8px 0; padding:14px; border-radius:8px; box-shadow:0 6px 12px rgba(16,24,40,0.04) }
+
+/* Freelancer results */
+.results-grid{ display:flex; gap:16px; flex-wrap:wrap }
+.result-card{ flex:1 1 300px }
+
+/* small helpers */
+.muted{ color:#6b7280 }
+
+@media (max-width:800px){
+	.sidebar{ display:none }
+	main{ margin-left:0 }
+	.container{ margin-left:0 }
+}
