@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+    <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Freelancer Dashboard - TalentLink</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="sidebar">
+      <h2>TalentLink</h2>
+      <nav>
+        <a href="index.html">Dashboard</a>
+        <a href="client-post.html">projects</a>
+        <a href="#">contracts</a>
+        <a href="#">Messages</a>
+        <a href="#">Settings</a>
+        <a href="#">Logout</a>
+      </nav>
+    </div>
+
+    <main>
+      <div class="container">
+        <div class="topbar"><h1>Freelancer Dashboard</h1><div class="profile">🔔 <span class="avatar"> </span></div></div>
+
+        <div class="card-row">
+          <div class="card"><div class="stat">4</div><small>Active Projects</small></div>
+          <div class="card"><div class="stat">2</div><small>Completed Projects</small></div>
+        </div>
+
+        <div style="display:flex; gap:20px; margin-top:18px">
+          <div style="flex:2">
+            <h3>My Projects</h3>
+            <div class="card">
+              <h4>Website Redesign <span class="muted">— Acme Inc.</span></h4>
+              <div class="tag" style="margin-top:8px"><span class="btn btn-warning" style="padding:6px 10px; border-radius:6px">In Progress</span></div>
+            </div>
+            <div class="card">
+              <h4>Logo Design <span class="muted">— BizCo</span></h4>
+              <div class="tag" style="margin-top:8px"><span class="btn btn-secondary" style="padding:6px 10px; border-radius:6px">Pending</span></div>
+            </div>
+          </div>
+
+          <div style="flex:1">
+            <h3>Invitations</h3>
+            <div class="card">
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <div>
+                  <strong>E-commerce Platform</strong>
+                  <div class="muted">Global Mart</div>
+                </div>
+                <button class="btn btn-warning">View Details</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <div>
+                  <strong>Marketing Campaign</strong>
+                  <div class="muted">BizCo</div>
+                </div>
+                <button class="btn btn-warning">View Details</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr style="margin:18px 0" />
+
+        <h3>Search Projects</h3>
+        <form id="searchForm">
+          <div class="row">
+            <div>
+              <label>Skill</label>
+              <input name="skill" />
+            </div>
+            <div>
+              <label>Min Budget</label>
+              <input name="minBudget" type="number" />
+            </div>
+            <div>
+              <label>Max Budget</label>
+              <input name="maxBudget" type="number" />
+            </div>
+            <div>
+              <label>Duration</label>
+              <input name="duration" />
+            </div>
+          </div>
+          <div class="actions"><button type="submit" class="btn btn-primary">Search</button></div>
+        </form>
+
+        <h3>Results</h3>
+        <div id="results" class="results-grid"></div>
+      </div>
+    </main>
+
+    <script>
+      async function search(params){
+        const qs = new URLSearchParams(params).toString();
+        const res = await fetch('/api/projects?' + qs);
+        return await res.json();
+      }
+      document.getElementById('searchForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const params = Object.fromEntries(fd.entries());
+        const data = await search(params);
+        const el = document.getElementById('results'); el.innerHTML = '';
+        data.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'project-card';
+          card.innerHTML = `<div class="project-title">${p.title}</div><div class="muted">${p.description ? p.description.substring(0,80) : ''}</div><div style="margin-top:8px">Budget: <strong>${p.budget || '-'}</strong> • Duration: <strong>${p.duration || '-'}</strong></div><div style="margin-top:10px">Skills: ${p.skills?.map(s=>`<span class='tag'>${s}</span>`).join(' ') || '-'}</div><div style="margin-top:10px"><button data-id='${p.id}' class='btn btn-secondary save'>Save</button></div>`;
+          el.appendChild(card);
+        })
+        document.querySelectorAll('.save').forEach(b => b.addEventListener('click', ()=> alert('Saved locally')));
+      })
+
+      // load all by default
+      (async()=>{
+        const res = await fetch('/api/projects');
+        const data = await res.json();
+        const el = document.getElementById('results'); el.innerHTML='';
+        data.forEach(p => { const li = document.createElement('li'); li.innerHTML = `<strong>${p.title}</strong> — ${p.skills?.join(', ') || ''}`; el.appendChild(li); })
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+    <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Post a New Project - TalentLink</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="sidebar">
+      <h2>TalentLink</h2>
+      <nav>
+        <a href="index.html">Dashboard</a>
+        <a href="client-post.html">projects</a>
+        <a href="#">proposals</a>
+        <a href="#">contracts</a>
+        <a href="#">Messages</a>
+        <a href="#">Profile</a>
+      </nav>
+    </div>
+
+    <main>
+      <div class="container">
+        <h2>Post a New Project</h2>
+        <div class="card form-card">
+          <form id="postForm">
+        <label>Project Title</label>
+        <input name="title" required />
+
+        <label>Description</label>
+        <textarea name="description" required></textarea>
+
+        <div class="row">
+          <div>
+            <label>Budget</label>
+            <input name="budget" type="number" />
+          </div>
+          <div>
+            <label>Duration</label>
+            <input name="duration" />
+          </div>
+        </div>
+
+            <label>Required Skills</label>
+            <div class="skills">
+              <label><input type="checkbox" name="skill_checkbox" value="React.js"/> React.js</label>
+              <label><input type="checkbox" name="skill_checkbox" value="UI/UX"/> UI/UX</label>
+              <label><input type="checkbox" name="skill_checkbox" value="Others"/> Others</label>
+            </div>
+
+            <label>Upload Files (optional)</label>
+            <div class="file-row">
+              <input id="fileInput" type="file" name="file" />
+              <button type="button" class="btn choose">Choose File</button>
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="btn btn-primary">Post Project</button>
+              <button type="button" id="cancel" class="btn btn-secondary">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <h3 style="margin-top:18px">Existing Projects (Live)</h3>
+        <ul id="projects"></ul>
+      </div>
+    </main>
+
+    <script>
+      async function loadProjects(){
+        const res = await fetch('/api/projects');
+        const data = await res.json();
+        const el = document.getElementById('projects');
+        el.innerHTML = '';
+        data.forEach(p => {
+          const li = document.createElement('li');
+          li.textContent = `${p.title} — ${p.budget || ''} — ${p.skills?.join(', ') || ''}`;
+          el.appendChild(li);
+        })
+      }
+      loadProjects();
+
+      document.getElementById('postForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const data = new FormData();
+        data.append('title', form.title.value);
+        data.append('description', form.description.value);
+        data.append('budget', form.budget.value);
+        data.append('duration', form.duration.value);
+        // collect checked skills
+        const skills = Array.from(document.querySelectorAll('input[name="skill_checkbox"]:checked')).map(i=>i.value);
+        if (skills.length) data.append('skills', skills.join(','));
+        const file = form.querySelector('input[type=file]');
+        if (file && file.files && file.files[0]) data.append('file', file.files[0]);
+        const res = await fetch('/api/projects', { method: 'POST', body: data });
+        if (res.ok) { form.reset(); loadProjects(); alert('Project posted'); }
+        else alert('Failed to post');
+      })
+      document.getElementById('cancel').addEventListener('click', ()=> location.href='/');
+    </script>
+  </body>
+</html>
