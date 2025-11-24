@@ -1,2 +1,3 @@
 pip install django djangorestframework djangorestframework-simplejwt
 pip install psycopg2-binary    # For PostgreSQL
+
