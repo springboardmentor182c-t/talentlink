@@ -1,25 +1,29 @@
-import React from "react";
 import { Routes, Route } from "react-router-dom";
+import MainLayout from "./layout/MainLayout.jsx";
+import Dashboard from "./components/Dashboard/Dashboard.jsx";
+import Candidates from "./Pages/Candidates.jsx";
+import Projects from "./Pages/Projects.jsx";
+import Messages from "./Pages/Messages.jsx";
+import Jobs from "./Pages/Jobs.jsx";
+import Contracts from "./Pages/Contracts.jsx";
+import Notifications from "./Pages/Notifications.jsx";
+import ClientProfile from "./Pages/ClientProfile.jsx";
 
-import Dashboard from "./components/Dashboard/Dashboard";
-import Candidates from "./components/Pages/Candidates";
-import Jobs from "./components/Pages/Jobs";
-import Messages from "./components/Pages/Messages";
-import Notifications from "./components/Pages/Notifications";
-import ClientProfile from "./components/Pages/ClientProfile";
-import "./App.css";
-
-export default function App() {
+function App() {
   return (
     <Routes>
-      <Route path="/" element={<Dashboard />} />
-      <Route path="/candidates" element={<Candidates />} />
-      <Route path="/candidates/:id" element={<Candidates />} />
-      <Route path="/jobs" element={<Jobs />} />
-      <Route path="/jobs/:id" element={<Jobs />} />
-      <Route path="/messages" element={<Messages />} />
-      <Route path="/notifications" element={<Notifications />} />
-      <Route path="/profile" element={<ClientProfile />} />
+      <Route path="/" element={<MainLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="candidates" element={<Candidates />} />
+        <Route path="projects" element={<Projects />} />
+        <Route path="messages" element={<Messages />} />
+        <Route path="jobs" element={<Jobs />} />
+        <Route path="contracts" element={<Contracts />} />
+        <Route path="notifications" element={<Notifications />} />
+        <Route path="profile" element={<ClientProfile />} />
+      </Route>
     </Routes>
   );
 }
+
+export default App;
