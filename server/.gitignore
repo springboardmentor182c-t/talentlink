@@ -13,3 +13,6 @@ env/
 
 # VS Code
 .vscode/
+
+**/migrations/
+

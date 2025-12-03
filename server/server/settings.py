@@ -45,6 +45,8 @@ INSTALLED_APPS = [
 
     'apps.users.apps.UsersConfig',
     'apps.core',
+    'apps.profiles',
+    
 
 ]
 
@@ -54,6 +56,8 @@ AUTH_USER_MODEL = 'users.User'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.BasicAuthentication',  # <--- Allows Thunder Client/Postman
+        'rest_framework.authentication.SessionAuthentication', # <--- Allows Browser/Admin Panel
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
