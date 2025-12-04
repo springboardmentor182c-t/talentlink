@@ -19,9 +19,3 @@ class FreelancerProfileSerializer(serializers.ModelSerializer):
             'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
-
-    def create(self, validated_data):
-        user = self.context['request'].user
-        if FreelancerProfile.objects.filter(user=user).exists():
-            raise serializers.ValidationError("You already have a profile created.")
-        return super().create(validated_data)

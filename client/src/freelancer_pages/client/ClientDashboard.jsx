@@ -1,7 +1,6 @@
-
-
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
 
 // --- SVG ICONS (Self-contained to avoid import errors) ---
 const Icons = {
@@ -55,6 +54,12 @@ const activeJobs = [
 ];
 
 const ClientDashboard = () => {
+  const navigate = useNavigate(); // 2. Initialize hook
+
+  const handlePostJob = () => {
+    navigate('/client/projects'); // 3. Navigation logic
+  };
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       
@@ -64,7 +69,7 @@ const ClientDashboard = () => {
           <h1 style={styles.title}>Client Overview</h1>
           <p style={styles.subtitle}>Manage your job postings, proposals, and hired talent.</p>
         </div>
-        <button style={styles.btn}>
+        <button style={styles.btn} onClick={handlePostJob}> {/* 4. Add onClick */}
           <span style={{ marginRight: '8px', display: 'flex' }}><Icons.Plus /></span> Post a Job
         </button>
       </div>

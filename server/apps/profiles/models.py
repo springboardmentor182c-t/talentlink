@@ -1,3 +1,6 @@
+
+
+
 from django.db import models
 from django.conf import settings
 
@@ -8,13 +11,15 @@ class FreelancerProfile(models.Model):
         ('closed', 'Closed'),
     ]
 
-    user = models.OneToOneField(
+    # --- THE FIX IS HERE ---
+    # Change OneToOneField -> ForeignKey
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
         related_name='freelancer_profile'
     )
-    
-    # New Fields
+    # -----------------------
+
     project_title = models.CharField(max_length=255)
     description = models.TextField(help_text="Project description")
     budget = models.DecimalField(max_digits=10, decimal_places=2, help_text="Hourly Rate Budget")
@@ -22,7 +27,6 @@ class FreelancerProfile(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='open')
     experience_years = models.PositiveIntegerField(default=0)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
