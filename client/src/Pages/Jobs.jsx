@@ -96,8 +96,7 @@ function Jobs() {
   ];
 
   const filteredJobs = jobs.filter(j => {
-    const matchesSearch = j.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         j.client.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = j.title.toLowerCase().includes(searchTerm.toLowerCase()) || j.client.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || j.status.toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesStatus;
   });
@@ -274,9 +273,13 @@ function Jobs() {
               </div>
 
               <div className="flex space-x-3">
-                <button className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <button
+                  onClick={() => navigate(`/proposal/${selectedJob.id}`)}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
                   Submit Proposal
                 </button>
+
                 <button className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                   Save for Later
                 </button>

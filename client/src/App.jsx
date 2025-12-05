@@ -1,3 +1,4 @@
+import React from "react";
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "./layout/MainLayout.jsx";
 import Dashboard from "./components/Dashboard/Dashboard.jsx";
@@ -8,6 +9,7 @@ import Jobs from "./Pages/Jobs.jsx";
 import Contracts from "./Pages/Contracts.jsx";
 import Notifications from "./Pages/Notifications.jsx";
 import ClientProfile from "./Pages/ClientProfile.jsx";
+import ProjectProposal from "./Pages/ProjectProposal.jsx";
 
 function App() {
   return (
@@ -21,6 +23,7 @@ function App() {
         <Route path="contracts" element={<Contracts />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="profile" element={<ClientProfile />} />
+        <Route path="proposal/:id" element={<ProjectProposal />} />
       </Route>
     </Routes>
   );
