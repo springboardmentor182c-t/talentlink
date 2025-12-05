@@ -1,6 +1,3 @@
-
-
-
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from apps.core.utils import generate_otp, send_otp_email
@@ -26,16 +23,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     
-    # FIX: We do NOT strictly require the role field here. 
-    # This prevents the "Field required" error if the frontend misses it.
+    # We allow role to be optional (defaults to freelancer in create method)
+    # to prevent errors if frontend sends it incorrectly.
 
     class Meta:
         model = User
         fields = ['email', 'password', 'first_name', 'last_name', 'role']
 
     def create(self, validated_data):
-        # FIX: Try to get the role. If it's missing/null, default to 'freelancer'.
-        # This creates a "Client" if requested, but falls back safely to "Freelancer" if not.
+        # Default to 'freelancer' if not provided
         role = validated_data.get('role', 'freelancer')
 
         user = User.objects.create_user(
@@ -43,10 +39,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
-            
-            # Pass the safely resolved role
             role=role,
-            
             is_active=False 
         )
         

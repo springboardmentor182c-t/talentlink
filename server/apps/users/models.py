@@ -1,3 +1,8 @@
+
+
+
+
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
@@ -37,9 +42,18 @@ class CustomUserManager(BaseUserManager):
 
 # 2. Update the User Model
 class User(AbstractUser):
+    # --- NEW: Role Choices ---
+    ROLE_CHOICES = (
+        ('freelancer', 'Freelancer'),
+        ('client', 'Client'),
+    )
+
     username = None # Disable username field
     email = models.EmailField(_('email address'), unique=True)
     
+    # --- NEW: Role Field ---
+    role = models.CharField(max_length=20, choices=[('client', 'Client'), ('freelancer', 'Freelancer')], default='freelancer')
+
     # OTP fields
     otp = models.CharField(max_length=6, null=True, blank=True)
     otp_created_at = models.DateTimeField(null=True, blank=True)
