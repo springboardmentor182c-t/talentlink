@@ -8,6 +8,7 @@ import Jobs from "./Pages/Jobs.jsx";
 import Contracts from "./Pages/Contracts.jsx";
 import Notifications from "./Pages/Notifications.jsx";
 import ClientProfile from "./Pages/ClientProfile.jsx";
+import FreelancerDashboard from "./Pages/FreelancerDashboard.jsx";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="contracts" element={<Contracts />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="profile" element={<ClientProfile />} />
+        <Route path="freelancer" element={<FreelancerDashboard />} />
       </Route>
     </Routes>
   );
