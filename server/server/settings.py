@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 
     'apps.users.apps.UsersConfig',
     'apps.core',
+    'apps.projects',
     'apps.profiles',
     
 
@@ -122,6 +123,23 @@ DATABASES = {
         'PORT': '5432',            # Default postgres port
     }
 }
+
+# For local testing when Postgres isn't available, use SQLite as a fallback
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+# Alternatively force SQLite for local dev by uncommenting below:
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation
