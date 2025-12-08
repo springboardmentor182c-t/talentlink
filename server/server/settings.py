@@ -38,26 +38,34 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # ... django apps
     'rest_framework',
-    'rest_framework_simplejwt',
-    'corsheaders',
+    'corsheaders',           # add this because you use the middleware
 
-    'apps.users.apps.UsersConfig',
-    'apps.core',
-
+    # local apps (folders next to manage.py)
+    'proposals',
+    'contracts',
+    # keep these ONLY if folders exist next to manage.py; otherwise delete them:
+    # 'freelancer_profile',
+    # 'profileapp',
+    # 'core',
 ]
 
-AUTH_USER_MODEL = 'users.User'
+
+# AUTH_USER_MODEL = 'users.User'
 
 # DRF Configuration
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',   # for browser login
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-    ),
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',         # shows login UI
+    ],
 }
 
 # JWT Configuration
@@ -165,3 +173,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", # Default Vite React port
     "http://localhost:3000", # Default Create-React-App port
 ]
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}

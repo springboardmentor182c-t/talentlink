@@ -16,8 +16,23 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/users/', include('apps.users.urls')),
+    path('api/contracts/', include('contracts.urls')),
+    # path('api/proposals/', include('proposals.urls')),  # only if you have this file
+    path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+
 ]
+
+
+
+from django.contrib import admin
+from django.urls import path, include
+from django.http import HttpResponse
+
+def home(_):
+    return HttpResponse("TalentLink API running. Try /admin/ or /api/contracts/")
+
