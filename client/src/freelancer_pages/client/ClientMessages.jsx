@@ -1,4 +1,5 @@
 import React from 'react';
+import { useProjects } from '../../context/ProjectContext';
 
 // --- SVG Icons ---
 const Icons = {
@@ -14,6 +15,29 @@ const contacts = [
 ];
 
 const ClientMessages = () => {
+  const { projects, addProject, updateProject, addMessage } = useProjects();
+
+  // Use first project as the active conversation for demo purposes
+  const project = projects && projects.length ? projects[0] : null;
+  const canSend = project ? !!project.proposalSent : false;
+  const [text, setText] = React.useState('');
+
+  const createDemo = () => {
+    addProject({ title: 'Demo Project', proposalSent: false, status: 'Open' });
+  };
+
+  const sendProposal = () => {
+    if (!project) return;
+    updateProject(project.id, { proposalSent: true });
+  };
+
+  const sendMessage = () => {
+    if (!project || !text.trim()) return;
+    const msg = { id: Date.now(), from: 'client', text: text.trim(), ts: new Date().toISOString() };
+    addMessage(project.id, msg);
+    setText('');
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.chatLayout}>
@@ -54,23 +78,50 @@ const ClientMessages = () => {
           </div>
 
           <div style={styles.messages}>
-            <div style={styles.msgReceived}>
-              <div style={styles.bubbleReceived}>Hi! How is the new draft?</div>
-              <div style={styles.msgTime}>10:00 AM</div>
-            </div>
-            <div style={styles.msgSent}>
-              <div style={styles.bubbleSent}>It looks great! Can we tweak the header color?</div>
-              <div style={styles.msgTime}>10:05 AM</div>
-            </div>
-            <div style={styles.msgReceived}>
-              <div style={styles.bubbleReceived}>Sure, I have uploaded the new designs.</div>
-              <div style={styles.msgTime}>10:30 AM</div>
-            </div>
+            {project && Array.isArray(project.messages) && project.messages.length > 0 ? (
+              project.messages.map(m => (
+                m.from === 'client' ? (
+                  <div key={m.id} style={styles.msgSent}>
+                    <div style={styles.bubbleSent}>{m.text}</div>
+                    <div style={styles.msgTime}>{new Date(m.ts).toLocaleTimeString()}</div>
+                  </div>
+                ) : (
+                  <div key={m.id} style={styles.msgReceived}>
+                    <div style={styles.bubbleReceived}>{m.text}</div>
+                    <div style={styles.msgTime}>{new Date(m.ts).toLocaleTimeString()}</div>
+                  </div>
+                )
+              ))
+            ) : (
+              <div style={{color:'#94a3b8'}}>No messages yet — send the first message when allowed.</div>
+            )}
           </div>
 
           <div style={styles.inputArea}>
-            <input type="text" placeholder="Type a message..." style={styles.messageInput} />
-            <button style={styles.sendBtn}><Icons.Send /></button>
+            {!project && (
+              <div style={{display:'flex', gap:10, alignItems:'center', width:'100%'}}>
+                <div style={{color:'#64748b'}}>No project selected.</div>
+                <button onClick={createDemo} style={{padding:'8px 12px', borderRadius:8}}>Create Demo Project</button>
+              </div>
+            )}
+
+            {project && (
+              <>
+                {!canSend && (
+                  <div style={{flex:1, display:'flex', alignItems:'center', gap:12}}>
+                    <div style={{color:'#64748b'}}>You can message once proposal is sent.</div>
+                    <button onClick={sendProposal} style={{padding:'8px 12px', borderRadius:8}}>Simulate: Send Proposal</button>
+                  </div>
+                )}
+
+                {canSend && (
+                  <>
+                    <input value={text} onChange={e => setText(e.target.value)} type="text" placeholder="Type a message..." style={styles.messageInput} onKeyDown={e => { if (e.key === 'Enter') sendMessage(); }} />
+                    <button onClick={sendMessage} style={styles.sendBtn}><Icons.Send /></button>
+                  </>
+                )}
+              </>
+            )}
           </div>
         </div>
 

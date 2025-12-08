@@ -286,6 +286,7 @@ import CalendarPage from "./freelancer_pages/freelancer/CalendarPage";
 import Clients from "./freelancer_pages/freelancer/Clients";
 import Reports from "./freelancer_pages/freelancer/Reports";
 import Settings from "./freelancer_pages/freelancer/Settings";
+import FreelancerMessages from "./freelancer_pages/freelancer/FreelancerMessages";
 
 /* ===== Notifications ===== */
 import NotificationHome from "./notifications/features/notifications/pages/NotificationsPage";
@@ -333,6 +334,7 @@ function App() {
             {/* FREELANCER ROUTES */}
             {/* ===================== */}
             <Route path="/freelancer" element={<FreelancerDashboard />} />
+            <Route path="/freelancer/messages" element={<FreelancerMessages />} />
             <Route path="/freelancer/projects" element={<Projects />} />
             <Route path="/freelancer/accounting" element={<Accounting />} />
             <Route path="/freelancer/expenses" element={<Expenses />} />
