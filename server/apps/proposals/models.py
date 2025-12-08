@@ -7,6 +7,7 @@ User = settings.AUTH_USER_MODEL
 class ProjectProposal(models.Model):
     STATUS_CHOICES = [
         ("submitted", "Submitted"),
+        ("considering", "Considering"),
         ("accepted", "Accepted"),
         ("rejected", "Rejected"),
     ]

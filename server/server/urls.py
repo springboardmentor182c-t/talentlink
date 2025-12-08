@@ -8,4 +8,5 @@ urlpatterns = [
     path("", lambda request: HttpResponse("API is running 🚀")),
     path("admin/", admin.site.urls),
     path("api/proposals/", include("apps.proposals.urls")),
+    path("api/freelancers/", include("apps.users.urls")),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
