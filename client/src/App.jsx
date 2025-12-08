@@ -8,6 +8,7 @@ import Jobs from "./Pages/Jobs.jsx";
 import Contracts from "./Pages/Contracts.jsx";
 import Notifications from "./Pages/Notifications.jsx";
 import ClientProfile from "./Pages/ClientProfile.jsx";
+import Proposals from "./Pages/Proposals.jsx";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route index element={<Dashboard />} />
         <Route path="candidates" element={<Candidates />} />
         <Route path="projects" element={<Projects />} />
+        <Route path="proposals" element={<Proposals />} />
         <Route path="messages" element={<Messages />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="contracts" element={<Contracts />} />
