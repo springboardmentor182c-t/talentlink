@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { DollarSign, Clock, CheckCircle, FileText, AlertCircle, Calendar, Download, Eye } from 'lucide-react';
 
-// Mock Data
+// Mock Data (updated: removed totalEarnings)
 const mockContractsData = {
   stats: {
     activeContracts: 8,
-    totalEarnings: '$45,280',
+    // totalEarnings removed on purpose for client view
     pendingPayments: '$3,500',
     completedProjects: 24
   },
@@ -97,7 +97,7 @@ const mockContractsData = {
   ]
 };
 
-// Stats Card Component
+// Stats Card Component (unchanged)
 const StatsCard = ({ title, value, icon: Icon, color = "indigo" }) => {
   const colorClasses = {
     indigo: 'bg-indigo-50 text-indigo-600',
@@ -123,7 +123,7 @@ const StatsCard = ({ title, value, icon: Icon, color = "indigo" }) => {
   );
 };
 
-// Contracts Component
+// Contracts Component (updated grid layout)
 const Contracts = () => {
   const [filter, setFilter] = useState('All');
   const [selectedContract, setSelectedContract] = useState(mockContractsData.contracts[0]);
@@ -144,26 +144,25 @@ const Contracts = () => {
           </button>
         </div>
 
-        {/* Stats Overview - Responsive Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 lg:mb-6">
+        {/* Stats Overview - Responsive Grid (3 equal cards) */}
+        {/* grid-cols-1 on xs, grid-cols-3 on sm and above ensures equal spacing */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 lg:mb-6">
           <StatsCard 
             title="Active" 
             value={mockContractsData.stats.activeContracts} 
             icon={FileText}
             color="indigo"
           />
-          <StatsCard 
-            title="Total Earnings" 
-            value={mockContractsData.stats.totalEarnings} 
-            icon={DollarSign}
-            color="green"
-          />
+
+          {/* If you have 'total spent' available from backend, replace the value below.
+              Otherwise this card can be removed or show placeholder like "$0". */}
           <StatsCard 
             title="Pending" 
             value={mockContractsData.stats.pendingPayments} 
             icon={Clock}
             color="yellow"
           />
+
           <StatsCard 
             title="Completed" 
             value={mockContractsData.stats.completedProjects} 
