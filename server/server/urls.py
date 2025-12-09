@@ -21,6 +21,8 @@ urlpatterns = [
     # Keep other routes present in main
     path("api/proposals/", include("apps.proposals.urls")),
     path("api/messaging/", include("apps.messaging.urls")),
+    path("api/projects/", include("apps.projects.urls")),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
