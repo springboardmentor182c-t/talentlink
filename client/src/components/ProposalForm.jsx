@@ -56,6 +56,7 @@ export default function ProposalForm({ projectId, onSuccess, client_id }) {
         setBidAmount("");
         setCompletionTime("");
         setCoverLetter("");
+        setErrors({});
         if (onSuccess) onSuccess(response.data);
       } else {
         console.error("Submission failed:", response.data);

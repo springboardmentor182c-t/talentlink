@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ProposalForm from "../components/ProposalForm";
 import ProposalList from "../components/ProposalList";
+import ProposalSidebar from "../components/ProposalSidebar";
 import api from "../services/api";
 
 export default function ProjectProposal() {
@@ -58,10 +59,13 @@ export default function ProjectProposal() {
 
             {/* Proposal List */}
             <div className="bg-white p-6 rounded-md mt-6">
-              <ProposalList key={refresh} projectId={projectId} />
+              <ProposalList projectId={projectId} refresh={refresh} />
             </div>
           </div>
         </main>
+
+        {/* Right Sidebar */}
+        <ProposalSidebar currentProjectId={projectId} />
       </div>
     </div>
   );

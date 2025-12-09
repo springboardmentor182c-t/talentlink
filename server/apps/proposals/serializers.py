@@ -1,8 +1,17 @@
-# proposals/serializers.py
 from rest_framework import serializers
 from .models import ProjectProposal
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class FreelancerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username"]
 
 class ProposalSerializer(serializers.ModelSerializer):
+    freelancer = FreelancerSerializer(read_only=True)
+
     class Meta:
         model = ProjectProposal
         fields = [
