@@ -22,4 +22,7 @@ urlpatterns = [
     path('api/users/', include('apps.users.urls')),
     path('api/', include('apps.core.urls')),
     path('api/profiles/', include('apps.profiles.urls')), 
+    
+    path('api/messaging/', include('apps.messaging.urls')),
+ 
 ]

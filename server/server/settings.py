@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.users.apps.UsersConfig',
     'apps.core',
     'apps.profiles',
+    'apps.messaging',
     
 
 ]
@@ -117,7 +118,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'Talentlink',      # The name you just gave the DB in pgAdmin
         'USER': 'postgres',        # Default is usually 'postgres'
-        'PASSWORD': 'Kumar@psql', # <--- PUT YOUR PGADMIN PASSWORD HERE
+        'PASSWORD': 'geeta', # <--- PUT YOUR PGADMIN PASSWORD HERE
         'HOST': 'localhost',
         'PORT': '5432',            # Default postgres port
     }
