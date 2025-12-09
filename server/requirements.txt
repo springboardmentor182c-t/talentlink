@@ -4,4 +4,8 @@ psycopg2-binary    # For PostgreSQL
 django
 djangorestframework
 djangorestframework-simplejwt
+Django
+djangorestframework
+djangorestframework-simplejwt
+psycopg2-binary
 django-cors-headers

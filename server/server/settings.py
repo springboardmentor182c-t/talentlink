@@ -48,6 +48,15 @@ INSTALLED_APPS = [
     # 'freelancer_profile',
     # 'profileapp',
     # 'core',
+    'rest_framework_simplejwt',
+    'corsheaders',
+
+    'apps.users.apps.UsersConfig',
+    'apps.core',
+    'apps.projects',
+    'apps.profiles',
+    
+
 ]
 
 
@@ -60,6 +69,11 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',  # <--- Allows Thunder Client/Postman
+        'rest_framework.authentication.SessionAuthentication', # <--- Allows Browser/Admin Panel
+        'rest_framework.authentication.TokenAuthentication',  # <--- CRITICAL FOR REACT
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_RENDERER_CLASSES': [
@@ -125,6 +139,23 @@ DATABASES = {
         'PORT': '5432',            # Default postgres port
     }
 }
+
+# For local testing when Postgres isn't available, use SQLite as a fallback
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+# Alternatively force SQLite for local dev by uncommenting below:
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation
