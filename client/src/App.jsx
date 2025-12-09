@@ -16,6 +16,10 @@ import PostNewProject from "./Pages/PostNewProject.jsx";
 import ProjectDetails from "./Pages/ProjectDetails.jsx";
 import EditProject from "./Pages/EditProject.jsx";
 
+import PostNewProject from "./Pages/PostNewProject.jsx";
+import ProjectDetails from "./Pages/ProjectDetails.jsx";
+import EditProject from "./Pages/EditProject.jsx"; // ⭐ NEW IMPORT
+
 function App() {
   return (
     <Routes>
@@ -34,6 +38,12 @@ function App() {
 
         {/* Keep other existing routes from main */}
         <Route path="proposals" element={<Proposals />} />
+        <Route path="projects/new" element={<PostNewProject />} />
+        <Route path="projects/:id" element={<ProjectDetails />} />
+
+        
+        <Route path="projects/:id/edit" element={<EditProject />} />
+
         <Route path="messages" element={<Messages />} />
         <Route path="contracts" element={<Contracts />} />
         <Route path="notifications" element={<Notifications />} />
