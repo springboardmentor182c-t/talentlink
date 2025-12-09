@@ -1,8 +1,6 @@
 # proposals/views.py
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, generics, status
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework import viewsets, generics
 from .models import ProjectProposal
 from .serializers import ProposalSerializer
 
@@ -22,7 +20,7 @@ class ProposalViewSet(viewsets.ModelViewSet):
 class ProposalCreateView(generics.CreateAPIView):
     queryset = ProjectProposal.objects.all()
     serializer_class = ProposalSerializer
-    permission_classes = [AllowAny]
+    permission_classes = []
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
