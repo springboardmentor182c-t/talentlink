@@ -8,4 +8,6 @@ urlpatterns = [
     path("api/comments/", include("apps.comments.urls")),
     path("api/reactions/", include("apps.reactions.urls")),
     path("api/adminpanel/", include("apps.adminpanel.urls")),
+    path("api/projects/", include("apps.projects.urls")),
+
 ]
