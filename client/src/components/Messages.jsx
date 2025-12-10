@@ -1,5 +1,6 @@
-import React from 'react';
-import { useProjects } from '../../context/ProjectContext';
+import React, { useState } from 'react';
+import { useProjects } from '../context/ProjectContext';
+import { useParams } from 'react-router-dom';
 
 // --- SVG Icons ---
 const Icons = {
@@ -14,16 +15,24 @@ const contacts = [
   { id: 3, name: 'Support Team', lastMsg: 'Ticket #492 resolved.', time: 'Nov 28', unread: 0, active: false },
 ];
 
-const ClientMessages = () => {
+const Messages = ({ userRole = 'client' }) => {
   const { projects, addProject, updateProject, addMessage } = useProjects();
+  const [text, setText] = useState('');
 
   // Use first project as the active conversation for demo purposes
   const project = projects && projects.length ? projects[0] : null;
-  const canSend = project ? !!project.proposalSent : false;
-  const [text, setText] = React.useState('');
+  
+  // Client can send once proposal is sent; Freelancer can send once status is 'Accepted'
+  const canSend = project 
+    ? (userRole === 'client' ? !!project.proposalSent : project.status === 'Accepted')
+    : false;
 
   const createDemo = () => {
-    addProject({ title: 'Demo Project', proposalSent: false, status: 'Open' });
+    addProject({ 
+      title: 'Demo Project', 
+      proposalSent: userRole === 'freelancer' ? true : false, 
+      status: 'Open' 
+    });
   };
 
   const sendProposal = () => {
@@ -31,9 +40,19 @@ const ClientMessages = () => {
     updateProject(project.id, { proposalSent: true });
   };
 
+  const acceptProject = () => {
+    if (!project) return;
+    updateProject(project.id, { status: 'Accepted' });
+  };
+
   const sendMessage = () => {
     if (!project || !text.trim()) return;
-    const msg = { id: Date.now(), from: 'client', text: text.trim(), ts: new Date().toISOString() };
+    const msg = { 
+      id: Date.now(), 
+      from: userRole, 
+      text: text.trim(), 
+      ts: new Date().toISOString() 
+    };
     addMessage(project.id, msg);
     setText('');
   };
@@ -80,7 +99,7 @@ const ClientMessages = () => {
           <div style={styles.messages}>
             {project && Array.isArray(project.messages) && project.messages.length > 0 ? (
               project.messages.map(m => (
-                m.from === 'client' ? (
+                m.from === userRole ? (
                   <div key={m.id} style={styles.msgSent}>
                     <div style={styles.bubbleSent}>{m.text}</div>
                     <div style={styles.msgTime}>{new Date(m.ts).toLocaleTimeString()}</div>
@@ -109,14 +128,29 @@ const ClientMessages = () => {
               <>
                 {!canSend && (
                   <div style={{flex:1, display:'flex', alignItems:'center', gap:12}}>
-                    <div style={{color:'#64748b'}}>You can message once proposal is sent.</div>
-                    <button onClick={sendProposal} style={{padding:'8px 12px', borderRadius:8}}>Simulate: Send Proposal</button>
+                    <div style={{color:'#64748b'}}>
+                      {userRole === 'client' 
+                        ? 'You can message once proposal is sent.' 
+                        : 'You can message once the client accepts.'}
+                    </div>
+                    {userRole === 'client' ? (
+                      <button onClick={sendProposal} style={{padding:'8px 12px', borderRadius:8}}>Simulate: Send Proposal</button>
+                    ) : (
+                      <button onClick={acceptProject} style={{padding:'8px 12px', borderRadius:8}}>Simulate: Accept</button>
+                    )}
                   </div>
                 )}
 
                 {canSend && (
                   <>
-                    <input value={text} onChange={e => setText(e.target.value)} type="text" placeholder="Type a message..." style={styles.messageInput} onKeyDown={e => { if (e.key === 'Enter') sendMessage(); }} />
+                    <input 
+                      value={text} 
+                      onChange={e => setText(e.target.value)} 
+                      type="text" 
+                      placeholder="Type a message..." 
+                      style={styles.messageInput} 
+                      onKeyDown={e => { if (e.key === 'Enter') sendMessage(); }} 
+                    />
                     <button onClick={sendMessage} style={styles.sendBtn}><Icons.Send /></button>
                   </>
                 )}
@@ -161,4 +195,4 @@ const styles = {
   sendBtn: { backgroundColor: '#3b82f6', color: 'white', border: 'none', width: '45px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }
 };
 
-export default ClientMessages;
+export default Messages;
