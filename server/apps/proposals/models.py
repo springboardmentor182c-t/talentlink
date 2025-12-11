@@ -1,4 +1,3 @@
-# proposals/models.py
 from django.db import models
 from django.conf import settings
 
@@ -31,3 +30,12 @@ class ProjectProposal(models.Model):
 
     def __str__(self):
         return f"{self.freelancer} → Project {self.project_id} ({self.status})"
+
+
+class ProposalAttachment(models.Model):
+    proposal = models.ForeignKey(ProjectProposal, related_name='attachments', on_delete=models.CASCADE)
+    file = models.FileField(upload_to='proposal_attachments/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Attachment {self.id} for Proposal {self.proposal_id}"

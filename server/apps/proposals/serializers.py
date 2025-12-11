@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ProjectProposal
+from .models import ProjectProposal, ProposalAttachment
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -32,3 +32,10 @@ class ProposalSerializer(serializers.ModelSerializer):
         if freelancer:
             validated_data["freelancer"] = freelancer
         return super().create(validated_data)
+
+
+class ProposalAttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProposalAttachment
+        fields = ['id', 'proposal', 'file', 'uploaded_at']
+        read_only_fields = ['id', 'uploaded_at']

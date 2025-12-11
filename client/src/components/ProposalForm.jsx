@@ -5,6 +5,7 @@ export default function ProposalForm({ projectId, onSuccess, client_id }) {
   const [bidAmount, setBidAmount] = useState("");
   const [completionTime, setCompletionTime] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
+  const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -35,6 +36,27 @@ export default function ProposalForm({ projectId, onSuccess, client_id }) {
     alert("Draft saved locally");
   };
 
+  const handleFilesChange = (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setAttachments(files);
+  };
+
+  const uploadAttachments = async (proposalId) => {
+    if (!attachments || attachments.length === 0) return;
+    try {
+      for (const file of attachments) {
+        const fd = new FormData();
+        fd.append('file', file);
+        await api.post(`/api/proposals/${proposalId}/attachments/`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
+    } catch (err) {
+      console.error('Attachment upload failed:', err);
+      alert('One or more attachments failed to upload. See console for details.');
+    }
+  };
+
   const handleSubmit = async (ev) => {
     ev.preventDefault();
     if (!validate()) return;
@@ -58,6 +80,12 @@ export default function ProposalForm({ projectId, onSuccess, client_id }) {
         setCoverLetter("");
         setErrors({});
         if (onSuccess) onSuccess(response.data);
+
+        const proposalId = response.data && response.data.id;
+        if (proposalId && !String(proposalId).startsWith('temp-')) {
+          await uploadAttachments(proposalId);
+          setAttachments([]);
+        }
       } else {
         console.error("Submission failed:", response.data);
         alert("Submission failed. Check console for details.");
@@ -107,6 +135,18 @@ export default function ProposalForm({ projectId, onSuccess, client_id }) {
           className="p-3 w-full border rounded-md h-32"
         />
         {errors.coverLetter && <p className="text-red-600">{errors.coverLetter}</p>}
+      </div>
+
+      <div>
+        <label className="font-semibold">Attachments (optional)</label>
+        <input type="file" multiple onChange={handleFilesChange} className="mt-2" />
+        {attachments && attachments.length > 0 && (
+          <ul className="mt-2 text-sm text-gray-700 list-disc ml-6">
+            {attachments.map((f, i) => (
+              <li key={i}>{f.name} ({Math.round(f.size/1024)} KB)</li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="flex gap-4">

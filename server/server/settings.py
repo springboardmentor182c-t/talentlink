@@ -25,6 +25,7 @@ INSTALLED_APPS = [
 
     "apps.users",
     "apps.proposals",
+    "apps.messaging",
     "apps.shoutouts",
     "apps.comments",
     "apps.reactions",
