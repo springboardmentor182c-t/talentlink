@@ -19,7 +19,6 @@ import ClientDashboard from "./freelancer_pages/client/ClientDashboard";
 import ClientFinancials from "./freelancer_pages/client/ClientFinancials";
 import ClientProjects from "./freelancer_pages/client/ClientProjects";
 import ClientDocuments from "./freelancer_pages/client/ClientDocuments";
-import ClientMessages from "./freelancer_pages/client/ClientMessages";
 import ClientSettings from "./freelancer_pages/client/ClientSettings";
 import ClientHelp from "./freelancer_pages/client/ClientHelp";
 
@@ -35,6 +34,9 @@ import ClientsFreelancer from "./freelancer_pages/freelancer/Clients";
 import ReportsFreelancer from "./freelancer_pages/freelancer/Reports";
 import SettingsFreelancer from "./freelancer_pages/freelancer/Settings";
 
+/* ===== Messaging ===== */
+import Messages from "./components/Messages";
+
 /* ===== Notifications ===== */
 import NotificationHome from "./notifications/features/notifications/pages/NotificationsPage";
 import NotificationItem from "./notifications/features/notifications/components/NotificationItem";
@@ -49,13 +51,39 @@ import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";   // Different from freelancer Clients
 import Reports from "./pages/Reports";   // Different from freelancer Reports
 
-/* ===== Placeholder Style ===== */
-const phStyle = {
-  padding: "40px",
-  fontSize: "24px",
-  fontWeight: "bold",
-  color: "#475569",
-};
+            {/* ===================== */}
+            {/* CLIENT PORTAL ROUTES */}
+            {/* ===================== */}
+            <Route path="/client" element={<ClientLayout />}>
+               <Route index element={<ClientDashboard />} />
+               
+               {/* Real Client Components */}
+               <Route path="dashboard" element={<ClientDashboard />} />
+               <Route path="projects" element={<ClientProjects />} />
+               <Route path="financials" element={<ClientFinancials />} />
+               <Route path="documents" element={<ClientDocuments />} />
+               <Route path="messages" element={<Messages userRole="client" />} />
+               <Route path="settings" element={<ClientSettings />} />
+               <Route path="help" element={<ClientHelp />} />
+               
+               {/* Profile placeholder */}
+               <Route path="profile" element={<div style={phStyle}>User Profile</div>} />
+            </Route>
+
+            {/* ===================== */}
+            {/* FREELANCER ROUTES */}
+            {/* ===================== */}
+            <Route path="/freelancer" element={<FreelancerDashboard />} />
+            <Route path="/freelancer/messages" element={<Messages userRole="freelancer" />} />
+            <Route path="/freelancer/projects" element={<Projects />} />
+            <Route path="/freelancer/accounting" element={<Accounting />} />
+            <Route path="/freelancer/expenses" element={<Expenses />} />
+            <Route path="/freelancer/inquiry" element={<Inquiry />} />
+            <Route path="/freelancer/contracts" element={<Contracts />} />
+            <Route path="/freelancer/calendar" element={<CalendarPage />} />
+            <Route path="/freelancer/clients" element={<Clients />} />
+            <Route path="/freelancer/reports" element={<Reports />} />
+            <Route path="/freelancer/settings" element={<Settings />} />
 
 export default function App() {
   return (

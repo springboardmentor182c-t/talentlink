@@ -52,9 +52,24 @@ export const ProjectProvider = ({ children }) => {
       progress: 0,
       createdAt: new Date().toLocaleDateString(),
       color: '#3b82f6',
+      messages: [],
       ...newProject
     };
     setProjects((prev) => [projectWithDetails, ...prev]);
+  };
+
+  // Function to update a project by id (shallow merge)
+  const updateProject = (id, patch) => {
+    setProjects((prev) => prev.map(p => p.id === id ? { ...p, ...patch } : p));
+  };
+
+  // Add a message to a project's messages array
+  const addMessage = (projectId, message) => {
+    setProjects((prev) => prev.map(p => {
+      if (p.id !== projectId) return p;
+      const nextMessages = Array.isArray(p.messages) ? [...p.messages, message] : [message];
+      return { ...p, messages: nextMessages };
+    }));
   };
 
   const deleteProject = (id) => {
@@ -62,7 +77,7 @@ export const ProjectProvider = ({ children }) => {
   };
 
   return (
-    <ProjectContext.Provider value={{ projects, addProject, deleteProject }}>
+    <ProjectContext.Provider value={{ projects, addProject, deleteProject, updateProject, addMessage }}>
       {children}
     </ProjectContext.Provider>
   );
