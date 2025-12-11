@@ -2,7 +2,6 @@ import React from "react";
 import {
   Menu,
   X,
-  Briefcase,
   MessageSquare,
   Users,
   FolderKanban,
@@ -17,8 +16,9 @@ const Sidebar = ({ isOpen, onClose }) => {
   const menuItems = [
     { icon: <Menu className="w-5 h-5" />, label: "Dashboard", path: "/" },
     { icon: <Users className="w-5 h-5" />, label: "Candidates", path: "/candidates" },
-    { icon: <Briefcase className="w-5 h-5" />, label: "Jobs", path: "/jobs" },
+    // 🚫 Removed Jobs page
     { icon: <FolderKanban className="w-5 h-5" />, label: "My Projects", path: "/projects" },
+    { icon: <FileText className="w-5 h-5" />, label: "Proposals", path: "/proposals" },
     { icon: <FileText className="w-5 h-5" />, label: "Contracts", path: "/contracts" },
     { icon: <MessageSquare className="w-5 h-5" />, label: "Messages", path: "/messages" },
   ];
@@ -37,7 +37,6 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Mobile Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-30 z-40 lg:hidden"
@@ -45,14 +44,11 @@ const Sidebar = ({ isOpen, onClose }) => {
         />
       )}
 
-      {/* Sidebar */}
       <div
-        className={`
-          fixed lg:static inset-y-0 left-0 z-50
+        className={`fixed lg:static inset-y-0 left-0 z-50
           w-64 bg-gradient-to-b from-indigo-600 to-indigo-700 text-white shadow-xl
           transform transition-transform duration-300 ease-in-out
-          ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        `}
+          ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
@@ -72,15 +68,12 @@ const Sidebar = ({ isOpen, onClose }) => {
               <button
                 key={item.label}
                 onClick={() => handleClick(item.path)}
-                className={`
-                  w-full flex items-center gap-3 px-4 py-3 rounded-lg
-                  transition-all duration-200
-                  ${
-                    isActive(item.path)
-                      ? "bg-white text-indigo-700 shadow-md font-semibold"
-                      : "text-indigo-100 hover:bg-indigo-500 hover:text-white"
-                  }
-                `}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg
+                  transition-all duration-200 ${
+                  isActive(item.path)
+                    ? "bg-white text-indigo-700 shadow-md font-semibold"
+                    : "text-indigo-100 hover:bg-indigo-500 hover:text-white"
+                }`}
               >
                 {item.icon}
                 <span className="font-medium">{item.label}</span>
@@ -91,7 +84,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           {/* Footer */}
           <div className="p-4 border-t border-indigo-500">
             <div className="text-xs text-indigo-200 text-center">
-              © 2024 Talent Link
+              © 2025 Talent Link
             </div>
           </div>
         </div>

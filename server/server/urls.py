@@ -7,6 +7,18 @@ from django.conf.urls.static import static
 urlpatterns = [
     path("", lambda request: HttpResponse("API is running 🚀")),
     path("admin/", admin.site.urls),
+
+    # Keep existing app includes and add projects API
+    path("api/users/", include("apps.users.urls")),
+    path("api/shoutouts/", include("apps.shoutouts.urls")),
+    path("api/comments/", include("apps.comments.urls")),
+    path("api/reactions/", include("apps.reactions.urls")),
+    path("api/adminpanel/", include("apps.adminpanel.urls")),
+
+    # Projects app 
+    path("api/projects/", include("apps.projects.urls")),
+
+    # Keep other routes present in main
     path("api/proposals/", include("apps.proposals.urls")),
     path("api/messaging/", include("apps.messaging.urls")),
 ]
