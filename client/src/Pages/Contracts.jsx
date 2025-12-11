@@ -401,6 +401,7 @@ const ContractDetails = ({ contract, onStatusUpdate, onPayment }) => {
 };
 
 // Main Contracts Component
+// Contracts Component (updated grid layout)
 const Contracts = () => {
   const [contracts, setContracts] = useState([]);
   const [stats, setStats] = useState({
@@ -587,6 +588,9 @@ const Contracts = () => {
 
         {/* Stats Overview - Responsive Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 lg:mb-6">
+        {/* Stats Overview - Responsive Grid (3 equal cards) */}
+        {/* grid-cols-1 on xs, grid-cols-3 on sm and above ensures equal spacing */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 lg:mb-6">
           <StatsCard 
             title="Active Contracts" 
             value={stats.activeContracts} 
@@ -601,6 +605,9 @@ const Contracts = () => {
             color="green"
             loading={loading}
           />
+
+          {/* If you have 'total spent' available from backend, replace the value below.
+              Otherwise this card can be removed or show placeholder like "$0". */}
           <StatsCard 
             title="Pending Payments" 
             value={stats.pendingPayments} 
@@ -608,6 +615,7 @@ const Contracts = () => {
             color="yellow"
             loading={loading}
           />
+
           <StatsCard 
             title="Completed" 
             value={stats.completedProjects} 
