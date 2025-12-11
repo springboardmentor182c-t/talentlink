@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "apps.comments",
     "apps.reactions",
     "apps.adminpanel",
+    "apps.projects",
 ]
 
 MIDDLEWARE = [
