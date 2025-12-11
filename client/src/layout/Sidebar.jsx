@@ -18,6 +18,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { icon: <Users className="w-5 h-5" />, label: "Candidates", path: "/candidates" },
     // 🚫 Removed Jobs page
     { icon: <FolderKanban className="w-5 h-5" />, label: "My Projects", path: "/projects" },
+    { icon: <FileText className="w-5 h-5" />, label: "Proposals", path: "/proposals" },
     { icon: <FileText className="w-5 h-5" />, label: "Contracts", path: "/contracts" },
     { icon: <MessageSquare className="w-5 h-5" />, label: "Messages", path: "/messages" },
   ];
