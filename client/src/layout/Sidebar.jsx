@@ -6,6 +6,7 @@ import {
   Users,
   FolderKanban,
   FileText,
+  Briefcase,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -16,7 +17,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const menuItems = [
     { icon: <Menu className="w-5 h-5" />, label: "Dashboard", path: "/" },
     { icon: <Users className="w-5 h-5" />, label: "Candidates", path: "/candidates" },
-    // 🚫 Removed Jobs page
+    { icon: <Briefcase className="w-5 h-5" />, label: "Jobs", path: "/jobs" },
     { icon: <FolderKanban className="w-5 h-5" />, label: "My Projects", path: "/projects" },
     { icon: <FileText className="w-5 h-5" />, label: "Proposals", path: "/proposals" },
     { icon: <FileText className="w-5 h-5" />, label: "Contracts", path: "/contracts" },
