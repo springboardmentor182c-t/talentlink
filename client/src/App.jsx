@@ -13,6 +13,10 @@ import Notifications from "./Pages/Notifications.jsx";
 import ClientProfile from "./Pages/ClientProfile.jsx";
 import ProjectProposal from "./Pages/ProjectProposal.jsx";
 import Proposals from "./Pages/Proposals.jsx";
+import FreelancerDashboard from "./Pages/FreelancerDashboard.jsx";
+import Proposals from "./Pages/Proposals.jsx";
+import Proposals from "./Pages/Proposals.jsx"; // <- keep if main has it
+
 import PostNewProject from "./Pages/PostNewProject.jsx";
 import ProjectDetails from "./Pages/ProjectDetails.jsx";
 import EditProject from "./Pages/EditProject.jsx";
@@ -42,6 +46,7 @@ function App() {
         <Route path="notifications" element={<Notifications />} />
         <Route path="profile" element={<ClientProfile />} />
         <Route path="proposal/:id" element={<ProjectProposal />} />
+        <Route path="freelancer" element={<FreelancerDashboard />} />
       </Route>
     </Routes>
   );
