@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Sidebar from "./Sidebar.jsx";
 import Navbar from "./Navbar.jsx";
 import { Outlet } from "react-router-dom";
+import { NotificationProvider } from "../contexts/NotificationContext.jsx";
 
 const MainLayout = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,6 +11,8 @@ const MainLayout = () => {
     <div className="flex flex-col min-h-screen w-full bg-white">
       {/* Main Layout with Sidebar and Content */}
       <div className="flex flex-1 w-full">
+    <NotificationProvider>
+      <div className="flex min-h-screen w-full bg-white">
         {/* Sidebar */}
         <Sidebar isOpen={isOpen} onClose={() => setIsOpen(false)} />
 
@@ -23,7 +26,7 @@ const MainLayout = () => {
           </div>
         </div>
       </div>
-    </div>
+    </NotificationProvider>
   );
 };
 

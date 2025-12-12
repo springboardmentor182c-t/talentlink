@@ -15,6 +15,7 @@ class ProposalViewSet(viewsets.ModelViewSet):
     queryset = ProjectProposal.objects.all().order_by("-created_at")
     serializer_class = ProposalSerializer
     permission_classes = [AllowAny]
+    # permission_classes = [IsAuthenticated]  # Temporarily disabled for testing
 
     def get_queryset(self):
         project_id = self.request.query_params.get("project_id")
