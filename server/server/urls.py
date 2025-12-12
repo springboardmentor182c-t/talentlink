@@ -29,6 +29,9 @@ urlpatterns = [
     path('api/projects/', include('apps.projects.urls')),
     path('api/', include('apps.core.urls')),
     path('api/profiles/', include('apps.profiles.urls')), 
+    
+    path('api/messaging/', include('apps.messaging.urls')),
+ 
 ]
 
 
