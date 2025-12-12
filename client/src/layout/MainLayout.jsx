@@ -8,6 +8,9 @@ const MainLayout = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
+    <div className="flex flex-col min-h-screen w-full bg-white">
+      {/* Main Layout with Sidebar and Content */}
+      <div className="flex flex-1 w-full">
     <NotificationProvider>
       <div className="flex min-h-screen w-full bg-white">
         {/* Sidebar */}
