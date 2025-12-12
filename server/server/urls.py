@@ -18,5 +18,8 @@ urlpatterns = [
 
     # Keep other routes present in main
     path("api/proposals/", include("apps.proposals.urls")),
+    path("api/freelancers/", include("apps.freelancers.urls")),
+    path("api/contracts/", include("apps.contracts.urls")),
+]
     path("api/freelancers/", include("apps.users.urls")),  # keep as main had it
 ]
