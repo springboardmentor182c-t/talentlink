@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import StatsCard from "../StatsCard.jsx";
 import BarChartPlaceholder from "../BarChartPlaceholder.jsx";
 import PieChartPlaceholder from "../PieChartPlaceholder.jsx";
 import RecentMessages from "../RecentMessages.jsx";
 import { Users, TrendingUp, MessageSquare, CheckCircle } from "lucide-react";
+import { messagingAPI } from "../../services/api.js";
 
-// Mock Data
+// Mock Data for other sections
 const mockDashboardData = {
   totalCandidates: 20,
   totalJobs: 8,
@@ -23,23 +24,81 @@ const mockDashboardData = {
     Interview: 20,
     Offer: 10,
   },
-  recentMessages: [
-    {
-      name: "Alex Torres",
-      message: "Great job on the update!",
-      time: "10:24 AM",
-      avatar: "AT",
-    },
-    {
-      name: "Megan Simon",
-      message: "When is the next class?",
-      time: "2:47 AM",
-      avatar: "MS",
-    },
-  ],
 };
 
 const Dashboard = () => {
+  const [recentMessages, setRecentMessages] = useState([]);
+  const [loadingMessages, setLoadingMessages] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  // Get current user ID from localStorage
+  useEffect(() => {
+    try {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        const user = JSON.parse(userData);
+        setCurrentUserId(user.id);
+      }
+    } catch (err) {
+      console.error("Error parsing user data:", err);
+    }
+  }, []);
+
+  // Fetch recent messages from API
+  useEffect(() => {
+    const fetchRecentMessages = async () => {
+      setLoadingMessages(true);
+      try {
+        const conversations = await messagingAPI.getConversations();
+
+        // Transform conversations to recent messages format
+        const messages = conversations
+          .filter(conv => conv.last_message) // Only include conversations with messages
+          .map(conv => {
+            // Get the other participant's name
+            const otherParticipant = conv.participants?.find(
+              p => p.id !== currentUserId
+            );
+            const name = otherParticipant?.username || "Unknown";
+            const avatar = name.substring(0, 2).toUpperCase() || "U";
+
+            // Format time
+            const date = new Date(conv.last_message.created_at);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            let time = "Unknown";
+            if (diffMins < 1) time = "Just now";
+            else if (diffMins < 60) time = `${diffMins}m ago`;
+            else if (diffHours < 24) time = `${diffHours}h ago`;
+            else if (diffDays < 7) time = `${diffDays}d ago`;
+            else time = date.toLocaleDateString();
+
+            return {
+              name,
+              message: conv.last_message.text,
+              time,
+              avatar,
+            };
+          })
+          .slice(0, 5); // Get only the first 5 recent messages
+
+        setRecentMessages(messages);
+      } catch (err) {
+        console.error("Failed to fetch recent messages:", err);
+        setRecentMessages([]);
+      } finally {
+        setLoadingMessages(false);
+      }
+    };
+
+    if (currentUserId) {
+      fetchRecentMessages();
+    }
+  }, [currentUserId]);
   return (
     <main className="w-full min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -98,7 +157,13 @@ const Dashboard = () => {
 
         {/* Messages Section */}
         <div className="w-full">
-          <RecentMessages messages={mockDashboardData.recentMessages} />
+          {loadingMessages ? (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
+              <p className="text-gray-500">Loading messages...</p>
+            </div>
+          ) : (
+            <RecentMessages messages={recentMessages} />
+          )}
         </div>
       </div>
     </main>
