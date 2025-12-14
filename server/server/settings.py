@@ -21,13 +21,13 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
-    "corsheaders",
+    # "corsheaders",
 
     "apps.users",
-    "apps.proposals",
-    "apps.messaging",
+    # "apps.proposals",
+    # "apps.messaging",
     "corsheaders",
-    "rest_framework",
+    # "rest_framework",
     # Local apps
     "apps.freelancers",
     "apps.proposals",
