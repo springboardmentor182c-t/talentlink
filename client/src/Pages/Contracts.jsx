@@ -586,8 +586,6 @@ const Contracts = () => {
           </div>
         )}
 
-        {/* Stats Overview - Responsive Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 lg:mb-6">
         {/* Stats Overview - Responsive Grid (3 equal cards) */}
         {/* grid-cols-1 on xs, grid-cols-3 on sm and above ensures equal spacing */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 lg:mb-6">

@@ -7,4 +7,4 @@ media/
 static/
 .DS_Store
 .env
-apps/messaging/
+migrations/

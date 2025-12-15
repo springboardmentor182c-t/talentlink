@@ -12,4 +12,51 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Messaging API functions
+export const messagingAPI = {
+  /**
+   * Get all conversations for the authenticated user
+   */
+  getConversations: async () => {
+    try {
+      const response = await api.get("/api/messaging/conversations/");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all messages for a specific conversation
+   */
+  getMessages: async (conversationId) => {
+    try {
+      const response = await api.get(
+        `/api/messaging/conversations/${conversationId}/messages/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Send a message to a conversation
+   */
+  sendMessage: async (conversationId, text) => {
+    try {
+      const response = await api.post(
+        `/api/messaging/conversations/${conversationId}/messages/`,
+        { text }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      throw error;
+    }
+  },
+};
+
 export default api;
