@@ -6,7 +6,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = '_all_'
+        fields = '__all__'
 
 class MessageCreateSerializer(serializers.ModelSerializer):
     class Meta:
