@@ -1,8 +1,6 @@
 # File: apps/core/urls.py
 
 from django.urls import path
-
-
 from .views import (
     RegisterView, 
     VerifyOTPView, 
@@ -18,6 +16,4 @@ urlpatterns = [
 
     # Endpoint: /api/verify-otp/
     path('verify-otp/', VerifyOTPView.as_view(), name='verify-otp'),
-    
-
 ]
