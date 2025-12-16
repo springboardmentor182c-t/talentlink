@@ -44,46 +44,7 @@ import NotificationItem from "./notifications/features/notifications/components/
 /* ===== Optional 404 Page ===== */
 import NotFound from "./freelancer_pages/NotFound";
 
-/* ===== Divya's Added Components ===== */
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
-import Dashboard from "./pages/Dashboard";
-import Clients from "./pages/Clients";   // Different from freelancer Clients
-import Reports from "./pages/Reports";   // Different from freelancer Reports
-
-            {/* ===================== */}
-            {/* CLIENT PORTAL ROUTES */}
-            {/* ===================== */}
-            <Route path="/client" element={<ClientLayout />}>
-               <Route index element={<ClientDashboard />} />
-               
-               {/* Real Client Components */}
-               <Route path="dashboard" element={<ClientDashboard />} />
-               <Route path="projects" element={<ClientProjects />} />
-               <Route path="financials" element={<ClientFinancials />} />
-               <Route path="documents" element={<ClientDocuments />} />
-               <Route path="messages" element={<Messages userRole="client" />} />
-               <Route path="settings" element={<ClientSettings />} />
-               <Route path="help" element={<ClientHelp />} />
-               
-               {/* Profile placeholder */}
-               <Route path="profile" element={<div style={phStyle}>User Profile</div>} />
-            </Route>
-
-            {/* ===================== */}
-            {/* FREELANCER ROUTES */}
-            {/* ===================== */}
-            <Route path="/freelancer" element={<FreelancerDashboard />} />
-            <Route path="/freelancer/messages" element={<Messages userRole="freelancer" />} />
-            <Route path="/freelancer/projects" element={<Projects />} />
-            <Route path="/freelancer/accounting" element={<Accounting />} />
-            <Route path="/freelancer/expenses" element={<Expenses />} />
-            <Route path="/freelancer/inquiry" element={<Inquiry />} />
-            <Route path="/freelancer/contracts" element={<Contracts />} />
-            <Route path="/freelancer/calendar" element={<CalendarPage />} />
-            <Route path="/freelancer/clients" element={<Clients />} />
-            <Route path="/freelancer/reports" element={<Reports />} />
-            <Route path="/freelancer/settings" element={<Settings />} />
+const phStyle = { padding: "2rem", textAlign: "center", fontSize: "1.5rem" };
 
 export default function App() {
   return (
@@ -101,48 +62,6 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ===================== */}
-          {/* DIVYA'S DASHBOARD ROUTES */}
-          {/* ===================== */}
-          <Route
-            path="/dashboard"
-            element={
-              <div className="app">
-                <Sidebar />
-                <div className="main-area">
-                  <Header />
-                  <Dashboard />
-                </div>
-              </div>
-            }
-          />
-
-          <Route
-            path="/clients"
-            element={
-              <div className="app">
-                <Sidebar />
-                <div className="main-area">
-                  <Header />
-                  <Clients />
-                </div>
-              </div>
-            }
-          />
-
-          <Route
-            path="/reports"
-            element={
-              <div className="app">
-                <Sidebar />
-                <div className="main-area">
-                  <Header />
-                  <Reports />
-                </div>
-              </div>
-            }
-          />
-
-          {/* ===================== */}
           {/* CLIENT PORTAL ROUTES */}
           {/* ===================== */}
           <Route path="/client" element={<ClientLayout />}>
@@ -151,7 +70,7 @@ export default function App() {
             <Route path="projects" element={<ClientProjects />} />
             <Route path="financials" element={<ClientFinancials />} />
             <Route path="documents" element={<ClientDocuments />} />
-            <Route path="messages" element={<ClientMessages />} />
+            <Route path="messages" element={<Messages userRole="client" />} />
             <Route path="settings" element={<ClientSettings />} />
             <Route path="help" element={<ClientHelp />} />
             <Route path="profile" element={<div style={phStyle}>User Profile</div>} />
