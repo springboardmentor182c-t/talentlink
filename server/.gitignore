@@ -10,9 +10,9 @@ env/
 
 # Django stuff
 *.log
-db.sqlite3
 
 # VS Code
 .vscode/
 
 **/migrations/
+

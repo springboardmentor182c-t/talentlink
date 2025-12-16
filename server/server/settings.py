@@ -38,49 +38,37 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # ... django apps
     'rest_framework',
-    'corsheaders',           # add this because you use the middleware
-
-    # local apps (folders next to manage.py)
-    'proposals',
-    'contracts',
-    # keep these ONLY if folders exist next to manage.py; otherwise delete them:
-    # 'freelancer_profile',
-    # 'profileapp',
-    # 'core',
     'rest_framework_simplejwt',
     'corsheaders',
 
     'apps.users.apps.UsersConfig',
     'apps.core',
-    'apps.projects',
     'apps.profiles',
     'apps.messaging',
+    'apps.analytics',
+    'apps.projects',
+    'apps.contracts.apps.ContractsConfig',
+    'apps.proposals.apps.ProposalsConfig',
+
     
 
 ]
 
-
-# AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'users.User'
 
 # DRF Configuration
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',   # for browser login
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication',  # <--- Allows Thunder Client/Postman
         'rest_framework.authentication.SessionAuthentication', # <--- Allows Browser/Admin Panel
         'rest_framework.authentication.TokenAuthentication',  # <--- CRITICAL FOR REACT
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    ],
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',         # shows login UI
-    ],
+    ),
 }
 
 # JWT Configuration
@@ -135,28 +123,11 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'Talentlink',      # The name you just gave the DB in pgAdmin
         'USER': 'postgres',        # Default is usually 'postgres'
-        'PASSWORD': 'geeta', # <--- PUT YOUR PGADMIN PASSWORD HERE
+        'PASSWORD': 'Kumar@psql', # <--- PUT YOUR PGADMIN PASSWORD HERE
         'HOST': 'localhost',
         'PORT': '5432',            # Default postgres port
     }
 }
-
-# For local testing when Postgres isn't available, use SQLite as a fallback
-if DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
-# Alternatively force SQLite for local dev by uncommenting below:
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 
 
 # Password validation
@@ -205,10 +176,3 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", # Default Vite React port
     "http://localhost:3000", # Default Create-React-App port
 ]
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
