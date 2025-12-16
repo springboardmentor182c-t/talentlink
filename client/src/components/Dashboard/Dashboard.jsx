@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import StatsCard from "../StatsCard.jsx";
 import BarChartPlaceholder from "../BarChartPlaceholder.jsx";
 import PieChartPlaceholder from "../PieChartPlaceholder.jsx";
@@ -30,6 +31,8 @@ const Dashboard = () => {
   const [recentMessages, setRecentMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
+
+  const navigate = useNavigate();
 
   // Get current user ID from localStorage
   useEffect(() => {
@@ -103,13 +106,33 @@ const Dashboard = () => {
     <main className="w-full min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-            Welcome, John!
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 mt-2">
-            Here's your dashboard overview
-          </p>
+        <div className="flex items-start justify-between mb-6 md:mb-8">
+          <div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+              Welcome, John!
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600 mt-2">
+              Here's your dashboard overview
+            </p>
+          </div>
+          <div className="ml-4">
+            <button
+              onClick={() => {
+                let role = null;
+                try {
+                  const userData = localStorage.getItem('user');
+                  if (userData) role = JSON.parse(userData).role;
+                } catch (e) {
+                  // parsing failed; default to client route
+                }
+                if (role === 'freelancer') navigate('/freelancer/profile/create');
+                else navigate('/profile/create');
+              }}
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            >
+              Create Profile
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards Grid */}

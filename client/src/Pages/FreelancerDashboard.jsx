@@ -3,6 +3,7 @@ import ProjectCard from "../components/ProjectCard.jsx";
 import FilterSidebar from "../components/FilterSidebar.jsx";
 import ProjectModal from "../components/ProjectModal.jsx";
 import ProfileMenu from "../components/ProfileMenu.jsx";
+import { useNavigate } from "react-router-dom";
 
 const initialProjects = [
   {
@@ -235,6 +236,8 @@ const FreelancerDashboard = () => {
     }
   };
 
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -273,6 +276,7 @@ const FreelancerDashboard = () => {
                   </span>
                 )}
               </button>
+              <button onClick={() => navigate('/freelancer/profile/create')} className="px-3 py-2 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Create Profile</button>
             </nav>
 
             {/* Profile Menu */}
