@@ -50,10 +50,19 @@ function App() {
         <Route path="notifications" element={<Notifications />} />
         <Route path="profile" element={<ClientProfile />} />
         <Route path="profile/create" element={<ClientProfileCreateEdit />} />
+        <Route path="client/profile" element={<ClientProfile />} />
+        <Route path="client/profile/view" element={<ClientProfile />} />
+        <Route path="client/profile/edit" element={<ClientProfileCreateEdit />} />
         <Route path="profile/settings" element={<Settings />} />
         <Route path="profile/skills" element={<Skills />} />
         <Route path="profile/work" element={<Work />} />
         <Route path="profile/portfolio" element={<Portfolio />} />
+
+        {/* Client profile subpages (mirror freelancer pattern) */}
+        <Route path="client/profile/skills" element={<Skills basePath="/client/profile" />} />
+        <Route path="client/profile/work" element={<Work basePath="/client/profile" />} />
+        <Route path="client/profile/portfolio" element={<Portfolio basePath="/client/profile" />} />
+        <Route path="client/profile/settings" element={<Settings basePath="/client/profile" />} />
         <Route path="proposal/:id" element={<ProjectProposal />} />
         <Route path="freelancer" element={<FreelancerDashboard />} />
         {/* Freelancer profile CRUD (UI only) */}

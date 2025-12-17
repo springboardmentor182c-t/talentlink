@@ -5,18 +5,19 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000
 const api = axios.create({
   baseURL: API_BASE_URL,
 });
+export const noAuthApi = axios.create({
+  baseURL: API_BASE_URL,
+});
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Token ${token}`;
+  }
   return config;
 });
 
-// Messaging API functions
 export const messagingAPI = {
-  /**
-   * Get all conversations for the authenticated user
-   */
   getConversations: async () => {
     try {
       const response = await api.get("/api/messaging/conversations/");
@@ -26,10 +27,6 @@ export const messagingAPI = {
       throw error;
     }
   },
-
-  /**
-   * Get all messages for a specific conversation
-   */
   getMessages: async (conversationId) => {
     try {
       const response = await api.get(
@@ -41,10 +38,6 @@ export const messagingAPI = {
       throw error;
     }
   },
-
-  /**
-   * Send a message to a conversation
-   */
   sendMessage: async (conversationId, text) => {
     try {
       const response = await api.post(
