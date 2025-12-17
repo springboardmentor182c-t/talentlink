@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import ProfileLayout from '../components/Profile/ProfileLayout.jsx';
+import { useNavigate } from 'react-router-dom';
 import {
   User,
   Mail,
@@ -14,7 +16,6 @@ import {
   CreditCard,
   Trash2
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';   // 👈 added
 
 const ClientProfile = () => {
   const [activeTab, setActiveTab] = useState('active');
@@ -226,9 +227,11 @@ const ClientProfile = () => {
               </div>
             </div>
           </div>
-          <button className="px-4 md:px-6 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm text-sm md:text-base w-full sm:w-auto">
-            Edit profile
-          </button>
+          <div className="flex gap-3 items-center">
+            <button className="px-4 md:px-6 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm text-sm md:text-base w-full sm:w-auto">
+              Edit profile
+            </button>
+          </div>
         </div>
       </div>
 
@@ -443,66 +446,61 @@ const ClientProfile = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-
-        {/* Top heading + Back button */}
-        <div className="flex items-center justify-between mb-4 md:mb-6">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-            Client Profile
-          </h1>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-3 md:px-4 py-2 rounded-lg border border-gray-300/70 bg-white/50 hover:bg-white/80 text-xs md:text-sm text-gray-700 flex items-center gap-2 shadow-sm transition-colors"
-          >
-            <span>←</span>
-            <span>Back</span>
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex flex-col sm:flex-row gap-2 md:gap-4 mb-6 md:mb-8">
-          <button
-            onClick={() => setActiveSection('profile')}
-            className={`px-4 md:px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
-              activeSection === 'profile'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
-            }`}
-          >
-            <User size={18} className="md:w-5 md:h-5" />
-            Profile
-          </button>
-          <button
-            onClick={() => setActiveSection('messages')}
-            className={`px-4 md:px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
-              activeSection === 'messages'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
-            }`}
-          >
-            <MessageSquare size={18} className="md:w-5 md:h-5" />
-            Messages
-          </button>
-          <button
-            onClick={() => setActiveSection('settings')}
-            className={`px-4 md:px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
-              activeSection === 'settings'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
-            }`}
-          >
-            <Settings size={18} className="md:w-5 md:h-5" />
-            Settings
-          </button>
-        </div>
-
-        {/* Content */}
-        {activeSection === 'profile' && renderProfileSection()}
-        {activeSection === 'messages' && renderMessagesSection()}
-        {activeSection === 'settings' && renderAccountSettings()}
+    <ProfileLayout title="Client Profile" basePath="/profile">
+      {/* Back button + small header within layout */}
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <div className="text-sm text-gray-500">Company account</div>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-3 md:px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-xs md:text-sm text-gray-700 flex items-center gap-2 shadow-sm transition-colors"
+        >
+          <span>←</span>
+          <span>Back</span>
+        </button>
       </div>
-    </div>
+
+      {/* Navigation */}
+      <div className="flex flex-col sm:flex-row gap-2 md:gap-4 mb-6 md:mb-8">
+        <button
+          onClick={() => setActiveSection('profile')}
+          className={`px-4 md:px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
+            activeSection === 'profile'
+              ? 'bg-indigo-600 text-white shadow-lg'
+              : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+          }`}
+        >
+          <User size={18} className="md:w-5 md:h-5" />
+          Profile
+        </button>
+        <button
+          onClick={() => setActiveSection('messages')}
+          className={`px-4 md:px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
+            activeSection === 'messages'
+              ? 'bg-indigo-600 text-white shadow-lg'
+              : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+          }`}
+        >
+          <MessageSquare size={18} className="md:w-5 md:h-5" />
+          Messages
+        </button>
+        <button
+          onClick={() => setActiveSection('settings')}
+          className={`px-4 md:px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
+            activeSection === 'settings'
+              ? 'bg-indigo-600 text-white shadow-lg'
+              : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+          }`}
+        >
+          <Settings size={18} className="md:w-5 md:h-5" />
+          Settings
+        </button>
+      </div>
+
+      {/* Content */}
+      {activeSection === 'profile' && renderProfileSection()}
+      {activeSection === 'messages' && renderMessagesSection()}
+      {activeSection === 'settings' && renderAccountSettings()}
+    </ProfileLayout>
   );
 };
 

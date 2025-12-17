@@ -11,9 +11,16 @@ import Messages from "./Pages/Messages.jsx";
 import Contracts from "./Pages/Contracts.jsx";
 import Notifications from "./Pages/Notifications.jsx";
 import ClientProfile from "./Pages/ClientProfile.jsx";
+import ClientProfileCreateEdit from "./Pages/Profile/ClientProfileCreateEdit.jsx";
+import Settings from "./Pages/Profile/Settings.jsx";
+import Skills from "./Pages/Profile/Skills.jsx";
+import Work from "./Pages/Profile/Work.jsx";
+import Portfolio from "./Pages/Profile/Portfolio.jsx";
 import ProjectProposal from "./Pages/ProjectProposal.jsx";
 import Proposals from "./Pages/Proposals.jsx";
 import FreelancerDashboard from "./Pages/FreelancerDashboard.jsx";
+import FreelancerProfileCreateEdit from "./Pages/Profile/FreelancerProfileCreateEdit.jsx";
+import FreelancerProfileView from "./Pages/Profile/FreelancerProfileView.jsx";
 import PostNewProject from "./Pages/PostNewProject.jsx";
 import ProjectDetails from "./Pages/ProjectDetails.jsx";
 import EditProject from "./Pages/EditProject.jsx";
@@ -42,8 +49,23 @@ function App() {
         <Route path="contracts" element={<Contracts />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="profile" element={<ClientProfile />} />
+        <Route path="profile/create" element={<ClientProfileCreateEdit />} />
+        <Route path="profile/settings" element={<Settings />} />
+        <Route path="profile/skills" element={<Skills />} />
+        <Route path="profile/work" element={<Work />} />
+        <Route path="profile/portfolio" element={<Portfolio />} />
         <Route path="proposal/:id" element={<ProjectProposal />} />
         <Route path="freelancer" element={<FreelancerDashboard />} />
+        {/* Freelancer profile CRUD (UI only) */}
+        <Route path="freelancer/profile" element={<FreelancerProfileView />} />
+        <Route path="freelancer/profile/create" element={<FreelancerProfileCreateEdit />} />
+        <Route path="freelancer/profile/edit" element={<FreelancerProfileCreateEdit />} />
+        <Route path="freelancer/profile/view" element={<FreelancerProfileView />} />
+        {/* Freelancer profile subpages reuse the same components but pass basePath for correct links */}
+        <Route path="freelancer/profile/skills" element={<Skills basePath="/freelancer/profile" />} />
+        <Route path="freelancer/profile/work" element={<Work basePath="/freelancer/profile" />} />
+        <Route path="freelancer/profile/portfolio" element={<Portfolio basePath="/freelancer/profile" />} />
+        <Route path="freelancer/profile/settings" element={<Settings basePath="/freelancer/profile" />} />
       </Route>
     </Routes>
   );

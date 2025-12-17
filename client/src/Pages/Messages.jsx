@@ -178,15 +178,19 @@ function Messages() {
             </div>
           </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <Loader className="w-6 h-6 animate-spin text-blue-600" />
-            </div>
-          ) : conversations.length === 0 ? (
+          {(loading || conversations.length === 0) ? (
             <div className="flex items-center justify-center h-64 text-gray-500">
-              <div className="text-center">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No conversations yet</p>
+              <div className="text-center max-w-md">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white mx-auto mb-3 font-semibold">
+                  TL
+                </div>
+                <h3 className="text-lg font-semibold mb-1">No conversation history</h3>
+                <p className="mb-3">Welcome to TalentLink! Start by creating your profile and exploring projects.</p>
+
+                <div className="bg-white border rounded-lg p-3 text-left shadow-sm">
+                  <div className="font-semibold text-sm text-gray-700">TALENTLINK</div>
+                  <p className="text-sm text-gray-600">Welcome to TalentLink! We're excited to have you — start by creating your profile and exploring projects. If you need help, check the Help Center or contact support.</p>
+                </div>
               </div>
             </div>
           ) : (
@@ -318,9 +322,19 @@ function Messages() {
             </>
           ) : (
             <div className="hidden md:flex flex-1 items-center justify-center text-gray-400 bg-gray-50">
-              <div className="text-center">
-                <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg">Select a conversation to start messaging</p>
+              <div className="text-center max-w-md">
+                {conversations.length === 0 ? (
+                  <>
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-600 text-white mx-auto mb-4 font-semibold">TL</div>
+                    <h3 className="text-lg font-semibold mb-2">No conversation history</h3>
+                    <p className="text-sm">Welcome to TalentLink! We're excited to have you — start by creating your profile and exploring projects. If you need help, check the Help Center or contact support.</p>
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg">Select a conversation to start messaging</p>
+                  </>
+                )}
               </div>
             </div>
           )}
