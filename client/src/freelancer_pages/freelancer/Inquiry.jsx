@@ -197,20 +197,11 @@ export default function Inquiry() {
   const [projects, setProjects] = useState(mockProjects);
   const [filteredProjects, setFilteredProjects] = useState(mockProjects);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filters, setFilters] = useState({
-    searchQuery: "",
-    skills: [],
-    budget: [100, 10000],
-    duration: "all",
-    level: [],
-    status: "all",
-  });
 
   const projectsPerPage = 6;
 
   // Filter projects
   const handleFiltersChange = (newFilters) => {
-    setFilters(newFilters);
     setCurrentPage(1);
 
     let filtered = projects;
