@@ -1,1 +1,0 @@
-# shoutouts app package
