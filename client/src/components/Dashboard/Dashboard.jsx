@@ -6,6 +6,7 @@ import PieChartPlaceholder from "../PieChartPlaceholder.jsx";
 import RecentMessages from "../RecentMessages.jsx";
 import { Users, TrendingUp, MessageSquare, CheckCircle } from "lucide-react";
 import { messagingAPI } from "../../services/api.js";
+import profileService from '../../services/profileService.js';
 
 // Mock Data for other sections
 const mockDashboardData = {
@@ -34,6 +35,9 @@ const Dashboard = () => {
 
   const navigate = useNavigate();
 
+  const [profile, setProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
   // Get current user ID from localStorage
   useEffect(() => {
     try {
@@ -45,6 +49,35 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Error parsing user data:", err);
     }
+  }, []);
+
+  // Load profile for current user (client or freelancer)
+  useEffect(() => {
+    const loadProfile = async () => {
+      setLoadingProfile(true);
+      try {
+        const userData = localStorage.getItem('user');
+        if (!userData) {
+          setProfile(null);
+          return;
+        }
+        const user = JSON.parse(userData);
+        if (user.role === 'client') {
+          const p = await profileService.client.getProfile();
+          setProfile(p);
+        } else if (user.role === 'freelancer') {
+          const p = await profileService.freelancer.getProfile();
+          setProfile(p);
+        }
+      } catch (err) {
+        console.error('Failed to load profile for dashboard:', err);
+        setProfile(null);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    loadProfile();
   }, []);
 
   // Fetch recent messages from API
@@ -109,29 +142,40 @@ const Dashboard = () => {
         <div className="flex items-start justify-between mb-6 md:mb-8">
           <div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-              Welcome, John!
+              Welcome, {profile?.first_name || 'John'}!
             </h2>
             <p className="text-sm sm:text-base text-gray-600 mt-2">
               Here's your dashboard overview
             </p>
           </div>
           <div className="ml-4">
-            <button
-              onClick={() => {
-                let role = null;
-                try {
+            {loadingProfile ? (
+              <button className="px-4 py-2 bg-gray-400 text-white rounded">Loading...</button>
+            ) : profile ? (
+              <button
+                onClick={() => {
                   const userData = localStorage.getItem('user');
-                  if (userData) role = JSON.parse(userData).role;
-                } catch (e) {
-                  // parsing failed; default to client route
-                }
-                if (role === 'freelancer') navigate('/freelancer/profile/create');
-                else navigate('/profile/create');
-              }}
-              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-            >
-              Create Profile
-            </button>
+                  const role = userData ? JSON.parse(userData).role : null;
+                  if (role === 'freelancer') navigate('/freelancer/profile/edit');
+                  else navigate('/client/profile/edit');
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              >
+                Edit Profile
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  const userData = localStorage.getItem('user');
+                  const role = userData ? JSON.parse(userData).role : null;
+                  if (role === 'freelancer') navigate('/freelancer/profile/create');
+                  else navigate('/profile/create');
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              >
+                Create Profile
+              </button>
+            )}
           </div>
         </div>
 

@@ -21,7 +21,7 @@ urlpatterns = [
     # Keep other routes present in main
     path("api/proposals/", include("apps.proposals.urls")),
     path("api/messaging/", include("apps.messaging.urls")),
-    path("api/freelancers/", include("apps.freelancers.urls")),
+    path("api/profile/", include("apps.profile.urls")),
     path("api/contracts/", include("apps.contracts.urls")),
 ]
 if settings.DEBUG:

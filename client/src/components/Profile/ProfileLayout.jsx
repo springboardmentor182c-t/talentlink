@@ -1,7 +1,29 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import profileService from '../../services/profileService.js';
 
 export default function ProfileLayout({ children, title = 'Profile', basePath = '/profile' }) {
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const userData = localStorage.getItem('user');
+        const user = userData ? JSON.parse(userData) : {};
+        if (user.role === 'freelancer') {
+          const p = await profileService.freelancer.getProfile();
+          setProfile(p);
+        } else if (user.role === 'client') {
+          const p = await profileService.client.getProfile();
+          setProfile(p);
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+    load();
+  }, []);
+
   const tabs = [
     { to: `${basePath}`, label: 'Profile' },
     { to: `${basePath}/skills`, label: 'Skills' },
@@ -16,10 +38,16 @@ export default function ProfileLayout({ children, title = 'Profile', basePath = 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <aside className="lg:col-span-1 bg-white rounded-lg p-6 shadow">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">JD</div>
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
+                {profile?.first_name?.[0] || 'U'}{profile?.last_name?.[0] || ''}
+              </div>
               <div>
-                <h3 className="text-lg font-semibold">John Anderson</h3>
-                <p className="text-sm text-gray-500">Tech Startup · San Francisco</p>
+                <h3 className="text-lg font-semibold">{(profile && `${profile.first_name || ''} ${profile.last_name || ''}`) || 'Your Profile'}</h3>
+                {profile?.company_name ? (
+                  <p className="text-sm text-gray-500">{profile.company_name}</p>
+                ) : (
+                  <p className="text-sm text-gray-500">Profile information</p>
+                )}
               </div>
             </div>
 

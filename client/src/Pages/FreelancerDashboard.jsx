@@ -3,6 +3,8 @@ import ProjectCard from "../components/ProjectCard.jsx";
 import FilterSidebar from "../components/FilterSidebar.jsx";
 import ProjectModal from "../components/ProjectModal.jsx";
 import ProfileMenu from "../components/ProfileMenu.jsx";
+import profileService from '../services/profileService.js';
+import ProfileCompletenessBar from '../components/ProfileCompletenessBar.jsx';
 import { useNavigate } from "react-router-dom";
 
 const initialProjects = [
@@ -80,6 +82,8 @@ const FreelancerDashboard = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const profileBtnRef = useRef(null);
+  const [profile, setProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
   // filter form (what the user has typed/selected)
   const [filterForm, setFilterForm] = useState({
@@ -120,6 +124,24 @@ const FreelancerDashboard = () => {
     return () =>
       document.removeEventListener("click", handleClickOutside);
   }, [profileMenuOpen]);
+
+  // load freelancer profile
+  useEffect(() => {
+    const loadProfile = async () => {
+      setLoadingProfile(true);
+      try {
+        const data = await profileService.freelancer.getProfile();
+        setProfile(data);
+      } catch (err) {
+        setProfile(null);
+        console.error('Failed to load freelancer profile:', err);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   // filtering logic
   function matchesFilters(project, f) {
@@ -276,7 +298,13 @@ const FreelancerDashboard = () => {
                   </span>
                 )}
               </button>
-              <button onClick={() => navigate('/freelancer/profile/create')} className="px-3 py-2 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Create Profile</button>
+              {loadingProfile ? (
+                <button className="px-3 py-2 rounded-md text-sm font-medium text-white bg-gray-400 cursor-wait">Loading...</button>
+              ) : profile ? (
+                <button onClick={() => navigate('/freelancer/profile/edit')} className="px-3 py-2 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Edit Profile</button>
+              ) : (
+                <button onClick={() => navigate('/freelancer/profile/create')} className="px-3 py-2 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Create Profile</button>
+              )}
             </nav>
 
             {/* Profile Menu */}
@@ -313,6 +341,21 @@ const FreelancerDashboard = () => {
                   : "Your saved projects"}
               </p>
             </div>
+
+            {profile && (
+              <div className="mb-6 p-4 bg-white rounded-md shadow-sm border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm text-gray-600">Welcome back,</div>
+                    <div className="text-lg font-semibold">{profile.first_name} {profile.last_name}</div>
+                    {profile.title && <div className="text-sm text-gray-500">{profile.title}</div>}
+                  </div>
+                  <div className="w-48">
+                    <ProfileCompletenessBar percentage={profile.profile_completeness || 0} />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Projects Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
