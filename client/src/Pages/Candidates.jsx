@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Search, Star, MapPin } from 'lucide-react';
+import profileService from '../services/profileService.js';
 
 function Candidates() {
   const navigate = useNavigate();
@@ -8,100 +9,43 @@ function Candidates() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  const candidates = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      role: 'Full Stack Developer',
-      skills: ['React', 'Node.js', 'MongoDB'],
-      experience: '5 years',
-      rate: '$85/hr',
-      location: 'New York, USA',
-      status: 'Active',
-      rating: 4.9,
-      avatar: 'SJ',
-      bio: 'Experienced full-stack developer specializing in modern web technologies.',
-      projects: 47,
-      successRate: 98
-    },
-    {
-      id: 2,
-      name: 'Michael Chen',
-      role: 'UI/UX Designer',
-      skills: ['Figma', 'Adobe XD', 'Sketch'],
-      experience: '3 years',
-      rate: '$70/hr',
-      location: 'San Francisco, USA',
-      status: 'Active',
-      rating: 4.8,
-      avatar: 'MC',
-      bio: 'Creative designer focused on user-centered design solutions.',
-      projects: 32,
-      successRate: 95
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      role: 'Content Writer',
-      skills: ['SEO', 'Copywriting', 'Blogging'],
-      experience: '4 years',
-      rate: '$50/hr',
-      location: 'Austin, USA',
-      status: 'Busy',
-      rating: 4.7,
-      avatar: 'ER',
-      bio: 'Professional content writer with SEO expertise.',
-      projects: 56,
-      successRate: 97
-    },
-    {
-      id: 4,
-      name: 'David Kim',
-      role: 'Mobile Developer',
-      skills: ['Flutter', 'React Native', 'iOS'],
-      experience: '6 years',
-      rate: '$90/hr',
-      location: 'Seattle, USA',
-      status: 'Active',
-      rating: 4.9,
-      avatar: 'DK',
-      bio: 'Mobile development expert with cross-platform experience.',
-      projects: 41,
-      successRate: 99
-    },
-    {
-      id: 5,
-      name: 'Jessica Lee',
-      role: 'Data Scientist',
-      skills: ['Python', 'Machine Learning', 'TensorFlow'],
-      experience: '4 years',
-      rate: '$95/hr',
-      location: 'Boston, USA',
-      status: 'Active',
-      rating: 4.8,
-      avatar: 'JL',
-      bio: 'Data scientist with expertise in ML and AI solutions.',
-      projects: 28,
-      successRate: 96
-    },
-    {
-      id: 6,
-      name: 'Robert Martinez',
-      role: 'DevOps Engineer',
-      skills: ['AWS', 'Docker', 'Kubernetes'],
-      experience: '7 years',
-      rate: '$100/hr',
-      location: 'Denver, USA',
-      status: 'Busy',
-      rating: 4.9,
-      avatar: 'RM',
-      bio: 'DevOps specialist with cloud infrastructure expertise.',
-      projects: 53,
-      successRate: 99
-    }
-  ];
+  const [profiles, setProfiles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const filteredCandidates = candidates.filter(c => {
+  const fetchProfiles = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await profileService.freelancer.listProfiles();
+      const list = data.results ?? data;
+      const normalized = list.map(p => ({
+        id: p.id,
+        name: (p.first_name || p.last_name) ? `${p.first_name || ''} ${p.last_name || ''}`.trim() : p.username || 'Freelancer',
+        role: p.title || 'Freelancer',
+        skills: p.skills ? p.skills.split(',').map(s => s.trim()).filter(Boolean) : [],
+        experience: p.experience || null,
+        rate: p.hourly_rate ? `$${p.hourly_rate}` : '—',
+        location: p.location || '—',
+        status: p.availability ? 'Active' : 'Busy',
+        avatar: p.profile_image || ((p.first_name ? p.first_name[0] : (p.username ? p.username[0] : '?')) || '?'),
+        bio: p.bio || '',
+        raw: p,
+      }));
+      setProfiles(normalized);
+    } catch (err) {
+      console.error('Error loading freelancer profiles', err);
+      setError('Failed to load freelancers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfiles();
+  }, []);
+
+  const filteredCandidates = profiles.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          c.role.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || c.status.toLowerCase() === filterStatus.toLowerCase();
@@ -144,15 +88,27 @@ function Candidates() {
         </div>
       </div>
 
+      {/* Loading / Error */}
+      {loading && (
+        <div className="py-8 text-center text-gray-600">Loading freelancers...</div>
+      )}
+      {error && (
+        <div className="py-8 text-center text-red-600">{error}</div>
+      )}
+
       {/* Candidate Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCandidates.map(candidate => (
           <div key={candidate.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                  {candidate.avatar}
-                </div>
+                {candidate.raw && candidate.raw.profile_image ? (
+                  <img src={candidate.raw.profile_image} alt={candidate.name} className="w-12 h-12 rounded-full object-cover" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                    {String(candidate.avatar).slice(0,2).toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <h3 className="font-semibold text-gray-800">{candidate.name}</h3>
                   <p className="text-sm text-gray-500">{candidate.role}</p>
@@ -166,10 +122,12 @@ function Candidates() {
             </div>
 
             <div className="flex items-center space-x-4 mb-4 text-sm text-gray-600">
-              <div className="flex items-center">
-                <Star className="w-4 h-4 text-yellow-500 mr-1" />
-                <span>{candidate.rating}</span>
-              </div>
+              {candidate.raw && candidate.raw.rating != null && (
+                <div className="flex items-center">
+                  <Star className="w-4 h-4 text-yellow-500 mr-1" />
+                  <span>{candidate.raw.rating}</span>
+                </div>
+              )}
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-1" />
                 <span className="truncate">{candidate.location}</span>
@@ -226,24 +184,29 @@ function Candidates() {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-xs text-gray-500 mb-1">Rating</p>
-                  <div className="flex items-center">
-                    <Star className="w-4 h-4 text-yellow-500 mr-1" />
-                    <span className="font-semibold">{selectedCandidate.rating}</span>
+                {selectedCandidate.raw && selectedCandidate.raw.rating != null && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-xs text-gray-500 mb-1">Rating</p>
+                    <div className="flex items-center">
+                      <Star className="w-4 h-4 text-yellow-500 mr-1" />
+                      <span className="font-semibold">{selectedCandidate.raw.rating}</span>
+                    </div>
                   </div>
-                </div>
+                )}
+
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-xs text-gray-500 mb-1">Projects</p>
-                  <p className="font-semibold">{selectedCandidate.projects}</p>
+                  <p className="text-xs text-gray-500 mb-1">Hourly Rate</p>
+                  <p className="font-semibold">{selectedCandidate.rate}</p>
                 </div>
+
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-xs text-gray-500 mb-1">Success Rate</p>
-                  <p className="font-semibold">{selectedCandidate.successRate}%</p>
+                  <p className="text-xs text-gray-500 mb-1">Availability</p>
+                  <p className="font-semibold">{selectedCandidate.status}</p>
                 </div>
+
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-xs text-gray-500 mb-1">Experience</p>
-                  <p className="font-semibold">{selectedCandidate.experience}</p>
+                  <p className="text-xs text-gray-500 mb-1">Location</p>
+                  <p className="font-semibold">{selectedCandidate.location}</p>
                 </div>
               </div>
 

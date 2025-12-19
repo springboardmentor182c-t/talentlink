@@ -152,8 +152,8 @@ const FreelancerProfileCreateEdit = () => {
                   value={form.first_name}
                   onChange={handleChange('first_name')}
                   className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="John"
-                />
+                placeholder="First name"
+                  />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Last name</label>
@@ -161,7 +161,7 @@ const FreelancerProfileCreateEdit = () => {
                   value={form.last_name}
                   onChange={handleChange('last_name')}
                   className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Doe"
+                  placeholder="Last name"
                 />
               </div>
             </div>

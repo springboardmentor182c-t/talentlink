@@ -19,6 +19,8 @@ class FreelancerProfileViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
+        if self.action in ['list', 'retrieve']:
+            return FreelancerProfile.objects.all()
         return FreelancerProfile.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
@@ -61,6 +63,8 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
+        if self.action in ['list', 'retrieve']:
+            return ClientProfile.objects.all()
         return ClientProfile.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):

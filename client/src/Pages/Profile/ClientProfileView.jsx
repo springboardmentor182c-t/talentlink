@@ -1,7 +1,23 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ProfileLayout from '../../components/Profile/ProfileLayout.jsx';
+import profileService from '../../services/profileService';
 
 const ClientProfileView = () => {
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const p = await profileService.client.getProfile();
+        setProfile(p);
+      } catch (err) {
+        console.error('Failed to load client profile view', err);
+        setProfile(null);
+      }
+    };
+    load();
+  }, []);
+
   return (
     <ProfileLayout title="Profile" basePath="/profile">
       <div className="space-y-6">
@@ -10,9 +26,13 @@ const ClientProfileView = () => {
             <div className="bg-white p-6 rounded shadow flex items-center gap-6">
               <div className="w-24 h-24 rounded-full bg-gray-200" />
               <div>
-                <div className="text-xl font-bold">John Anderson</div>
-                <div className="text-sm text-gray-500">Tech Startup · San Francisco</div>
-                <div className="text-sm text-gray-500 mt-2">Tech Startup | Looking for MERN developers</div>
+                <div className="text-xl font-bold">{profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : ''}</div>
+                {profile?.company_name && (
+                  <div className="text-sm text-gray-500">{profile.company_name}{profile.location ? ` · ${profile.location}` : ''}</div>
+                )}
+                {profile?.company_description && (
+                  <div className="text-sm text-gray-500 mt-2">{profile.company_description}</div>
+                )}
               </div>
             </div>
 

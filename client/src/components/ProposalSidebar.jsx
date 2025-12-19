@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Lightbulb, ChevronRight } from "lucide-react";
+import api from '../services/api';
 
 const ProposalSidebar = ({ currentProjectId }) => {
   const writingTips = [
@@ -13,29 +14,26 @@ const ProposalSidebar = ({ currentProjectId }) => {
     "Show enthusiasm for the project and the client",
   ];
 
-  const mockProjects = [
-    {
-      id: 1,
-      title: "E-commerce Platform Development",
-      applications: 24,
-      description: "Building a modern e-commerce platform with React and Node.js",
-      status: "Active",
-    },
-    {
-      id: 2,
-      title: "Mobile App UI/UX Design",
-      applications: 15,
-      description: "Design intuitive mobile application interface",
-      status: "Active",
-    },
-    {
-      id: 3,
-      title: "Corporate Website Redesign",
-      applications: 32,
-      description: "Complete redesign of corporate website with modern design",
-      status: "Completed",
-    },
-  ];
+  const [projects, setProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+
+  useEffect(() => {
+    const loadProjects = async () => {
+      setLoadingProjects(true);
+      try {
+        const res = await api.get('/api/projects/');
+        const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
+        setProjects(data);
+      } catch (err) {
+        console.error('Failed to load projects for sidebar', err);
+        setProjects([]);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+
+    loadProjects();
+  }, []);
 
   const [expandedProject, setExpandedProject] = useState(null);
 
@@ -64,57 +62,63 @@ const ProposalSidebar = ({ currentProjectId }) => {
       <div className="p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Available Projects</h3>
         <div className="space-y-3">
-          {mockProjects.map((project) => (
-            <div
-              key={project.id}
-              className={`p-4 rounded-lg border transition-all cursor-pointer ${
-                expandedProject === project.id
-                  ? "border-indigo-500 bg-indigo-50"
-                  : "border-gray-200 bg-gray-50 hover:border-gray-300"
-              }`}
-              onClick={() =>
-                setExpandedProject(
-                  expandedProject === project.id ? null : project.id
-                )
-              }
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-gray-900 text-sm leading-tight mb-1">
-                    {project.title}
-                  </h4>
-                  <p className="text-xs text-gray-600">
-                    {project.applications} applications
-                  </p>
-                </div>
-                <ChevronRight
-                  className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${
-                    expandedProject === project.id ? "rotate-90" : ""
-                  }`}
-                />
-              </div>
-
-              {expandedProject === project.id && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs text-gray-700 leading-relaxed mb-3">
-                    {project.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      project.status === "Active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-200 text-gray-800"
-                    }`}>
-                      {project.status}
-                    </span>
-                    <button className="text-xs text-indigo-600 font-medium hover:text-indigo-700 transition-colors">
-                      View Project →
-                    </button>
+          {loadingProjects ? (
+            <p className="text-sm text-gray-500">Loading projects...</p>
+          ) : projects.length === 0 ? (
+            <p className="text-sm text-gray-500">No projects available.</p>
+          ) : (
+            projects.map((project) => (
+              <div
+                key={project.id}
+                className={`p-4 rounded-lg border transition-all cursor-pointer ${
+                  expandedProject === project.id
+                    ? "border-indigo-500 bg-indigo-50"
+                    : "border-gray-200 bg-gray-50 hover:border-gray-300"
+                }`}
+                onClick={() =>
+                  setExpandedProject(
+                    expandedProject === project.id ? null : project.id
+                  )
+                }
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-gray-900 text-sm leading-tight mb-1">
+                      {project.title}
+                    </h4>
+                    <p className="text-xs text-gray-600">
+                      — applications
+                    </p>
                   </div>
+                  <ChevronRight
+                    className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${
+                      expandedProject === project.id ? "rotate-90" : ""
+                    }`}
+                  />
                 </div>
-              )}
-            </div>
-          ))}
+
+                {expandedProject === project.id && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-xs text-gray-700 leading-relaxed mb-3">
+                      {project.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        project.status === "active" || project.status === "Active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-200 text-gray-800"
+                      }`}>
+                        {project.status}
+                      </span>
+                      <button className="text-xs text-indigo-600 font-medium hover:text-indigo-700 transition-colors">
+                        View Project →
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </aside>

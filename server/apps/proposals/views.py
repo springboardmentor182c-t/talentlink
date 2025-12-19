@@ -1,5 +1,7 @@
 
 from django.contrib.auth import get_user_model
+import logging
+from django.conf import settings
 from rest_framework import viewsets, generics, status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
@@ -15,13 +17,32 @@ class ProposalViewSet(viewsets.ModelViewSet):
     queryset = ProjectProposal.objects.all().order_by("-created_at")
     serializer_class = ProposalSerializer
     permission_classes = [AllowAny]
-    # permission_classes = [IsAuthenticated]  # Temporarily disabled for testing
 
     def get_queryset(self):
         project_id = self.request.query_params.get("project_id")
         if project_id:
-            return self.queryset.filter(project_id=project_id)
+            try:
+                pid = int(project_id)
+            except (ValueError, TypeError):
+                logging.warning("Invalid project_id filter: %s", project_id)
+                return self.queryset.none()
+            return self.queryset.filter(project_id=pid)
         return self.queryset
+
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = ProposalSerializer(page, many=True, context=self.get_serializer_context())
+                return self.get_paginated_response(serializer.data)
+            serializer = ProposalSerializer(queryset, many=True, context=self.get_serializer_context())
+            return Response(serializer.data)
+        except Exception as e:
+            logging.exception("Error listing proposals")
+            if getattr(settings, "DEBUG", False):
+                return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"detail": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def _ensure_client(self, request, proposal):
         if proposal.client != request.user:

@@ -2,7 +2,7 @@ import React from "react";
 import { Search, Bell, User, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const Navbar = ({ onMenuClick, userName = "John" }) => {
+const Navbar = ({ onMenuClick, userName = "" }) => {
   const navigate = useNavigate();
 
   const goToNotifications = () => {
@@ -54,9 +54,11 @@ const Navbar = ({ onMenuClick, userName = "John" }) => {
             <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
               <User className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
             </div>
-            <span className="hidden sm:inline text-xs sm:text-sm font-medium text-gray-700">
-              {userName}
-            </span>
+            {userName ? (
+              <span className="hidden sm:inline text-xs sm:text-sm font-medium text-gray-700">
+                {userName}
+              </span>
+            ) : null}
           </button>
         </div>
       </div>
