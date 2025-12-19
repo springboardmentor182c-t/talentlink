@@ -120,19 +120,19 @@ WSGI_APPLICATION = 'server.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'Talentlink',
+        'USER': 'postgres',
+        'PASSWORD': 'Kumar@psql',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
-# NOTE: For production, use PostgreSQL:
+# NOTE: For local dev without Postgres, you can switch to SQLite:
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'Talentlink',
-#         'USER': 'postgres',
-#         'PASSWORD': 'Kumar@psql',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
 
