@@ -14,11 +14,13 @@ class Proposal(models.Model):
     # Keep it simple for now
     project_title = models.CharField(max_length=200)
     client = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='client_proposals',
+        settings.AUTH_USER_MODEL, 
+        related_name='project_client_proposals',  # CHANGED
         on_delete=models.CASCADE
     )
     freelancer = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='freelancer_proposals',
+        settings.AUTH_USER_MODEL, 
+        related_name='project_freelancer_proposals',  # CHANGED
         on_delete=models.CASCADE
     )
     bid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)

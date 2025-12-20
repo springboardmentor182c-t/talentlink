@@ -31,7 +31,8 @@ urlpatterns = [
     path('api/profiles/', include('apps.profiles.urls')), 
     
     path('api/messaging/', include('apps.messaging.urls')),
- 
+    path('api/reviews/', include('apps.reviews.urls')),
+
 ]
 
 

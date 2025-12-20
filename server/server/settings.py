@@ -39,49 +39,44 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
-    'corsheaders',           # add this because you use the middleware
+    'corsheaders',
+    'rest_framework_simplejwt',
 
     # local apps (folders next to manage.py)
     'proposals',
     'contracts',
-    # keep these ONLY if folders exist next to manage.py; otherwise delete them:
-    # 'freelancer_profile',
-    # 'profileapp',
-    # 'core',
-    'rest_framework_simplejwt',
-    'corsheaders',
+    #'apps.reviews', # Keep commented until after you create it
 
-    'apps.users.apps.UsersConfig',
+    'apps.users.apps.UsersConfig',  # App is here
     'apps.core',
     'apps.projects',
     'apps.profiles',
     'apps.messaging',
-    
-
+    'apps.adminpanel.apps.AdminpanelConfig',
+    'apps.reviews.apps.ReviewsConfig',
 ]
 
+# Custom User Model - app label is just 'users'
+AUTH_USER_MODEL = 'users.User'  # NOT 'apps.users.User'
 
-# AUTH_USER_MODEL = 'users.User'
+
+#AUTH_USER_MODEL = 'users.User'
 
 # DRF Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',   # for browser login
+        'rest_framework.authentication.SessionAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.authentication.BasicAuthentication',  # <--- Allows Thunder Client/Postman
-        'rest_framework.authentication.SessionAuthentication', # <--- Allows Browser/Admin Panel
-        'rest_framework.authentication.TokenAuthentication',  # <--- CRITICAL FOR REACT
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',         # shows login UI
+        'rest_framework.renderers.BrowsableAPIRenderer',
     ],
 }
+
 
 # JWT Configuration
 from datetime import timedelta
@@ -205,10 +200,3 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", # Default Vite React port
     "http://localhost:3000", # Default Create-React-App port
 ]
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}

@@ -5,17 +5,27 @@ from django.conf import settings
 class Project(models.Model):
     POSTED = 'posted'
     OPEN = 'open'
+    COMPLETED = 'completed'
     CLOSED = 'closed'
 
     STATUS_CHOICES = [
         (POSTED, 'Posted'),
         (OPEN, 'Open'),
+        (COMPLETED, 'Completed'),
         (CLOSED, 'Closed'),
     ]
 
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     client = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='projects', on_delete=models.CASCADE)
+    freelancer = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    related_name='completed_projects',
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True
+)
+
     skills = models.JSONField(default=list, blank=True)
     budget_min = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     budget_max = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
