@@ -6,6 +6,7 @@ import {
   Users,
   FolderKanban,
   FileText,
+  LogOut,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -16,9 +17,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const menuItems = [
     { icon: <Menu className="w-5 h-5" />, label: "Dashboard", path: "/" },
     { icon: <Users className="w-5 h-5" />, label: "Candidates", path: "/candidates" },
-    // 🚫 Removed Jobs page
     { icon: <FolderKanban className="w-5 h-5" />, label: "My Projects", path: "/projects" },
-    { icon: <FileText className="w-5 h-5" />, label: "Proposals", path: "/proposals" },
     { icon: <FileText className="w-5 h-5" />, label: "Contracts", path: "/contracts" },
     { icon: <MessageSquare className="w-5 h-5" />, label: "Messages", path: "/messages" },
   ];
@@ -26,6 +25,15 @@ const Sidebar = ({ isOpen, onClose }) => {
   const handleClick = (path) => {
     navigate(path);
     onClose && onClose();
+  };
+
+  const handleLogout = () => {
+    // 🔐 JWT logout = remove tokens
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userRole");
+
+    navigate("/login");
   };
 
   const isActive = (path) => {
@@ -62,7 +70,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             </button>
           </div>
 
-          {/* Menu Items */}
+          {/* Menu */}
           <nav className="flex-1 p-4 space-y-1">
             {menuItems.map((item) => (
               <button
@@ -81,9 +89,18 @@ const Sidebar = ({ isOpen, onClose }) => {
             ))}
           </nav>
 
-          {/* Footer */}
+          {/* 🔴 Logout */}
           <div className="p-4 border-t border-indigo-500">
-            <div className="text-xs text-indigo-200 text-center">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg
+              text-indigo-100 hover:bg-red-500 hover:text-white transition-all"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="font-medium">Logout</span>
+            </button>
+
+            <div className="text-xs text-indigo-200 text-center mt-3">
               © 2025 Talent Link
             </div>
           </div>
