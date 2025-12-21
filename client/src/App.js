@@ -270,6 +270,12 @@ import ClientLayout from "./freelancer_layouts/ClientLayout";
 import ClientDashboard from "./freelancer_pages/client/ClientDashboard";
 import ClientProjects from "./freelancer_pages/client/ClientProjects";
 import ClientFinancials from "./freelancer_pages/client/ClientFinancials";
+
+import ClientContracts from './freelancer_pages/client/ClientContracts';
+// Import your layout (to keep the sidebar and header)
+
+import JobProposals from "./freelancer_pages/client/JobProposals";
+
 import ClientDocuments from "./freelancer_pages/client/ClientDocuments";
 import ClientMessages from "./freelancer_pages/client/ClientMessages";
 import ClientSettings from "./freelancer_pages/client/ClientSettings";
@@ -278,6 +284,7 @@ import ClientHelp from "./freelancer_pages/client/ClientHelp";
 /* ===== Freelancer Dashboard Pages ===== */
 import FreelancerDashboard from "./freelancer_pages/freelancer/FreelancerDashboard";
 import Projects from "./freelancer_pages/freelancer/Projects"; // Ensure this is the new Freelancer Project page
+import FreelancerProposals from "./freelancer_pages/freelancer/FreelancerProposals";
 import Accounting from "./freelancer_pages/freelancer/Accounting";
 import Expenses from "./freelancer_pages/freelancer/Expenses";
 import Inquiry from "./freelancer_pages/freelancer/Inquiry";
@@ -320,6 +327,8 @@ function App() {
                <Route path="dashboard" element={<ClientDashboard />} />
                <Route path="projects" element={<ClientProjects />} />
                <Route path="financials" element={<ClientFinancials />} />
+               <Route  path="/client/contracts" element={<ClientContracts />} />
+               <Route path="/client/proposals" element={<JobProposals />} />
                <Route path="documents" element={<ClientDocuments />} />
                <Route path="messages" element={<ClientMessages />} />
                <Route path="settings" element={<ClientSettings />} />
@@ -334,6 +343,7 @@ function App() {
             {/* ===================== */}
             <Route path="/freelancer" element={<FreelancerDashboard />} />
             <Route path="/freelancer/projects" element={<Projects />} />
+            <Route path="/freelancer/proposals" element={<FreelancerProposals />} />
             <Route path="/freelancer/accounting" element={<Accounting />} />
             <Route path="/freelancer/expenses" element={<Expenses />} />
             <Route path="/freelancer/inquiry" element={<Inquiry />} />
@@ -350,6 +360,9 @@ function App() {
             <Route path="/notifications/:id" element={<NotificationItem />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<Navigate to="/404" />} />
+
+
+
           </Routes>
         </Router>
       </ProjectProvider>
