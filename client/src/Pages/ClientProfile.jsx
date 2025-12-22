@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ProfileLayout from '../components/Profile/ProfileLayout.jsx';
+import { useNavigate } from 'react-router-dom';
 import {
   User,
   Mail,
@@ -12,497 +14,414 @@ import {
   Settings,
   Lock,
   CreditCard,
-  Trash2
+  Trash2,
+  Building,
+  Globe,
+  Download
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';   // 👈 added
+import profileService from '../services/profileService.js';
+import ProfileCompletenessBar from '../components/ProfileCompletenessBar.jsx';
 
 const ClientProfile = () => {
   const [activeTab, setActiveTab] = useState('active');
   const [activeSection, setActiveSection] = useState('profile');
   const [invitationTab, setInvitationTab] = useState('invitations');
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const navigate = useNavigate();                // 👈 added
-  
-  // Sample data
-  const [projects] = useState({
-    active: [
-      {
-        id: 1,
-        title: 'E-commerce Platform Development',
-        applications: 24,
-        postedDate: '2 days ago'
-      },
-      {
-        id: 2,
-        title: 'Mobile App UI/UX Design',
-        applications: 15,
-        postedDate: '5 days ago'
-      }
-    ],
-    completed: [
-      {
-        id: 3,
-        title: 'Website Redesign Project',
-        applications: 32,
-        completedDate: '1 month ago'
-      },
-      {
-        id: 4,
-        title: 'Database Migration',
-        applications: 8,
-        completedDate: '2 months ago'
-      }
-    ],
-    drafts: [
-      {
-        id: 5,
-        title: 'API Integration Task',
-        lastEdited: '1 day ago'
-      },
-      {
-        id: 6,
-        title: 'Cloud Infrastructure Setup',
-        lastEdited: '3 days ago'
-      }
-    ]
-  });
+  const navigate = useNavigate();
 
-  const [messages] = useState([
-    {
-      id: 1,
-      sender: 'Michael Park',
-      message: "I've submitted the initial designs for review",
-      time: '2 hours ago'
-    },
-    {
-      id: 2,
-      sender: 'Sarah Chen',
-      message: 'When can we schedule the project kickoff meeting?',
-      time: '5 hours ago'
-    },
-    {
-      id: 3,
-      sender: 'Alex Rodriguez',
-      message: 'The milestone has been completed successfully',
-      time: '1 day ago'
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      const data = await profileService.client.getProfile();
+      setProfile(data);
+      setError('');
+    } catch (err) {
+      setProfile(null);
+      setError('');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+  const [projects] = useState({ active: [], completed: [] });
+  const [invitations] = useState({ invitations: [], applications: [] });
+  const [messages] = useState([]);
 
-  const [invitations] = useState([
-    {
-      id: 1,
-      name: 'Sarah Chen',
-      role: 'Full Stack Developer',
-      project: 'E-commerce Platform',
-      sentDate: '2 days ago',
-      status: 'Pending'
-    },
-    {
-      id: 2,
-      name: 'David Kumar',
-      role: 'React Developer',
-      project: 'Mobile App UI/UX Design',
-      sentDate: '4 days ago',
-      status: 'Pending'
-    }
-  ]);
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
-  const [hires] = useState([
-    {
-      id: 1,
-      name: 'Michael Park',
-      role: 'UI/UX Designer',
-      project: 'Website Redesign Project',
-      hireDate: '1 month ago',
-      status: 'Active'
-    },
-    {
-      id: 2,
-      name: 'Emma Wilson',
-      role: 'Backend Developer',
-      project: 'Database Migration',
-      hireDate: '2 months ago',
-      status: 'Completed'
-    },
-    {
-      id: 3,
-      name: 'James Chen',
-      role: 'DevOps Engineer',
-      project: 'Cloud Infrastructure',
-      hireDate: '3 weeks ago',
-      status: 'Active'
-    }
-  ]);
+  const renderProfileSection = () => (
+    <div className="space-y-6">
+      {/* Profile Header */}
+      {profile ? (
+        <div className="bg-gradient-to-r from-indigo-200 to-blue-200 rounded-2xl p-4 md:p-8 shadow-lg">
+          <div className="flex flex-col md:flex-row items-start gap-6">
+            <div className="flex-shrink-0">
+              {profile.profile_image ? (
+                <img
+                  src={profile.profile_image.startsWith('http') ? profile.profile_image : `${apiBaseUrl}${profile.profile_image}`}
+                  alt={`${profile.first_name} ${profile.last_name}`}
+                  className="w-32 h-32 rounded-full object-cover border-4 border-white"
+                />
+              ) : (
+                <div className="w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center text-3xl font-bold text-gray-600">
+                  {profile.first_name?.[0] || 'C'}{profile.last_name?.[0] || 'U'}
+                </div>
+              )}
+            </div>
 
-  const renderProjects = () => {
-    const currentProjects = projects[activeTab];
-    
-    return (
-      <div className="space-y-4">
-        {currentProjects.map((project) => (
-          <div key={project.id} className="bg-white rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-              <div className="flex-1">
-                <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2">
-                  {project.title}
+            <div className="flex-1">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+                {profile.first_name} {profile.last_name}
+              </h1>
+              {profile.company_name && (
+                <p className="text-lg text-gray-700 mt-1 flex items-center gap-2">
+                  <Building size={18} />
+                  {profile.company_name}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-600">
+                {profile.location && <span>📍 {profile.location}</span>}
+                {profile.country && <span>🌍 {profile.country}</span>}
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  onClick={() => navigate('/messages')}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  <MessageSquare size={18} />
+                  Messages
+                </button>
+                <button
+                  onClick={() => setActiveSection('settings')}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
+                >
+                  <Edit size={18} />
+                  Edit Profile
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Profile Completeness */}
+          <div className="mt-6 pt-6 border-t border-indigo-300">
+            <ProfileCompletenessBar percentage={profile.profile_completeness || 0} />
+          </div>
+        </div>
+      ) : (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <h2 className="text-2xl font-bold mb-4 text-gray-900">No Profile Found</h2>
+          <p className="mb-6 text-gray-600">Create a profile to get started.</p>
+          <button
+            onClick={() => navigate('/client/profile/edit')}
+            className="px-6 py-2 bg-indigo-600 text-white rounded font-medium hover:bg-indigo-700 transition-colors"
+          >
+            Create Profile
+          </button>
+        </div>
+      )}
+
+      {/* Profile Details */}
+      {profile && (
+        <>
+          {profile.company_description && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">About Company</h3>
+              <p className="text-gray-700">{profile.company_description}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {profile.website && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-900">
+                  <Globe size={20} />
+                  Website
                 </h3>
-                <div className="flex flex-wrap items-center gap-3 md:gap-6 text-xs md:text-sm text-gray-600">
-                  {project.applications && (
-                    <span>{project.applications} applications</span>
-                  )}
-                  {project.postedDate && (
-                    <span>Posted {project.postedDate}</span>
-                  )}
-                  {project.completedDate && (
-                    <span>Completed {project.completedDate}</span>
-                  )}
-                  {project.lastEdited && (
-                    <span>Last edited {project.lastEdited}</span>
-                  )}
+                <a
+                  href={profile.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-indigo-600 hover:underline break-all"
+                >
+                  {profile.website}
+                </a>
+              </div>
+            )}
+
+            {profile.phone && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-900">
+                  <Phone size={20} />
+                  Phone
+                </h3>
+                <p className="text-gray-700">{profile.phone}</p>
+              </div>
+            )}
+          </div>
+
+          {profile.documents && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-900">
+                <Download size={20} />
+                Documents
+              </h3>
+              <a
+                href={profile.documents.startsWith('http') ? profile.documents : `${apiBaseUrl}${profile.documents}`}
+                download
+                className="text-indigo-600 hover:underline font-medium"
+              >
+                {profile.documents.split('/').pop()}
+              </a>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  const renderProjectsSection = () => (
+    <div className="space-y-6">
+      {/* Tabs */}
+      <div className="flex gap-2 border-b">
+        {['active', 'completed'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-6 py-3 font-medium border-b-2 transition-colors ${
+              activeTab === tab
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            {tab === 'active' ? 'Active Projects' : 'Completed Projects'}
+          </button>
+        ))}
+      </div>
+
+      {/* Projects List */}
+      <div className="space-y-4">
+        {(activeTab === 'active' ? projects.active : projects.completed).length === 0 ? (
+          <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">No projects yet</div>
+        ) : (
+          (activeTab === 'active' ? projects.active : projects.completed).map((project) => (
+            <div
+              key={project.id}
+              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {activeTab === 'active'
+                      ? `Posted ${project.postedDate}`
+                      : `Completed ${project.completedDate}`}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-indigo-600">{project.applications}</p>
+                  <p className="text-sm text-gray-600">Applications</p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <button className="px-3 md:px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm">
-                  <Eye size={16} />
-                  <span className="hidden sm:inline">View</span>
-                </button>
-                {activeTab !== 'completed' && (
-                  <button className="px-3 md:px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm">
-                    <Edit size={16} />
-                    <span className="hidden sm:inline">Edit</span>
-                  </button>
-                )}
-                {activeTab === 'active' && (
-                  <button className="px-3 md:px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors flex items-center gap-2 text-sm">
-                    <X size={16} />
-                    <span className="hidden sm:inline">Close</span>
-                  </button>
-                )}
-                {activeTab === 'drafts' && (
-                  <button className="px-3 md:px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors flex items-center gap-2 text-sm">
-                    <Trash2 size={16} />
-                    <span className="hidden sm:inline">Delete</span>
-                  </button>
-                )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+
+  const renderInvitationsSection = () => (
+    <div className="space-y-6">
+      {/* Tabs */}
+      <div className="flex gap-2 border-b">
+        {['invitations', 'applications'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setInvitationTab(tab)}
+            className={`px-6 py-3 font-medium border-b-2 transition-colors ${
+              invitationTab === tab
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            {tab === 'invitations' ? 'My Invitations' : 'Applications'}
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      <div className="space-y-4">
+        {(invitationTab === 'invitations'
+          ? invitations.invitations
+          : invitations.applications
+        ).map((item) => (
+          <div
+            key={item.id}
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">{item.freelancer}</h3>
+                <p className="text-sm text-gray-600 mt-1">{item.appliedDate}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-green-600">{item.skillMatch}%</p>
+                <p className="text-sm text-gray-600">Skill Match</p>
               </div>
             </div>
           </div>
         ))}
       </div>
-    );
-  };
-
-  const renderProfileSection = () => (
-    <div className="space-y-6">
-      {/* Profile Header */}
-      <div className="bg-gradient-to-r from-indigo-200 to-blue-200 rounded-2xl p-4 md:p-8 shadow-lg">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-6">
-            <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-              <User size={40} className="text-gray-500 md:w-12 md:h-12" />
-            </div>
-            <div className="text-center sm:text-left">
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900">John Anderson</h1>
-              <p className="text-sm md:text-base text-gray-700 mt-1">Tech Startup | Looking for MERN developers</p>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mt-4 text-xs md:text-sm text-gray-700">
-                <div className="flex items-center justify-center sm:justify-start gap-2">
-                  <MapPin size={14} className="md:w-4 md:h-4" />
-                  <span>San Francisco, CA</span>
-                </div>
-                <div className="flex items-center justify-center sm:justify-start gap-2">
-                  <Phone size={14} className="md:w-4 md:h-4" />
-                  <span>+1 (555) 123-4567</span>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mt-2 text-xs md:text-sm text-gray-700">
-                <div className="flex items-center justify-center sm:justify-start gap-2">
-                  <Mail size={14} className="md:w-4 md:h-4" />
-                  <span>john.anderson@email.com</span>
-                </div>
-                <div className="flex items-center justify-center sm:justify-start gap-2">
-                  <Calendar size={14} className="md:w-4 md:h-4" />
-                  <span>Member since Jan 2024</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <button className="px-4 md:px-6 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm text-sm md:text-base w-full sm:w-auto">
-            Edit profile
-          </button>
-        </div>
-      </div>
-
-      {/* My Projects Section */}
-      <div className="bg-gradient-to-br from-indigo-100 to-blue-100 rounded-2xl p-4 md:p-6 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900">My Projects</h2>
-          <button className="px-4 md:px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm text-sm md:text-base">
-            Post new project
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-2 md:gap-4 mb-6">
-          <button
-            onClick={() => setActiveTab('active')}
-            className={`flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg font-medium transition-colors text-sm md:text-base ${
-              activeTab === 'active'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-indigo-200 text-gray-700 hover:bg-indigo-300'
-            }`}
-          >
-            Active
-          </button>
-          <button
-            onClick={() => setActiveTab('completed')}
-            className={`flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg font-medium transition-colors text-sm md:text-base ${
-              activeTab === 'completed'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-indigo-200 text-gray-700 hover:bg-indigo-300'
-            }`}
-          >
-            Completed
-          </button>
-          <button
-            onClick={() => setActiveTab('drafts')}
-            className={`flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg font-medium transition-colors text-sm md:text-base ${
-              activeTab === 'drafts'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-indigo-200 text-gray-700 hover:bg-indigo-300'
-            }`}
-          >
-            Drafts
-          </button>
-        </div>
-
-        {/* Projects List */}
-        {renderProjects()}
-      </div>
-
-      {/* Invitations and Hire Section */}
-      <div className="bg-gradient-to-br from-indigo-100 to-blue-100 rounded-2xl p-4 md:p-6 shadow-lg">
-        <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6">Invitations and Hire</h2>
-        
-        <div className="flex gap-2 md:gap-4 mb-6">
-          <button 
-            onClick={() => setInvitationTab('invitations')}
-            className={`flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg font-medium transition-colors text-sm md:text-base ${
-              invitationTab === 'invitations'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-indigo-200 text-gray-700 hover:bg-indigo-300'
-            }`}
-          >
-            Invitations
-          </button>
-          <button 
-            onClick={() => setInvitationTab('hires')}
-            className={`flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg font-medium transition-colors text-sm md:text-base ${
-              invitationTab === 'hires'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-indigo-200 text-gray-700 hover:bg-indigo-300'
-            }`}
-          >
-            Hires
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {invitationTab === 'invitations' ? (
-            invitations.map((invitation) => (
-              <div key={invitation.id} className="bg-white rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
-                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                  <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
-                    <User size={24} className="text-gray-500" />
-                  </div>
-                  <div className="flex-1 text-center sm:text-left">
-                    <h3 className="font-semibold text-gray-900">{invitation.name}</h3>
-                    <p className="text-xs md:text-sm text-gray-600 mt-1">{invitation.role}</p>
-                    <p className="text-xs md:text-sm text-gray-600">For: {invitation.project} • Sent {invitation.sentDate}</p>
-                  </div>
-                  <div className="flex flex-wrap justify-center sm:justify-start gap-2">
-                    <button className="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm">
-                      {invitation.status}
-                    </button>
-                    <button className="px-3 md:px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm">
-                      Message
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            hires.map((hire) => (
-              <div key={hire.id} className="bg-white rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
-                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                  <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
-                    <User size={24} className="text-gray-500" />
-                  </div>
-                  <div className="flex-1 text-center sm:text-left">
-                    <h3 className="font-semibold text-gray-900">{hire.name}</h3>
-                    <p className="text-xs md:text-sm text-gray-600 mt-1">{hire.role}</p>
-                    <p className="text-xs md:text-sm text-gray-600">Project: {hire.project} • Hired {hire.hireDate}</p>
-                  </div>
-                  <div className="flex flex-wrap justify-center sm:justify-start gap-2">
-                    <button className={`px-3 md:px-4 py-2 rounded-md transition-colors text-sm ${
-                      hire.status === 'Active' 
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}>
-                      {hire.status}
-                    </button>
-                    <button className="px-3 md:px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm">
-                      View Profile
-                    </button>
-                    <button className="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm">
-                      Message
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
     </div>
   );
 
   const renderMessagesSection = () => (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-br from-indigo-100 to-blue-100 rounded-2xl p-4 md:p-6 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900">Messages</h2>
-          <button className="px-4 md:px-6 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm text-sm md:text-base">
-            View all
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {messages.map((msg) => (
-            <div key={msg.id} className="bg-white rounded-lg p-4 md:p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
-                  <User size={24} className="text-gray-500" />
-                </div>
-                <div className="flex-1 text-center sm:text-left">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                    <h3 className="font-semibold text-gray-900">{msg.sender}</h3>
-                    <span className="text-xs md:text-sm text-gray-500">{msg.time}</span>
-                  </div>
-                  <p className="text-sm md:text-base text-gray-600 mt-1">{msg.message}</p>
-                </div>
-              </div>
+    <div className="space-y-4">
+      {messages.map((msg) => (
+        <div
+          key={msg.id}
+          className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => navigate('/messages')}
+        >
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">{msg.freelancer}</h3>
+              <p className="text-sm text-gray-600 mt-2">{msg.lastMessage}</p>
             </div>
-          ))}
+            <div className="text-right">
+              <p className="text-sm text-gray-600">{msg.timestamp}</p>
+              {msg.unread > 0 && (
+                <span className="mt-2 inline-block px-3 py-1 bg-indigo-600 text-white rounded-full text-xs font-semibold">
+                  {msg.unread} unread
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 
   const renderAccountSettings = () => (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-br from-indigo-100 to-blue-100 rounded-2xl p-4 md:p-8 shadow-lg">
-        <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6 md:mb-8">Account Settings</h2>
+    <div className="max-w-2xl space-y-6">
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
+          <User size={20} />
+          Edit Profile
+        </h3>
+        <button
+          onClick={() => navigate('/client/profile/edit')}
+          className="w-full px-4 py-2 bg-indigo-600 text-white rounded font-medium hover:bg-indigo-700 transition-colors"
+        >
+          Update Your Profile
+        </button>
+      </div>
 
-        {/* Security Section */}
-        <div className="mb-6 md:mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Lock size={18} className="text-gray-700 md:w-5 md:h-5" />
-            <h3 className="text-base md:text-lg font-semibold text-gray-900">Security</h3>
-          </div>
-          <p className="text-sm md:text-base text-gray-700 mb-4">Manage your password and security preferences</p>
-          <button className="px-4 md:px-6 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm text-sm md:text-base w-full sm:w-auto">
-            Change Password
-          </button>
-        </div>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
+          <Lock size={20} />
+          Security
+        </h3>
+        <button className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded font-medium hover:bg-gray-300 transition-colors">
+          Change Password
+        </button>
+      </div>
 
-        {/* Payment Details Section */}
-        <div className="mb-6 md:mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <CreditCard size={18} className="text-gray-700 md:w-5 md:h-5" />
-            <h3 className="text-base md:text-lg font-semibold text-gray-900">Payment Details</h3>
-          </div>
-          <p className="text-sm md:text-base text-gray-700 mb-4">Manage your payment methods and billing information</p>
-          <button className="px-4 md:px-6 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm text-sm md:text-base w-full sm:w-auto">
-            Manage Payment Methods
-          </button>
-        </div>
-
-        {/* Danger Zone Section */}
-        <div className="pt-6 border-t border-red-200">
-          <div className="flex items-center gap-2 mb-3">
-            <Trash2 size={18} className="text-red-600 md:w-5 md:h-5" />
-            <h3 className="text-base md:text-lg font-semibold text-red-600">Danger Zone</h3>
-          </div>
-          <p className="text-sm md:text-base text-gray-700 mb-4">Permanently delete your account and all associated data</p>
-          <button className="px-4 md:px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium shadow-sm text-sm md:text-base w-full sm:w-auto">
-            Delete Account
-          </button>
-        </div>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
+          <CreditCard size={20} />
+          Billing
+        </h3>
+        <button className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded font-medium hover:bg-gray-300 transition-colors">
+          Manage Billing
+        </button>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-
-        {/* Top heading + Back button */}
-        <div className="flex items-center justify-between mb-4 md:mb-6">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-            Client Profile
-          </h1>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-3 md:px-4 py-2 rounded-lg border border-gray-300/70 bg-white/50 hover:bg-white/80 text-xs md:text-sm text-gray-700 flex items-center gap-2 shadow-sm transition-colors"
-          >
-            <span>←</span>
-            <span>Back</span>
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex flex-col sm:flex-row gap-2 md:gap-4 mb-6 md:mb-8">
-          <button
-            onClick={() => setActiveSection('profile')}
-            className={`px-4 md:px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
-              activeSection === 'profile'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
-            }`}
-          >
-            <User size={18} className="md:w-5 md:h-5" />
-            Profile
-          </button>
-          <button
-            onClick={() => setActiveSection('messages')}
-            className={`px-4 md:px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
-              activeSection === 'messages'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
-            }`}
-          >
-            <MessageSquare size={18} className="md:w-5 md:h-5" />
-            Messages
-          </button>
-          <button
-            onClick={() => setActiveSection('settings')}
-            className={`px-4 md:px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
-              activeSection === 'settings'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
-            }`}
-          >
-            <Settings size={18} className="md:w-5 md:h-5" />
-            Settings
-          </button>
-        </div>
-
-        {/* Content */}
-        {activeSection === 'profile' && renderProfileSection()}
-        {activeSection === 'messages' && renderMessagesSection()}
-        {activeSection === 'settings' && renderAccountSettings()}
+    <ProfileLayout title="Client Dashboard" basePath="/client/profile">
+      {/* Back button + small header within layout */}
+      <div className="mb-8 flex items-center gap-4">
+        <button
+          onClick={() => navigate('/freelancer')}
+          className="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-2"
+        >
+          ← Back
+        </button>
+        <h2 className="text-2xl font-bold text-gray-900">Client Dashboard</h2>
       </div>
-    </div>
+
+      {/* Navigation Tabs */}
+      <div className="mb-8 flex flex-wrap gap-2 border-b">
+        <button
+          onClick={() => setActiveSection('profile')}
+          className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+            activeSection === 'profile'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <User size={18} className="inline mr-2" />
+          Profile
+        </button>
+        <button
+          onClick={() => setActiveSection('projects')}
+          className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+            activeSection === 'projects'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Projects
+        </button>
+        <button
+          onClick={() => setActiveSection('invitations')}
+          className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+            activeSection === 'invitations'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Invitations & Applications
+        </button>
+        <button
+          onClick={() => setActiveSection('messages')}
+          className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+            activeSection === 'messages'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <MessageSquare size={18} className="inline mr-2" />
+          Messages
+        </button>
+        <button
+          onClick={() => setActiveSection('settings')}
+          className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+            activeSection === 'settings'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Settings size={18} className="inline mr-2" />
+          Settings
+        </button>
+      </div>
+
+      {/* Content */}
+      {activeSection === 'profile' && renderProfileSection()}
+      {activeSection === 'projects' && renderProjectsSection()}
+      {activeSection === 'invitations' && renderInvitationsSection()}
+      {activeSection === 'messages' && renderMessagesSection()}
+      {activeSection === 'settings' && renderAccountSettings()}
+    </ProfileLayout>
   );
 };
 

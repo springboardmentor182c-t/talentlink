@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import StatsCard from "../StatsCard.jsx";
 import BarChartPlaceholder from "../BarChartPlaceholder.jsx";
 import PieChartPlaceholder from "../PieChartPlaceholder.jsx";
 import RecentMessages from "../RecentMessages.jsx";
 import { Users, TrendingUp, MessageSquare, CheckCircle } from "lucide-react";
+import { messagingAPI } from "../../services/api.js";
+import profileService from '../../services/profileService.js';
 
-// Mock Data
+// Mock Data for other sections
 const mockDashboardData = {
   totalCandidates: 20,
   totalJobs: 8,
@@ -23,34 +26,157 @@ const mockDashboardData = {
     Interview: 20,
     Offer: 10,
   },
-  recentMessages: [
-    {
-      name: "Alex Torres",
-      message: "Great job on the update!",
-      time: "10:24 AM",
-      avatar: "AT",
-    },
-    {
-      name: "Megan Simon",
-      message: "When is the next class?",
-      time: "2:47 AM",
-      avatar: "MS",
-    },
-  ],
 };
 
 const Dashboard = () => {
+  const [recentMessages, setRecentMessages] = useState([]);
+  const [loadingMessages, setLoadingMessages] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  const navigate = useNavigate();
+
+  const [profile, setProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  // Get current user ID from localStorage
+  useEffect(() => {
+    try {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        const user = JSON.parse(userData);
+        setCurrentUserId(user.id);
+      }
+    } catch (err) {
+      console.error("Error parsing user data:", err);
+    }
+  }, []);
+
+  // Load profile for current user (client or freelancer)
+  useEffect(() => {
+    const loadProfile = async () => {
+      setLoadingProfile(true);
+      try {
+        const userData = localStorage.getItem('user');
+        if (!userData) {
+          setProfile(null);
+          return;
+        }
+        const user = JSON.parse(userData);
+        if (user.role === 'client') {
+          const p = await profileService.client.getProfile();
+          setProfile(p);
+        } else if (user.role === 'freelancer') {
+          const p = await profileService.freelancer.getProfile();
+          setProfile(p);
+        }
+      } catch (err) {
+        console.error('Failed to load profile for dashboard:', err);
+        setProfile(null);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  // Fetch recent messages from API
+  useEffect(() => {
+    const fetchRecentMessages = async () => {
+      setLoadingMessages(true);
+      try {
+        const conversations = await messagingAPI.getConversations();
+
+        // Transform conversations to recent messages format
+        const messages = conversations
+          .filter(conv => conv.last_message) // Only include conversations with messages
+          .map(conv => {
+            // Get the other participant's name
+            const otherParticipant = conv.participants?.find(
+              p => p.id !== currentUserId
+            );
+            const name = otherParticipant?.username || "Unknown";
+            const avatar = name.substring(0, 2).toUpperCase() || "U";
+
+            // Format time
+            const date = new Date(conv.last_message.created_at);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            let time = "Unknown";
+            if (diffMins < 1) time = "Just now";
+            else if (diffMins < 60) time = `${diffMins}m ago`;
+            else if (diffHours < 24) time = `${diffHours}h ago`;
+            else if (diffDays < 7) time = `${diffDays}d ago`;
+            else time = date.toLocaleDateString();
+
+            return {
+              name,
+              message: conv.last_message.text,
+              time,
+              avatar,
+            };
+          })
+          .slice(0, 5); // Get only the first 5 recent messages
+
+        setRecentMessages(messages);
+      } catch (err) {
+        console.error("Failed to fetch recent messages:", err);
+        setRecentMessages([]);
+      } finally {
+        setLoadingMessages(false);
+      }
+    };
+
+    if (currentUserId) {
+      fetchRecentMessages();
+    }
+  }, [currentUserId]);
   return (
     <main className="w-full min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-            Welcome, John!
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 mt-2">
-            Here's your dashboard overview
-          </p>
+        <div className="flex items-start justify-between mb-6 md:mb-8">
+          <div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+              Welcome, {profile?.first_name || 'John'}!
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600 mt-2">
+              Here's your dashboard overview
+            </p>
+          </div>
+          <div className="ml-4">
+            {loadingProfile ? (
+              <button className="px-4 py-2 bg-gray-400 text-white rounded">Loading...</button>
+            ) : profile ? (
+              <button
+                onClick={() => {
+                  const userData = localStorage.getItem('user');
+                  const role = userData ? JSON.parse(userData).role : null;
+                  if (role === 'freelancer') navigate('/freelancer/profile/edit');
+                  else navigate('/client/profile/edit');
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              >
+                Edit Profile
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  const userData = localStorage.getItem('user');
+                  const role = userData ? JSON.parse(userData).role : null;
+                  if (role === 'freelancer') navigate('/freelancer/profile/create');
+                  else navigate('/profile/create');
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              >
+                Create Profile
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Stats Cards Grid */}
@@ -98,7 +224,13 @@ const Dashboard = () => {
 
         {/* Messages Section */}
         <div className="w-full">
-          <RecentMessages messages={mockDashboardData.recentMessages} />
+          {loadingMessages ? (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
+              <p className="text-gray-500">Loading messages...</p>
+            </div>
+          ) : (
+            <RecentMessages messages={recentMessages} />
+          )}
         </div>
       </div>
     </main>
