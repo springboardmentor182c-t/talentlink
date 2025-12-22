@@ -47,7 +47,7 @@ class ProposalViewSet(viewsets.ModelViewSet):
 
         already_accepted = ProjectProposal.objects.filter(
             client=proposal.client,
-            project_title=proposal.project_title,
+            project_id=proposal.project_id,
             status="accepted",
         ).exclude(id=proposal.id).exists()
         if already_accepted:
