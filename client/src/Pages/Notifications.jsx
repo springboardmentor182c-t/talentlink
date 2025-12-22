@@ -8,7 +8,7 @@ function Notifications() {
     {
       id: 1,
       title: "Contract Awaiting Signature",
-      description: "The Talent Link contract for John Doe is ready for your signature.",
+      description: "A Talent Link contract is ready for your signature.",
       linkText: "View Contract",
       time: "Yesterday"
     },
