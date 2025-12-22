@@ -3,10 +3,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated 
-from django.db.models import Count 
+from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth 
 from datetime import datetime # Added import needed for strftime (good practice)
-from rest_framework import serializers # Added if serializers aren't imported separately
+from rest_framework import serializers, status # Added if serializers aren't imported separately
 
 # --- FINAL CORRECTED MODEL IMPORTS ---
 # Proposal is confirmed in 'messaging'.
@@ -15,6 +15,9 @@ from apps.proposals.models import Proposal
 
 # Project and Skill are now DEFINITELY in the 'projects' app.
 from apps.projects.models import Project, Skill 
+
+# Import contracts
+from apps.contracts.models import Contract
 
 # Assuming your serializers are imported like this (You confirmed this setup)
 from .serializers import ActivityAnalyticsSerializer, SkillsAnalyticsSerializer
@@ -121,3 +124,73 @@ class SkillsAnalyticsView(APIView):
         return Response({
             'projects_per_skill': serializer.data
         })
+
+
+class DashboardStatsView(APIView):
+    """
+    Get overall dashboard statistics for the freelancer.
+    API Path: /api/v1/analytics/dashboard-stats/
+    
+    Returns:
+    - this_month_revenue: Total revenue from contracts in current month
+    - projects_accepted: Total number of accepted proposals
+    - delivered_on_time: Percentage of on-time deliveries
+    - active_contracts: Number of active contracts
+    - pending_proposals: Number of pending proposals
+    - completed_projects: Number of completed projects
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        freelancer = request.user
+        from django.utils import timezone
+        from dateutil.relativedelta import relativedelta
+        
+        current_month = timezone.now()
+        month_start = current_month.replace(day=1)
+        
+        # Get contracts for current month
+        current_month_contracts = Contract.objects.filter(
+            freelancer=freelancer,
+            created_at__gte=month_start,
+            created_at__lte=current_month
+        )
+        
+        # Calculate this month's revenue (assuming bid_amount on proposals)
+        this_month_revenue = 0
+        for contract in current_month_contracts:
+            if hasattr(contract, 'proposal') and contract.proposal:
+                this_month_revenue += float(contract.proposal.bid_amount or 0)
+        
+        # Get proposal statistics
+        proposals = Proposal.objects.filter(freelancer=freelancer)
+        accepted_proposals = proposals.filter(status='accepted').count()
+        pending_proposals = proposals.filter(status='pending').count()
+        
+        # Get contract statistics
+        active_contracts = Contract.objects.filter(
+            freelancer=freelancer,
+            status='active'
+        ).count()
+        
+        # Get project statistics
+        projects = Project.objects.filter(freelancer=freelancer)
+        completed_projects = projects.filter(status='COMPLETED').count()
+        active_projects = projects.filter(status='ACTIVE').count()
+        
+        # Calculate on-time delivery percentage (assuming all completed projects are on time for now)
+        total_projects = projects.count()
+        delivered_on_time = (completed_projects / total_projects * 100) if total_projects > 0 else 0
+        
+        stats = {
+            'this_month_revenue': f"${this_month_revenue:,.2f}",
+            'projects_accepted': accepted_proposals,
+            'delivered_on_time': f"{delivered_on_time:.1f}%",
+            'active_contracts': active_contracts,
+            'pending_proposals': pending_proposals,
+            'completed_projects': completed_projects,
+            'active_projects': active_projects,
+            'total_projects': total_projects,
+        }
+        
+        return Response(stats, status=status.HTTP_200_OK)
