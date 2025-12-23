@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, Clock, CheckCircle, DollarSign, AlertCircle, User, FileText } from 'lucide-react';
 import { notificationService } from '../services/notificationService';
+import { notificationApi } from '../services/notificationApi';
 
 const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
@@ -8,19 +9,11 @@ const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    // Subscribe to notifications
-    const unsubscribe = notificationService.subscribe((notification) => {
-      setNotifications(prev => [notification, ...prev]);
-      setUnreadCount(prev => prev + 1);
+    // Fetch notifications from backend
+    notificationApi.fetchNotifications().then(data => {
+      setNotifications(data);
+      setUnreadCount(data.filter(n => !n.is_read).length);
     });
-
-    // Load existing notifications
-    setNotifications(notificationService.getNotifications());
-    setUnreadCount(notificationService.getUnreadNotifications().length);
-
-    return () => {
-      unsubscribe();
-    };
   }, []);
 
   const toggleDropdown = () => {
@@ -31,17 +24,15 @@ const NotificationBell = () => {
     setIsOpen(false);
   };
 
-  const markAsRead = (notificationId) => {
-    notificationService.markAsRead(notificationId);
-    setNotifications(prev => 
-      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-    );
+  const markAsRead = async (notificationId) => {
+    await notificationApi.markAsRead(notificationId);
+    setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n));
     setUnreadCount(prev => Math.max(0, prev - 1));
   };
 
-  const markAllAsRead = () => {
-    notificationService.markAllAsRead();
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const markAllAsRead = async () => {
+    // Optionally implement mark all as read in backend
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     setUnreadCount(0);
   };
 

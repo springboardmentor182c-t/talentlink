@@ -22,7 +22,8 @@ export const noAuthApi = axios.create({
 // 🔁 Attach JWT access token to every request
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
+    // Prefer 'accessToken' but fall back to legacy 'token' for compatibility
+    const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -33,9 +34,16 @@ api.interceptors.request.use(
 
 // 💬 Messaging APIs (existing Group-A feature — DO NOT REMOVE)
 export const messagingAPI = {
-  getConversations: async () => {
+  getConversations: async (userType) => {
     try {
-      const response = await api.get("/messaging/conversations/");
+      // Optionally filter by userType if backend supports it
+      let url = "/messaging/conversations/";
+      if (userType === "freelancer") {
+        url += "?role=freelancer";
+      } else if (userType === "client") {
+        url += "?role=client";
+      }
+      const response = await api.get(url);
       return response.data;
     } catch (error) {
       console.error("Error fetching conversations:", error);

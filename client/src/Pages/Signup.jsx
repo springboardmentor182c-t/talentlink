@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import api from "../services/api";
+import authService from "../services/authService";
 
 export default function SignUp() {
   const [fullName, setFullName] = useState('');
@@ -33,17 +34,24 @@ export default function SignUp() {
     try {
       setIsLoading(true);
 
-      await api.post('/auth/register/', {
-        email: email,
-        password: password,
-        role: userType.toLowerCase(), // client / freelancer
-      });
+      const response = await authService.register(fullName || email, email, password, userType.toLowerCase());
 
-      alert('Account created successfully. Please login.');
-      window.location.href = '/login';
+      // If registration returned tokens, user is auto-logged in and redirected by role
+      if (authService.getToken()) {
+        const role = (localStorage.getItem('userRole') || response.user?.user_type || response.user?.userType || userType).toLowerCase();
+        if (role === 'client') {
+          window.location.href = '/client-pending';
+        } else {
+          window.location.href = '/freelancer-pending';
+        }
+      } else {
+        alert('Account created successfully. Please login.');
+        window.location.href = '/login';
+      }
 
     } catch (err) {
-      setError('Signup failed. Email may already exist.');
+      const message = err?.detail || err?.email || err?.message || 'Signup failed. Email may already exist.';
+      setError(message);
     } finally {
       setIsLoading(false);
     }

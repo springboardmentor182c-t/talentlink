@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle, FileText, Tag, DollarSign, Clock, Award, Briefcase, MapPin } from "lucide-react";
-import axios from "axios";
+import api from "../services/api";
 import { useNavigate, useParams } from "react-router-dom";
 
 const EditProject = () => {
@@ -28,7 +28,7 @@ const EditProject = () => {
   useEffect(() => {
     async function fetchProject() {
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/api/projects/${id}/`);
+        const res = await api.get(`/projects/${id}/`);
         const p = res.data;
 
         setFormData({
@@ -108,7 +108,7 @@ const EditProject = () => {
     };
 
     try {
-      await axios.put(`http://127.0.0.1:8000/api/projects/${id}/`, payload);
+      await api.put(`/projects/${id}/`, payload);
 
       alert("Project updated successfully!");
       navigate(`/projects/${id}`);

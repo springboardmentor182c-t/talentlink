@@ -3,7 +3,7 @@ import { Search, Send, Paperclip, MoreVertical, MessageSquare, Loader } from 'lu
 import { useNavigate } from 'react-router-dom';
 import { messagingAPI } from '../services/api.js';
 
-function Messages() {
+function Messages({ userType }) {
   const navigate = useNavigate();
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messageInput, setMessageInput] = useState('');
@@ -34,7 +34,8 @@ function Messages() {
       setLoading(true);
       setError(null);
       try {
-        const data = await messagingAPI.getConversations();
+        // Optionally pass userType to API for role-based filtering
+        const data = await messagingAPI.getConversations(userType);
         setConversations(data || []);
       } catch (err) {
         setError('Failed to load conversations');
@@ -47,7 +48,7 @@ function Messages() {
     if (currentUserId) {
       fetchConversations();
     }
-  }, [currentUserId]);
+  }, [currentUserId, userType]);
 
   // Fetch messages when conversation is selected
   useEffect(() => {
@@ -150,7 +151,13 @@ function Messages() {
     <div>
       {/* Back Button */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => {
+          if (userType === 'freelancer') {
+            navigate('/freelancer/messages');
+          } else {
+            navigate('/client/messages');
+          }
+        }}
         className="mb-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
       >
         ← Back

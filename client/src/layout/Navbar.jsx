@@ -5,12 +5,23 @@ import { useNavigate } from "react-router-dom";
 const Navbar = ({ onMenuClick, userName = "" }) => {
   const navigate = useNavigate();
 
+  // Detect dashboard type from current path
+  const isFreelancer = window.location.pathname.startsWith("/freelancer");
+
   const goToNotifications = () => {
-    navigate("/notifications");
+    if (isFreelancer) {
+      navigate("/freelancer/notifications");
+    } else {
+      navigate("/client/notifications");
+    }
   };
 
   const goToProfile = () => {
-    navigate("/profile");
+    if (isFreelancer) {
+      navigate("/freelancer/profile");
+    } else {
+      navigate("/client/profile");
+    }
   };
 
   return (

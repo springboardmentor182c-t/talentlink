@@ -5,17 +5,33 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000
 export const authService = {
   register: async (username, email, password, userType = 'freelancer') => {
     try {
-      const response = await api.post('/api/users/auth/register/', {
+      const response = await api.post('/auth/register/', {
         username,
         email,
         password,
         password_confirm: password,
-        user_type: userType,
+        role: userType,
       });
+
+      // Accept multiple possible response shapes: { token, user } or { access, refresh, user }
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('accessToken', response.data.token);
       }
+
+      if (response.data.access) {
+        localStorage.setItem('accessToken', response.data.access);
+      }
+
+      if (response.data.refresh) {
+        localStorage.setItem('refreshToken', response.data.refresh);
+      }
+
+      if (response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('userRole', response.data.user.user_type || response.data.user.userType || userType);
+      }
+
       return response.data;
     } catch (error) {
       console.error('Registration error:', error);
@@ -24,14 +40,24 @@ export const authService = {
   },
   login: async (username, password) => {
     try {
-      const response = await api.post('/api/users/auth/login/', {
+      const response = await api.post('/auth/login/', {
         username,
         password,
       });
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+
+      // Support JWT response shape { access, refresh, user }
+      if (response.data.access) {
+        localStorage.setItem('accessToken', response.data.access);
       }
+      if (response.data.refresh) {
+        localStorage.setItem('refreshToken', response.data.refresh);
+      }
+      if (response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        const role = (response.data.user.user_type || response.data.user.role || 'freelancer').toLowerCase();
+        localStorage.setItem('userRole', role);
+      }
+
       return response.data;
     } catch (error) {
       console.error('Login error:', error);
@@ -40,12 +66,15 @@ export const authService = {
   },
   logout: async () => {
     try {
-      await api.post('/api/users/auth/logout/');
+      await api.post('/auth/logout/');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
       localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
+      localStorage.removeItem('userRole');
     }
   },
   getCurrentUser: () => {
@@ -53,10 +82,10 @@ export const authService = {
     return user ? JSON.parse(user) : null;
   },
   getToken: () => {
-    return localStorage.getItem('token');
+    return localStorage.getItem('accessToken') || localStorage.getItem('token');
   },
   isAuthenticated: () => {
-    return !!localStorage.getItem('token');
+    return !!(localStorage.getItem('accessToken') || localStorage.getItem('token'));
   },
 };
 

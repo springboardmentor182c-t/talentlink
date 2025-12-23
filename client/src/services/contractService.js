@@ -1,5 +1,5 @@
 // Contract API service functions
-const API_BASE_URL = 'http://localhost:8000/api/contracts';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
@@ -30,7 +30,7 @@ export const contractService = {
       }
     });
     
-    const url = `${API_BASE_URL}/contracts/${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const url = `${API_BASE_URL}/api/contracts${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     const response = await fetch(url, {
       headers: getAuthHeaders()
     });
@@ -39,7 +39,7 @@ export const contractService = {
 
   // Get single contract by ID
   getContract: async (contractId) => {
-    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/`, {
+    const response = await fetch(`${API_BASE_URL}/api/contracts/${contractId}/`, {
       headers: getAuthHeaders()
     });
     return handleResponse(response);
@@ -47,7 +47,7 @@ export const contractService = {
 
   // Create a new contract
   createContract: async (contractData) => {
-    const response = await fetch(`${API_BASE_URL}/contracts/`, {
+    const response = await fetch(`${API_BASE_URL}/api/contracts/`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(contractData)
@@ -57,7 +57,7 @@ export const contractService = {
 
   // Update contract
   updateContract: async (contractId, contractData) => {
-    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/`, {
+    const response = await fetch(`${API_BASE_URL}/api/contracts/${contractId}/`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(contractData)
@@ -67,7 +67,7 @@ export const contractService = {
 
   // Partial update contract
   patchContract: async (contractId, contractData) => {
-    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/`, {
+    const response = await fetch(`${API_BASE_URL}/api/contracts/${contractId}/`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify(contractData)
@@ -90,7 +90,7 @@ export const contractService = {
 
   // Create contract from accepted proposal
   createContractFromProposal: async (proposalData) => {
-    const response = await fetch(`${API_BASE_URL}/contracts/create-from-proposal/`, {
+    const response = await fetch(`${API_BASE_URL}/api/contracts/create-from-proposal/`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(proposalData)
@@ -100,7 +100,7 @@ export const contractService = {
 
   // Update contract status
   updateContractStatus: async (contractId, statusData) => {
-    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/update-status/`, {
+    const response = await fetch(`${API_BASE_URL}/api/contracts/${contractId}/update-status/`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(statusData)
@@ -110,7 +110,7 @@ export const contractService = {
 
   // Make payment
   makePayment: async (contractId, paymentData) => {
-    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/make-payment/`, {
+    const response = await fetch(`${API_BASE_URL}/api/contracts/${contractId}/make-payment/`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(paymentData)
@@ -120,7 +120,7 @@ export const contractService = {
 
   // Release escrow
   releaseEscrow: async (contractId, releaseData) => {
-    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/release-escrow/`, {
+    const response = await fetch(`${API_BASE_URL}/api/contracts/${contractId}/release-escrow/`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(releaseData)
@@ -130,7 +130,7 @@ export const contractService = {
 
   // Get contract activities
   getContractActivities: async (contractId) => {
-    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/activities/`, {
+    const response = await fetch(`${API_BASE_URL}/api/contracts/${contractId}/activities/`, {
       headers: getAuthHeaders()
     });
     return handleResponse(response);
@@ -138,7 +138,7 @@ export const contractService = {
 
   // Add milestone
   addMilestone: async (contractId, milestoneData) => {
-    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/add-milestone/`, {
+    const response = await fetch(`${API_BASE_URL}/api/contracts/${contractId}/add-milestone/`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(milestoneData)
@@ -148,7 +148,7 @@ export const contractService = {
 
   // Download contract
   downloadContract: async (contractId) => {
-    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/download/`, {
+    const response = await fetch(`${API_BASE_URL}/api/contracts/${contractId}/download/`, {
       headers: getAuthHeaders()
     });
     return handleResponse(response);
@@ -158,7 +158,7 @@ export const contractService = {
   milestones: {
     // Get all milestones
     getMilestones: async () => {
-      const response = await fetch(`${API_BASE_URL}/milestones/`, {
+      const response = await fetch(`${API_BASE_URL}/api/contracts/milestones/`, {
         headers: getAuthHeaders()
       });
       return handleResponse(response);
@@ -166,7 +166,7 @@ export const contractService = {
 
     // Get single milestone
     getMilestone: async (milestoneId) => {
-      const response = await fetch(`${API_BASE_URL}/milestones/${milestoneId}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/contracts/milestones/${milestoneId}/`, {
         headers: getAuthHeaders()
       });
       return handleResponse(response);
@@ -174,7 +174,7 @@ export const contractService = {
 
     // Complete milestone
     completeMilestone: async (milestoneId) => {
-      const response = await fetch(`${API_BASE_URL}/milestones/${milestoneId}/complete/`, {
+      const response = await fetch(`${API_BASE_URL}/api/contracts/milestones/${milestoneId}/complete/`, {
         method: 'POST',
         headers: getAuthHeaders()
       });
@@ -183,7 +183,7 @@ export const contractService = {
 
     // Approve milestone
     approveMilestone: async (milestoneId) => {
-      const response = await fetch(`${API_BASE_URL}/milestones/${milestoneId}/approve/`, {
+      const response = await fetch(`${API_BASE_URL}/api/contracts/milestones/${milestoneId}/approve/`, {
         method: 'POST',
         headers: getAuthHeaders()
       });

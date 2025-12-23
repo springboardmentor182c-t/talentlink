@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ProfileLayout from '../../components/Profile/ProfileLayout.jsx';
 
-const Settings = ({ basePath = '/profile' }) => {
+const Settings = ({ basePath = '/client/profile' }) => {
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [emailNotifications, setEmailNotifications] = useState(true);

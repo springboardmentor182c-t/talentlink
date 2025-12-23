@@ -10,7 +10,7 @@ import {
   ArrowLeft,
   CheckCircle
 } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 const PostNewProject = () => {
@@ -92,7 +92,7 @@ const PostNewProject = () => {
         status: 'active' // goes to Active tab
       };
 
-      const res = await axios.post('http://127.0.0.1:8000/api/projects/', payload);
+      const res = await api.post('/projects/', payload);
       console.log('Saved project:', res.data);
 
       alert('🎉 Project saved successfully!');
@@ -146,7 +146,7 @@ const PostNewProject = () => {
         status: 'draft' // goes to Drafts tab
       };
 
-      const res = await axios.post('http://127.0.0.1:8000/api/projects/', payload);
+      const res = await api.post('/projects/', payload);
       console.log('Saved draft project:', res.data);
 
       alert('📝 Project saved as draft!');

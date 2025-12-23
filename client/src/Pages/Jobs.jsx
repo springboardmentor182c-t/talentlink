@@ -105,7 +105,7 @@ function Jobs() {
     <div>
       {/* Back Button */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/client/jobs')}
         className="mb-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
       >
         ← Back
@@ -274,7 +274,7 @@ function Jobs() {
 
               <div className="flex space-x-3">
                 <button
-                  onClick={() => navigate(`/proposal/${selectedJob.id}`)}
+                  onClick={() => navigate(`/freelancer/proposal/${selectedJob.id}`)}
                   className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Submit Proposal

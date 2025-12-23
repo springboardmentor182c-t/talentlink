@@ -63,7 +63,7 @@ const FreelancerProfileCreateEdit = () => {
 
     if (!authService.isAuthenticated()) {
       setError('You must be logged in to create or update your profile. Redirecting to login...');
-      setTimeout(() => navigate('/login'), 900);
+        setTimeout(() => navigate('/login'), 900);
       return;
     }
 
@@ -81,7 +81,7 @@ const FreelancerProfileCreateEdit = () => {
       setSuccess(form.id ? 'Profile updated successfully!' : 'Profile created successfully!');
       
       setTimeout(() => {
-        navigate('/freelancer/profile/view');
+        navigate('/freelancer/profile');
       }, 1500);
     } catch (err) {
       const serverData = err?.response?.data;
@@ -297,7 +297,7 @@ const FreelancerProfileCreateEdit = () => {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/freelancer/profile/view')}
+              onClick={() => navigate('/freelancer/profile')}
               className="px-6 py-2 bg-gray-200 text-gray-700 rounded font-medium hover:bg-gray-300 transition-colors"
             >
               Cancel

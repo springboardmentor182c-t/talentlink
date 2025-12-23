@@ -108,14 +108,14 @@ const FreelancerProfileView = () => {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <button
-                onClick={() => navigate('/messages')}
+                onClick={() => navigate('/client/messages')}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 <MessageCircle size={18} />
                 Message
               </button>
               <button
-                onClick={() => navigate('/contracts')}
+                onClick={() => navigate('/client/contracts')}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
               >
                 <Briefcase size={18} />
