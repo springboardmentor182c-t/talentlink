@@ -1,25 +1,41 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
+// 🔐 Authenticated API (JWT)
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api`,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
+// 🔓 Non-auth API (login, signup, otp)
+export const noAuthApi = axios.create({
+  baseURL: `${API_BASE_URL}/api`,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-// Messaging API functions
+// 🔁 Attach JWT access token to every request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// 💬 Messaging APIs (existing Group-A feature — DO NOT REMOVE)
 export const messagingAPI = {
-  /**
-   * Get all conversations for the authenticated user
-   */
   getConversations: async () => {
     try {
-      const response = await api.get("/api/messaging/conversations/");
+      const response = await api.get("/messaging/conversations/");
       return response.data;
     } catch (error) {
       console.error("Error fetching conversations:", error);
@@ -27,13 +43,10 @@ export const messagingAPI = {
     }
   },
 
-  /**
-   * Get all messages for a specific conversation
-   */
   getMessages: async (conversationId) => {
     try {
       const response = await api.get(
-        `/api/messaging/conversations/${conversationId}/messages/`
+        `/messaging/conversations/${conversationId}/messages/`
       );
       return response.data;
     } catch (error) {
@@ -42,13 +55,10 @@ export const messagingAPI = {
     }
   },
 
-  /**
-   * Send a message to a conversation
-   */
   sendMessage: async (conversationId, text) => {
     try {
       const response = await api.post(
-        `/api/messaging/conversations/${conversationId}/messages/`,
+        `/messaging/conversations/${conversationId}/messages/`,
         { text }
       );
       return response.data;

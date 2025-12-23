@@ -1,3 +1,4 @@
+import logging
 from rest_framework import serializers
 from .models import ProjectProposal, ProposalAttachment
 from django.contrib.auth import get_user_model
@@ -10,7 +11,7 @@ class FreelancerSerializer(serializers.ModelSerializer):
         fields = ["id", "username"]
 
 class ProposalSerializer(serializers.ModelSerializer):
-    freelancer = FreelancerSerializer(read_only=True)
+    freelancer = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectProposal
@@ -26,6 +27,15 @@ class ProposalSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["freelancer", "status", "created_at"]
+
+    def get_freelancer(self, obj):
+        try:
+            if getattr(obj, 'freelancer_id', None) is None:
+                return None
+            return FreelancerSerializer(obj.freelancer).data
+        except Exception:
+            logging.exception("Error serializing freelancer for proposal %s", getattr(obj, 'id', None))
+            return None
 
     def create(self, validated_data):
         freelancer = self.context.get("freelancer")
