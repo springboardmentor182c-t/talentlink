@@ -1,371 +1,299 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { 
-  BarChart3, 
   TrendingUp, 
-  Users, 
-  FileText, 
-  Clock, 
   DollarSign, 
-  Star,
-  CheckCircle,
+  Briefcase, 
+  Star, 
+  Clock, 
+  CheckCircle, 
   AlertCircle,
+  Users,
+  Award,
   Calendar,
-  Briefcase,
-  Search
-} from "lucide-react";
-import StatsCard from "./StatsCard.jsx";
-import RecentProjects from "./RecentProjects.jsx";
-import EarningsChart from "./EarningsChart.jsx";
-import ActivityFeed from "./ActivityFeed.jsx";
-import LoadingSpinner from "../LoadingSpinner.jsx";
-import AnalyticsWidget from "./AnalyticsWidget.jsx";
-import ChartWidget from "./ChartWidget.jsx";
-import ActivityTimeline from "./ActivityTimeline.jsx";
-import PerformanceMetrics from "./PerformanceMetrics.jsx";
-import { freelancerService } from "../../services/freelancerService.js";
+  FileText
+} from 'lucide-react';
+import StatsCard from '../StatsCard.jsx';
+import BarChartPlaceholder from '../BarChartPlaceholder.jsx';
+import PieChartPlaceholder from '../PieChartPlaceholder.jsx';
+import { freelancerService } from '../../services/freelancerService.js';
 
 const FreelancerDashboardHome = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Mock API data - kept for reference but not used
+  // const mockDashboardData = {
+  //   stats: {
+  //     totalEarnings: 125000,
+  //     activeContracts: 3,
+  //     completedProjects: 24,
+  //     averageRating: 4.8,
+  //     proposalsSubmitted: 15,
+  //     profileViews: 234
+  //   },
+  //   recentProjects: [
+  //     {
+  //       id: 1,
+  //       title: "React Dashboard Development",
+  //       client: "Tech Corp",
+  //       budget: 50000,
+  //       deadline: "2024-01-15",
+  //       status: "in_progress"
+  //     },
+  //     {
+  //       id: 2,
+  //       title: "Mobile App UI Design",
+  //       client: "StartupXYZ",
+  //       budget: 30000,
+  //       deadline: "2024-01-20",
+  //       status: "completed"
+  //     }
+  //   ],
+  //   earningsData: [
+  //     { month: 'Aug', earnings: 25000 },
+  //     { month: 'Sep', earnings: 32000 },
+  //     { month: 'Oct', earnings: 28000 },
+  //     { month: 'Nov', earnings: 35000 },
+  //     { month: 'Dec', earnings: 28000 }
+  //   ],
+  //   skillsAnalytics: [
+  //     { name: 'React', value: 35, projects: 12 },
+  //     { name: 'Node.js', value: 25, projects: 8 },
+  //     { name: 'UI/UX', value: 20, projects: 6 },
+  //     { name: 'Python', value: 20, projects: 6 }
+  //   ],
+  //   upcomingDeadlines: [
+  //     {
+  //       id: 1,
+  //       project: "E-commerce Website",
+  //       deadline: "2024-01-10",
+  //       daysLeft: 3
+  //     },
+  //     {
+  //       id: 2,
+  //       project: "API Integration",
+  //       deadline: "2024-01-12",
+  //       daysLeft: 5
+  //     }
+  //   ]
+  // };
+
+  // Fetch dashboard data from API
   useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        // Call the freelancer service to get dashboard data
+        const response = await freelancerService.getDashboardData();
+        
+        if (response.success) {
+          setDashboardData(response.data);
+        } else {
+          setError(response.error || 'Failed to load dashboard data');
+        }
+      } catch (err) {
+        setError('Failed to load dashboard data');
+        console.error('Error fetching dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const data = await freelancerService.getDashboardData();
-      setDashboardData(data);
-    } catch (err) {
-      const errorMessage = err.message || 'Failed to load dashboard data';
-      setError(errorMessage);
-      console.error("Error fetching dashboard data:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner />
+      <div className="p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Dashboard</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={fetchDashboardData}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Retry
-          </button>
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <p className="text-red-800">{error}</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  const stats = dashboardData?.stats || {
-    totalEarnings: 2450,
-    activeProjects: 3,
-    completedProjects: 28,
-    proposalsSent: 15,
-    clientRating: 4.9,
-    totalHours: 156,
-    pendingPayments: 850,
-    upcomingDeadlines: 2
-  };
-
-  const recentProjects = dashboardData?.recentProjects || [
-    {
-      id: 1,
-      title: "React Dashboard Development",
-      client: "Tech Corp",
-      status: "in_progress",
-      budget: "$1,200",
-      deadline: "2024-01-15",
-      progress: 75
-    },
-    {
-      id: 2,
-      title: "Mobile App UI Design",
-      client: "StartupXYZ",
-      status: "completed",
-      budget: "$800",
-      deadline: "2024-01-10",
-      progress: 100
-    },
-    {
-      id: 3,
-      title: "API Integration Project",
-      client: "DevStudio",
-      status: "pending",
-      budget: "$1,500",
-      deadline: "2024-01-20",
-      progress: 25
-    }
-  ];
-
-  const StatCard = ({ title, value, icon: Icon, color = "blue", prefix = "", suffix = "", trend = null }) => {
-    const colorClasses = {
-      blue: "bg-blue-100 text-blue-600",
-      green: "bg-green-100 text-green-600",
-      yellow: "bg-yellow-100 text-yellow-600",
-      red: "bg-red-100 text-red-600",
-      indigo: "bg-indigo-100 text-indigo-600",
-      purple: "bg-purple-100 text-purple-600"
-    };
-
-    return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-600">{title}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">
-              {prefix}{value}{suffix}
-            </p>
-            {trend && (
-              <p className={`text-sm mt-1 ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {trend > 0 ? '+' : ''}{trend}% from last month
-              </p>
-            )}
-          </div>
-          <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-            <Icon className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const activities = dashboardData?.recentActivities || [
-    {
-      id: 1,
-      type: "project_completed",
-      title: "Project completed successfully",
-      description: "React Dashboard Development finished and approved by client",
-      timestamp: "2 hours ago",
-      icon: CheckCircle,
-      color: "text-green-600"
-    },
-    {
-      id: 2,
-      type: "payment_received",
-      title: "Payment received",
-      description: "$1,200 for Mobile App UI Design project",
-      timestamp: "1 day ago",
-      icon: DollarSign,
-      color: "text-blue-600"
-    },
-    {
-      id: 3,
-      type: "new_proposal",
-      title: "New proposal submitted",
-      description: "Submitted proposal for API Integration Project",
-      timestamp: "2 days ago",
-      icon: FileText,
-      color: "text-purple-600"
-    }
-  ];
+  const { stats, recentProjects, earningsData, skillsAnalytics, upcomingDeadlines } = dashboardData;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Freelancer Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage your projects and track your progress</p>
-        </div>
-        <div className="flex gap-3">
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
-            <Briefcase className="w-4 h-4" />
-            Find Work
-          </button>
-          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Submit Proposal
-          </button>
-        </div>
+      {/* Welcome Header */}
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-6 text-white">
+        <h1 className="text-2xl font-bold mb-2">Welcome back, {stats.name || 'Freelancer'}!</h1>
+        <p className="text-indigo-100">Here's what's happening with your freelance business today.</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Earnings"
-          value={stats.totalEarnings.toLocaleString()}
-          prefix="$"
-          icon={DollarSign}
-          color="green"
-          trend={12}
-        />
-        <StatCard
-          title="Active Projects"
-          value={stats.activeProjects}
-          icon={Briefcase}
-          color="yellow"
-        />
-        <StatCard
-          title="Client Rating"
-          value={stats.clientRating}
-          suffix="/5.0"
-          icon={Star}
-          color="blue"
-        />
-        <StatCard
-          title="Total Hours"
-          value={stats.totalHours}
-          icon={Clock}
-          color="purple"
-        />
-      </div>
-
-      {/* Additional Stats */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Monthly Revenue"
-          value={Math.round(stats.totalEarnings * 1.2)}
-          prefix="$"
+        <StatsCard
+          title="Total Earnings"
+          value={`₹${stats.totalEarnings.toLocaleString()}`}
           icon={DollarSign}
+          trend={{ value: 12.5, isPositive: true }}
           color="green"
-          trend={12}
         />
-        <StatCard
-          title="Job Success Rate"
-          value={92}
-          suffix="%"
-          icon={CheckCircle}
+        <StatsCard
+          title="Active Contracts"
+          value={stats.activeContracts}
+          icon={Briefcase}
+          trend={{ value: 2, isPositive: true }}
           color="blue"
-          trend={3}
         />
-        <StatCard
-          title="Response Time"
-          value={2.4}
-          suffix="h"
-          icon={Clock}
+        <StatsCard
+          title="Completed Projects"
+          value={stats.completedProjects}
+          icon={CheckCircle}
+          trend={{ value: 8, isPositive: true }}
           color="purple"
         />
-        <StatCard
-          title="Repeat Clients"
-          value={18}
-          icon={Users}
-          color="indigo"
-          trend={5}
+        <StatsCard
+          title="Average Rating"
+          value={stats.averageRating}
+          icon={Star}
+          trend={{ value: 0.2, isPositive: true }}
+          color="yellow"
+          suffix="/5.0"
         />
       </div>
 
-      {/* Performance Metrics */}
-      <PerformanceMetrics />
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Projects */}
-        <div className="lg:col-span-2">
-          <RecentProjects 
-            projects={recentProjects}
-            title="Recent Projects"
-            onViewAll={() => console.log("View all projects")}
-          />
-        </div>
-
-        {/* Activity Feed */}
-        <div className="space-y-6">
-          <ActivityFeed 
-            activities={activities}
-            title="Recent Activity"
-            onViewAll={() => console.log("View all activities")}
-          />
-        </div>
-      </div>
-
-      {/* Charts and Analytics */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartWidget
-          title="Project Applications"
-          data={[
-            { label: "Jan", value: 15 },
-            { label: "Feb", value: 22 },
-            { label: "Mar", value: 18 },
-            { label: "Apr", value: 28 },
-            { label: "May", value: 32 },
-            { label: "Jun", value: 25 }
-          ]}
-          color="indigo"
-        />
-
-        <ChartWidget
-          title="Client Satisfaction"
-          data={[
-            { label: "5★", value: 45 },
-            { label: "4★", value: 32 },
-            { label: "3★", value: 15 },
-            { label: "2★", value: 6 },
-            { label: "1★", value: 2 }
-          ]}
-          color="green"
-        />
-      </div>
-
-      {/* Activity Timeline */}
-      <ActivityTimeline />
-
-      {/* Earnings Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <EarningsChart 
-          title="Monthly Earnings"
-          data={dashboardData?.earningsData || [
-            { month: "Jan", earnings: 1200 },
-            { month: "Feb", earnings: 1800 },
-            { month: "Mar", earnings: 2200 },
-            { month: "Apr", earnings: 1900 },
-            { month: "May", earnings: 2400 },
-            { month: "Jun", earnings: 2100 }
-          ]}
-        />
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="space-y-3">
-            <button className="w-full flex items-center gap-3 p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors text-left">
-              <Search className="w-5 h-5 text-indigo-600" />
-              <div>
-                <p className="font-medium text-gray-900">Find New Work</p>
-                <p className="text-sm text-gray-600">Browse available projects</p>
-              </div>
-            </button>
-            
-            <button className="w-full flex items-center gap-3 p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left">
-              <FileText className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="font-medium text-gray-900">Submit Proposal</p>
-                <p className="text-sm text-gray-600">Apply for a project</p>
-              </div>
-            </button>
-            
-            <button className="w-full flex items-center gap-3 p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-left">
-              <Clock className="w-5 h-5 text-purple-600" />
-              <div>
-                <p className="font-medium text-gray-900">Track Time</p>
-                <p className="text-sm text-gray-600">Log working hours</p>
-              </div>
-            </button>
-            
-            <button className="w-full flex items-center gap-3 p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-left">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
-              <div>
-                <p className="font-medium text-gray-900">View Analytics</p>
-                <p className="text-sm text-gray-600">Performance insights</p>
-              </div>
-            </button>
+        {/* Earnings Chart */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Monthly Earnings</h3>
+            <TrendingUp className="w-5 h-5 text-green-500" />
           </div>
+          <BarChartPlaceholder data={[
+            { position: 'Aug', count: 25000 },
+            { position: 'Sep', count: 32000 },
+            { position: 'Oct', count: 28000 },
+            { position: 'Nov', count: 35000 },
+            { position: 'Dec', count: 28000 }
+          ]} />
+          <p className="text-sm text-gray-500 mt-2">Earnings trend over last 5 months</p>
+        </div>
+
+        {/* Skills Analytics */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Skills Distribution</h3>
+            <Award className="w-5 h-5 text-purple-500" />
+          </div>
+          <PieChartPlaceholder data={{
+            React: 35,
+            'Node.js': 25,
+            'UI/UX': 20,
+            Python: 20
+          }} />
+          <p className="text-sm text-gray-500 mt-2">Projects by skill category</p>
+        </div>
+      </div>
+
+      {/* Recent Projects & Upcoming Deadlines */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Projects */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Projects</h3>
+            <Briefcase className="w-5 h-5 text-blue-500" />
+          </div>
+          <div className="space-y-3">
+            {recentProjects.map((project) => (
+              <div key={project.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-900">{project.title}</p>
+                  <p className="text-sm text-gray-500">{project.client}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-gray-900">₹{project.budget.toLocaleString()}</p>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    project.status === 'completed' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {project.status.replace('_', ' ')}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button className="w-full mt-4 text-center text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+            View All Projects →
+          </button>
+        </div>
+
+        {/* Upcoming Deadlines */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Upcoming Deadlines</h3>
+            <Calendar className="w-5 h-5 text-orange-500" />
+          </div>
+          <div className="space-y-3">
+            {upcomingDeadlines.map((deadline) => (
+              <div key={deadline.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+                <div>
+                  <p className="font-medium text-gray-900">{deadline.project}</p>
+                  <p className="text-sm text-gray-500">Due: {deadline.deadline}</p>
+                </div>
+                <div className="text-right">
+                  <span className={`text-sm font-medium ${
+                    deadline.daysLeft <= 3 ? 'text-red-600' : 'text-orange-600'
+                  }`}>
+                    {deadline.daysLeft} days left
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button className="w-full mt-4 text-center text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+            View Calendar →
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <button className="flex flex-col items-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
+            <Briefcase className="w-6 h-6 text-indigo-600 mb-2" />
+            <span className="text-sm font-medium text-indigo-900">Find Work</span>
+          </button>
+          <button className="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+            <FileText className="w-6 h-6 text-green-600 mb-2" />
+            <span className="text-sm font-medium text-green-900">Submit Proposal</span>
+          </button>
+          <button className="flex flex-col items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+            <Users className="w-6 h-6 text-purple-600 mb-2" />
+            <span className="text-sm font-medium text-purple-900">Network</span>
+          </button>
+          <button className="flex flex-col items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+            <Award className="w-6 h-6 text-orange-600 mb-2" />
+            <span className="text-sm font-medium text-orange-900">Update Skills</span>
+          </button>
         </div>
       </div>
     </div>

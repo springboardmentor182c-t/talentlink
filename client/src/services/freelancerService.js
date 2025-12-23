@@ -1,546 +1,838 @@
-import { API_BASE_URL, getAuthHeaders, handleResponse } from './api.js';
+import api from './api.js';
+import { freelancerAPI } from './api.js';
 
-const DEMO_FREELANCER_DATA = {
-  dashboard: {
-    stats: {
-      totalEarnings: 2450,
-      activeProjects: 3,
-      completedProjects: 28,
-      proposalsSent: 15,
-      clientRating: 4.9,
-      totalHours: 156,
-      pendingPayments: 850,
-      upcomingDeadlines: 2
-    },
-    recentProjects: [
-      {
-        id: 1,
-        title: "React Dashboard Development",
-        client: "Tech Corp",
-        status: "in_progress",
-        budget: "$1,200",
-        deadline: "2024-01-15",
-        progress: 75
-      },
-      {
-        id: 2,
-        title: "Mobile App UI Design",
-        client: "StartupXYZ",
-        status: "completed",
-        budget: "$800",
-        deadline: "2024-01-10",
-        progress: 100
-      },
-      {
-        id: 3,
-        title: "API Integration Project",
-        client: "DevStudio",
-        status: "pending",
-        budget: "$1,500",
-        deadline: "2024-01-20",
-        progress: 25
-      }
-    ],
-    recentActivities: [
-      {
-        id: 1,
-        type: "project_completed",
-        title: "Project completed successfully",
-        description: "React Dashboard Development finished and approved by client",
-        timestamp: "2 hours ago",
-        icon: "CheckCircle",
-        color: "text-green-600"
-      },
-      {
-        id: 2,
-        type: "payment_received",
-        title: "Payment received",
-        description: "$1,200 for Mobile App UI Design project",
-        timestamp: "1 day ago",
-        icon: "DollarSign",
-        color: "text-blue-600"
-      },
-      {
-        id: 3,
-        type: "new_proposal",
-        title: "New proposal submitted",
-        description: "Submitted proposal for API Integration Project",
-        timestamp: "2 days ago",
-        icon: "FileText",
-        color: "text-purple-600"
-      }
-    ],
-    earningsData: [
-      { month: "Jan", earnings: 1200 },
-      { month: "Feb", earnings: 1800 },
-      { month: "Mar", earnings: 2200 },
-      { month: "Apr", earnings: 1900 },
-      { month: "May", earnings: 2400 },
-      { month: "Jun", earnings: 2100 }
-    ]
-  }
+const FREELANCER_ENDPOINTS = {
+  DASHBOARD: '/freelancer/dashboard',
+  PROFILE: '/freelancer/profile',
+  PROPOSALS: '/freelancer/proposals',
+  CONTRACTS: '/freelancer/contracts',
+  EARNINGS: '/freelancer/earnings',
+  ANALYTICS: '/freelancer/analytics',
+  REVIEWS: '/freelancer/reviews',
+  PROJECTS: '/freelancer/projects',
+  SKILLS: '/freelancer/skills',
+  PORTFOLIO: '/freelancer/portfolio',
+  MESSAGES: '/freelancer/messages',
+  NOTIFICATIONS: '/freelancer/notifications'
 };
 
-const DEMO_FREELANCER_PROFILE = {
-  id: 1,
-  name: "John Doe",
-  email: "john@example.com",
-  role: "freelancer",
-  profile: {
-    title: "Full Stack Developer",
-    description: "Experienced full-stack developer with expertise in React, Node.js, and MongoDB.",
-    skills: ["React", "Node.js", "MongoDB", "JavaScript", "TypeScript", "Python"],
-    experience: "5+ years",
-    hourlyRate: 45,
-    availability: "Available",
-    location: "San Francisco, CA",
-    languages: ["English", "Spanish"],
-    education: "Bachelor's in Computer Science",
-    certifications: ["AWS Certified Developer", "React Developer Certified"]
-  },
-  stats: {
-    totalProjects: 45,
-    completedProjects: 38,
-    clientRating: 4.9,
-    totalEarnings: 85000,
-    responseTime: "2 hours",
-    onTimeDelivery: 98
-  },
-  portfolio: [
+// Configuration to switch between mock and real API
+const USE_MOCK_DATA = false; // Set to false to use real API calls
+
+// Mock data functions
+const mockDashboardData = async () => {
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return {
+    success: true,
+    data: {
+      stats: {
+        totalEarnings: 125000,
+        activeContracts: 3,
+        completedProjects: 24,
+        averageRating: 4.8,
+        proposalsSubmitted: 15,
+        profileViews: 234
+      },
+      recentProjects: [
+        {
+          id: 1,
+          title: "React Dashboard Development",
+          client: "Tech Corp",
+          budget: 50000,
+          deadline: "2024-01-15",
+          status: "in_progress"
+        },
+        {
+          id: 2,
+          title: "Mobile App UI Design",
+          client: "StartupXYZ",
+          budget: 30000,
+          deadline: "2024-01-20",
+          status: "completed"
+        }
+      ],
+      earningsData: [
+        { month: 'Aug', earnings: 25000 },
+        { month: 'Sep', earnings: 32000 },
+        { month: 'Oct', earnings: 28000 },
+        { month: 'Nov', earnings: 35000 },
+        { month: 'Dec', earnings: 28000 }
+      ],
+      skillsAnalytics: {
+        'React': 35,
+        'Node.js': 25,
+        'UI/UX': 20,
+        'Python': 20
+      },
+      upcomingDeadlines: [
+        {
+          id: 1,
+          project: "E-commerce Website",
+          deadline: "2024-01-10",
+          daysLeft: 3
+        },
+        {
+          id: 2,
+          project: "API Integration",
+          deadline: "2024-01-12",
+          daysLeft: 5
+        }
+      ]
+    }
+  };
+};
+
+const mockMyProposalsData = async () => {
+  await new Promise(resolve => setTimeout(resolve, 900));
+  return [
     {
       id: 1,
-      title: "E-commerce Platform",
-      description: "Full-stack e-commerce solution built with React and Node.js",
-      technologies: ["React", "Node.js", "MongoDB", "Stripe"],
-      link: "https://example.com/project1"
+      jobTitle: "React Dashboard Development",
+      clientName: "Tech Corp",
+      bidAmount: 45000,
+      status: "pending",
+      submittedDate: "2 days ago",
+      coverLetter: "I have extensive experience in React development and can deliver a high-quality dashboard with advanced data visualization features. My approach includes using modern React patterns, TypeScript for type safety, and implementing responsive design principles.",
+      estimatedDuration: "3 weeks",
+      attachments: 2,
+      clientMessage: null
     },
     {
       id: 2,
-      title: "Task Management App",
-      description: "Collaborative task management application with real-time updates",
-      technologies: ["React", "Socket.io", "Express", "PostgreSQL"],
-      link: "https://example.com/project2"
+      jobTitle: "Mobile App UI Design",
+      clientName: "StartupXYZ",
+      bidAmount: 28000,
+      status: "accepted",
+      submittedDate: "1 week ago",
+      coverLetter: "I can create a modern and user-friendly design for your mobile app. I specialize in mobile-first design principles and have experience with both iOS and Android platforms.",
+      estimatedDuration: "2 weeks",
+      attachments: 3,
+      clientMessage: "Great proposal! Let's discuss the project details in our next meeting."
+    },
+    {
+      id: 3,
+      jobTitle: "API Integration Project",
+      clientName: "Dev Agency",
+      bidAmount: 35000,
+      status: "rejected",
+      submittedDate: "5 days ago",
+      coverLetter: "I have strong experience with API integrations and can help you connect your systems efficiently. I'm proficient in RESTful APIs, GraphQL, and various authentication methods.",
+      estimatedDuration: "1 week",
+      attachments: 1,
+      clientMessage: null
+    },
+    {
+      id: 4,
+      jobTitle: "E-commerce Website",
+      clientName: "Retail Business",
+      bidAmount: 65000,
+      status: "submitted",
+      submittedDate: "1 day ago",
+      coverLetter: "I can build a complete e-commerce solution with modern technologies including React, Node.js, and MongoDB. The solution will include payment integration, inventory management, and admin dashboard.",
+      estimatedDuration: "4 weeks",
+      attachments: 4,
+      clientMessage: null
     }
-  ]
+  ];
 };
 
-const DEMO_FREELANCER_JOBS = [
-  {
-    id: 1,
-    title: "E-commerce Website Development",
-    description: "Build a modern e-commerce platform with React and Node.js including payment integration and admin dashboard.",
-    status: "active",
-    budget: 5000,
-    deadline: "Dec 25, 2024",
-    hoursLogged: 45,
-    milestoneProgress: 65,
-    clientName: "TechCorp Solutions",
-    clientRating: 4.8
-  },
-  {
-    id: 2,
-    title: "Mobile App UI/UX Design",
-    description: "Design user interface and experience for a fitness tracking mobile application.",
-    status: "in_progress",
-    budget: 2500,
-    deadline: "Jan 15, 2025",
-    hoursLogged: 28,
-    milestoneProgress: 45,
-    clientName: "FitLife Inc.",
-    clientRating: 4.9
-  },
-  {
-    id: 3,
-    title: "API Integration Project",
-    description: "Integrate third-party payment APIs and social media APIs into existing web application.",
-    status: "completed",
-    budget: 1800,
-    deadline: "Nov 30, 2024",
-    hoursLogged: 32,
-    milestoneProgress: 100,
-    clientName: "StartupXYZ",
-    clientRating: 5.0
-  },
-  {
-    id: 4,
-    title: "Database Optimization",
-    description: "Optimize database queries and improve application performance.",
-    status: "pending",
-    budget: 1200,
-    deadline: "Jan 5, 2025",
-    hoursLogged: 0,
-    milestoneProgress: 0,
-    clientName: "DataFlow Systems",
-    clientRating: 4.7
-  }
-];
+const mockMyContractsData = async () => {
+  await new Promise(resolve => setTimeout(resolve, 800));
+  return [
+    {
+      id: 1,
+      title: "React Dashboard Development",
+      clientName: "Tech Corp",
+      totalValue: 50000,
+      paidAmount: 15000,
+      status: "active",
+      startDate: "2024-01-01",
+      endDate: "2024-01-31",
+      description: "Development of a comprehensive React-based dashboard for data visualization and analytics.",
+      milestoneProgress: 30,
+      created_at: "2024-01-01T00:00:00Z"
+    },
+    {
+      id: 2,
+      title: "API Integration Project",
+      clientName: "StartupXYZ",
+      totalValue: 25000,
+      paidAmount: 25000,
+      status: "completed",
+      startDate: "2023-12-15",
+      endDate: "2023-12-30",
+      description: "Integration of third-party APIs for payment processing and data synchronization.",
+      milestoneProgress: 100,
+      created_at: "2023-12-15T00:00:00Z"
+    },
+    {
+      id: 3,
+      title: "Mobile App UI Design",
+      clientName: "Design Studio",
+      totalValue: 15000,
+      paidAmount: 5000,
+      status: "pending",
+      startDate: "2024-01-20",
+      endDate: "2024-02-15",
+      description: "UI/UX design for a mobile application with modern and intuitive interface.",
+      milestoneProgress: 0,
+      created_at: "2024-01-10T00:00:00Z"
+    },
+    {
+      id: 4,
+      title: "E-commerce Platform",
+      clientName: "Retail Corp",
+      totalValue: 75000,
+      paidAmount: 25000,
+      status: "disputed",
+      startDate: "2023-11-01",
+      endDate: "2024-01-01",
+      description: "Full-stack e-commerce platform development with payment integration.",
+      milestoneProgress: 45,
+      created_at: "2023-11-01T00:00:00Z"
+    }
+  ];
+};
 
-const DEMO_FREELANCER_PROPOSALS = [
-  {
-    id: 1,
-    jobTitle: "React Native Mobile App Development",
-    clientName: "MobileFirst Solutions",
-    status: "pending",
-    submittedDate: "Dec 10, 2024",
-    bidAmount: 3500,
-    estimatedDuration: "4 weeks",
-    coverLetter: "I have extensive experience in React Native development and have successfully delivered similar projects. My approach includes thorough testing and clean code practices.",
-    attachments: 3,
-    clientMessage: null
-  },
-  {
-    id: 2,
-    jobTitle: "WordPress Website Redesign",
-    clientName: "Creative Agency",
-    status: "accepted",
-    submittedDate: "Dec 8, 2024",
-    bidAmount: 1800,
-    estimatedDuration: "2 weeks",
-    coverLetter: "I can redesign your WordPress website with modern UI/UX principles and optimize it for performance and SEO.",
-    attachments: 2,
-    clientMessage: "Great proposal! Let's discuss the project timeline and get started."
-  },
-  {
-    id: 3,
-    jobTitle: "Python Data Analysis Script",
-    clientName: "Analytics Pro",
-    status: "rejected",
-    submittedDate: "Dec 5, 2024",
-    bidAmount: 800,
-    estimatedDuration: "1 week",
-    coverLetter: "I can create a comprehensive data analysis script using Python with pandas, numpy, and matplotlib for visualization.",
-    attachments: 1,
-    clientMessage: null
-  },
-  {
-    id: 4,
-    jobTitle: "Vue.js Frontend Development",
-    clientName: "Tech Innovations",
-    status: "submitted",
-    submittedDate: "Dec 12, 2024",
-    bidAmount: 2200,
-    estimatedDuration: "3 weeks",
-    coverLetter: "Experienced Vue.js developer ready to build responsive and performant frontend applications with modern best practices.",
-    attachments: 4,
-    clientMessage: null
-  }
-];
+const mockMyJobsData = async () => {
+  await new Promise(resolve => setTimeout(resolve, 700));
+  return [
+    {
+      id: 1,
+      title: "React Dashboard Development",
+      description: "Building a comprehensive analytics dashboard with React, TypeScript, and modern data visualization libraries.",
+      status: "in_progress",
+      budget: 50000,
+      deadline: "Jan 31, 2024",
+      hoursLogged: 45,
+      milestoneProgress: 60,
+      earnings: 30000,
+      clientName: "Tech Corp"
+    },
+    {
+      id: 2,
+      title: "Mobile App UI Design",
+      description: "Creating modern and intuitive UI/UX design for a fitness tracking mobile application.",
+      status: "active",
+      budget: 25000,
+      deadline: "Jan 25, 2024",
+      hoursLogged: 20,
+      milestoneProgress: 40,
+      earnings: 10000,
+      clientName: "StartupXYZ"
+    },
+    {
+      id: 3,
+      title: "API Integration Project",
+      description: "Integrating third-party payment and data APIs into existing web application.",
+      status: "pending",
+      budget: 15000,
+      deadline: "Feb 05, 2024",
+      hoursLogged: 0,
+      milestoneProgress: 0,
+      earnings: 0,
+      clientName: "Dev Agency"
+    },
+    {
+      id: 4,
+      title: "E-commerce Website",
+      description: "Complete e-commerce platform development with shopping cart, payment processing, and admin panel.",
+      status: "completed",
+      budget: 80000,
+      deadline: "Dec 15, 2023",
+      hoursLogged: 120,
+      milestoneProgress: 100,
+      earnings: 80000,
+      clientName: "Retail Business"
+    }
+  ];
+};
 
-const DEMO_FREELANCER_CONTRACTS = [
-  {
-    id: 1,
-    title: "Full-Stack Web Application Development",
-    clientName: "Enterprise Solutions Ltd.",
-    status: "active",
-    startDate: "Nov 1, 2024",
-    endDate: "Jan 31, 2025",
-    totalValue: 15000,
-    paidAmount: 9000,
-    milestoneProgress: 60,
-    description: "Develop a comprehensive full-stack web application with user authentication, database integration, and admin dashboard.",
-    clientMessage: null
-  },
-  {
-    id: 2,
-    title: "UI/UX Design for Mobile App",
-    clientName: "Design Studio Pro",
-    status: "active",
-    startDate: "Dec 1, 2024",
-    endDate: "Feb 15, 2025",
-    totalValue: 4500,
-    paidAmount: 2250,
-    milestoneProgress: 50,
-    description: "Create complete UI/UX design for a mobile application including wireframes, mockups, and interactive prototypes.",
-    clientMessage: null
-  },
-  {
-    id: 3,
-    title: "API Development and Integration",
-    clientName: "Tech Innovations Inc.",
-    status: "completed",
-    startDate: "Oct 15, 2024",
-    endDate: "Nov 30, 2024",
-    totalValue: 8000,
-    paidAmount: 8000,
-    milestoneProgress: 100,
-    description: "Develop and integrate RESTful APIs for e-commerce platform including payment processing and inventory management.",
-    clientMessage: "Excellent work! Looking forward to working with you again."
-  },
-  {
-    id: 4,
-    title: "Database Migration Project",
-    clientName: "Data Systems Corp.",
-    status: "disputed",
-    startDate: "Sep 1, 2024",
-    endDate: "Oct 15, 2024",
-    totalValue: 6000,
-    paidAmount: 3000,
-    milestoneProgress: 75,
-    description: "Migrate legacy database to modern cloud-based solution with data validation and performance optimization.",
-    clientMessage: null
-  }
-];
-
+// Main freelancer service
 export const freelancerService = {
-  // Dashboard Data
-  getDashboardData: async () => {
+  // Dashboard API calls
+  async getDashboardData() {
     try {
-      const token = localStorage.getItem('token');
-      
-      // Demo mode check
-      if (token && token.includes('demo-freelancer-token')) {
-        console.log('FreelancerService: Returning demo dashboard data');
-        return DEMO_FREELANCER_DATA.dashboard;
+      if (USE_MOCK_DATA) {
+        return await mockDashboardData();
       }
-
-      const response = await fetch(`${API_BASE_URL}/freelancer/dashboard/`, {
-        headers: getAuthHeaders()
-      });
-      return handleResponse(response);
+      
+      // Real API call
+          const apiResponse = await freelancerAPI.getDashboardData();
+          
+          // Transform API response to match expected format
+          return {
+            success: true,
+            data: {
+              stats: {
+                totalEarnings: apiResponse.stats.totalEarnings || 0,
+                activeContracts: apiResponse.stats.activeContracts || 0,
+                completedProjects: apiResponse.stats.completedContracts || 0,
+                averageRating: 4.5, // Default rating since API doesn't provide it
+                proposalsSubmitted: apiResponse.stats.totalProposals || 0,
+                profileViews: 0, // Not available in current API
+                name: apiResponse.profile?.title || 'Freelancer'
+              },
+              recentProjects: apiResponse.recentContracts?.map(contract => ({
+                id: contract.id,
+                title: contract.title,
+                client: 'Client', // Not available in current API
+                budget: contract.total_amount,
+                deadline: contract.created_at,
+                status: contract.status
+              })) || [],
+              earningsData: apiResponse.monthlyEarnings?.map(earning => ({
+                month: earning.month,
+                earnings: earning.total
+              })) || [],
+              skillsAnalytics: apiResponse.profile?.skills ? 
+                apiResponse.profile.skills.split(',').reduce((acc, skill, index) => {
+                  acc[skill.trim()] = Math.floor(100 / (index + 1));
+                  return acc;
+                }, {}) : {},
+              upcomingDeadlines: [] // Not available in current API
+            }
+          };
     } catch (error) {
-      console.error('Error fetching freelancer dashboard data:', error);
-      throw error;
+      console.error('Error fetching freelancer dashboard:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch dashboard data'
+      };
     }
   },
 
-  // Profile Data
-  getProfile: async () => {
+  // Profile API calls
+  async getProfile() {
     try {
-      const token = localStorage.getItem('token');
-      
-      if (token && token.includes('demo-freelancer-token')) {
-        console.log('FreelancerService: Returning demo profile data');
-        return DEMO_FREELANCER_PROFILE;
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        return {
+          success: true,
+          data: {
+            id: 1,
+            name: "John Doe",
+            email: "john@example.com",
+            title: "Full Stack Developer",
+            bio: "Experienced developer with 5+ years in React and Node.js",
+            hourlyRate: 2500,
+            location: "Mumbai, India",
+            skills: ["React", "Node.js", "MongoDB", "Express.js", "JavaScript"],
+            experience: "5+ years",
+            rating: 4.8,
+            totalProjects: 24,
+            languages: ["English", "Hindi"],
+            availability: "Available",
+            portfolioItems: [
+              {
+                id: 1,
+                title: "E-commerce Platform",
+                description: "Full-stack e-commerce solution",
+                imageUrl: "/api/placeholder/300/200",
+                link: "https://example.com"
+              }
+            ]
+          }
+        };
       }
-
-      const response = await fetch(`${API_BASE_URL}/freelancer/profile/`, {
-        headers: getAuthHeaders()
-      });
-      return handleResponse(response);
+      
+      // Real API call
+      return await freelancerAPI.getProfile();
     } catch (error) {
       console.error('Error fetching freelancer profile:', error);
-      throw error;
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch profile data'
+      };
     }
   },
 
-  // Update Profile
-  updateProfile: async (profileData) => {
+  async updateProfile(profileData) {
     try {
-      const token = localStorage.getItem('token');
-      
-      if (token && token.includes('demo-freelancer-token')) {
-        console.log('FreelancerService: Demo profile update');
-        return { success: true, message: "Profile updated successfully" };
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        return {
+          success: true,
+          message: "Profile updated successfully",
+          data: profileData
+        };
       }
-
-      const response = await fetch(`${API_BASE_URL}/freelancer/profile/update/`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(profileData)
-      });
-      return handleResponse(response);
+      
+      // Real API call
+      return await freelancerAPI.updateProfile(profileData);
     } catch (error) {
       console.error('Error updating freelancer profile:', error);
-      throw error;
+      return {
+        success: false,
+        error: error.message || 'Failed to update profile'
+      };
     }
   },
 
-  // Get Available Projects
-  getAvailableProjects: async (filters = {}) => {
+  // Proposals API calls
+  async getProposals() {
     try {
-      const token = localStorage.getItem('token');
-      
-      if (token && token.includes('demo-freelancer-token')) {
-        console.log('FreelancerService: Returning demo available projects');
-        return [
-          {
-            id: 1,
-            title: "React Frontend Developer (Dashboard UI)",
-            summary: "Build a responsive dashboard for project and client management using React.",
-            description: "Looking for a frontend developer to create a clean dashboard interface with reusable components, responsive layout, and integration-ready UI elements.",
-            duration: "1-3 months",
-            budget: "$40,000 – $60,000",
-            skills: ["React", "JavaScript", "CSS", "Responsive UI"],
-            tags: ["React", "JavaScript", "CSS", "Responsive UI"],
-            client: "Tech Corp",
-            posted: "2 days ago",
-            proposals: 15
-          },
-          {
-            id: 2,
-            title: "Full Stack MERN Developer",
-            summary: "Create a MERN stack project with REST APIs and admin dashboard.",
-            description: "Need a MERN developer to build secure APIs, authentication module, and an admin panel. Experience with MongoDB schema design and deployment is preferred.",
-            duration: "1-3 months",
-            budget: "$70,000 – $100,000",
-            skills: ["React", "Node.js", "MongoDB", "Express"],
-            tags: ["Node.js", "React", "MongoDB", "Express"],
-            client: "StartupXYZ",
-            posted: "1 day ago",
-            proposals: 8
-          }
-        ];
-      }
-
-      const queryString = new URLSearchParams(filters).toString();
-      const response = await fetch(`${API_BASE_URL}/freelancer/projects/available/?${queryString}`, {
-        headers: getAuthHeaders()
-      });
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Error fetching available projects:', error);
-      throw error;
-    }
-  },
-
-  // Submit Proposal
-  submitProposal: async (projectId, proposalData) => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (token && token.includes('demo-freelancer-token')) {
-        console.log('FreelancerService: Demo proposal submission');
-        return { 
-          success: true, 
-          message: "Proposal submitted successfully",
-          proposalId: Math.floor(Math.random() * 1000)
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 900));
+        return {
+          success: true,
+          data: [
+            {
+              id: 1,
+              projectTitle: "React Dashboard Development",
+              client: "Tech Corp",
+              budget: 50000,
+              proposedRate: 45000,
+              status: "pending",
+              submittedDate: "2024-01-01",
+              coverLetter: "I have extensive experience in React development..."
+            },
+            {
+              id: 2,
+              projectTitle: "Mobile App UI Design",
+              client: "StartupXYZ",
+              budget: 30000,
+              proposedRate: 28000,
+              status: "accepted",
+              submittedDate: "2023-12-28",
+              coverLetter: "I can create a modern and user-friendly design..."
+            }
+          ]
         };
       }
-
-      const response = await fetch(`${API_BASE_URL}/freelancer/projects/${projectId}/proposals/`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(proposalData)
-      });
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Error submitting proposal:', error);
-      throw error;
-    }
-  },
-
-  // Get My Proposals
-  getMyProposals: async () => {
-    try {
-      const token = localStorage.getItem('token');
       
-      if (token && token.includes('demo-freelancer-token')) {
-        console.log('FreelancerService: Returning demo proposals');
-        return DEMO_FREELANCER_PROPOSALS;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/freelancer/proposals/`, {
-        headers: getAuthHeaders()
-      });
-      return handleResponse(response);
+      // Real API call
+      return await freelancerAPI.getProposals();
     } catch (error) {
       console.error('Error fetching proposals:', error);
-      throw error;
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch proposals'
+      };
     }
   },
 
-  // Get My Jobs
-  getMyJobs: async () => {
+  async getMyProposals() {
     try {
-      const token = localStorage.getItem('token');
-      
-      if (token && token.includes('demo-freelancer-token')) {
-        console.log('FreelancerService: Returning demo jobs');
-        return DEMO_FREELANCER_JOBS;
+      if (USE_MOCK_DATA) {
+        return await mockMyProposalsData();
       }
-
-      const response = await fetch(`${API_BASE_URL}/freelancer/jobs/`, {
-        headers: getAuthHeaders()
-      });
-      return handleResponse(response);
+      
+      // Real API call
+      const response = await freelancerAPI.getProposals();
+      
+      // Handle different response formats
+      let proposals = [];
+      if (Array.isArray(response)) {
+        proposals = response;
+      } else if (response && response.data) {
+        proposals = response.data;
+      }
+      
+      // Transform API format to match frontend expectations
+      return proposals.map(proposal => ({
+        id: proposal.id,
+        jobTitle: proposal.title || `Project ${proposal.project_id}`, // Use project_id as fallback title
+        clientName: proposal.client_name || `Client ${proposal.client}`, // Map client field
+        bidAmount: proposal.bid_amount || 0, // Map backend bid_amount to frontend bidAmount
+        status: proposal.status,
+        submittedDate: proposal.created_at,
+        coverLetter: proposal.cover_letter || '',
+        completionTime: proposal.completion_time || 'Not specified',
+        estimatedDuration: proposal.completion_time || 'Not specified',
+        attachments: proposal.attachments || 0
+      }));
     } catch (error) {
-      console.error('Error fetching jobs:', error);
-      throw error;
+      console.error('Error fetching my proposals:', error);
+      throw new Error(error.message || 'Failed to fetch my proposals');
     }
   },
 
-  // Time Tracking
-  getTimeEntries: async () => {
+  async submitProposal(proposalData) {
     try {
-      const token = localStorage.getItem('token');
-      
-      if (token && token.includes('demo-freelancer-token')) {
-        console.log('FreelancerService: Returning demo time entries');
-        return [
-          {
-            id: 1,
-            projectTitle: "React Dashboard Development",
-            date: "2024-01-10",
-            hours: 6.5,
-            description: "Implemented user authentication and dashboard components",
-            hourlyRate: 45,
-            earnings: 292.50
-          },
-          {
-            id: 2,
-            projectTitle: "Mobile App UI Design",
-            date: "2024-01-09",
-            hours: 4.0,
-            description: "Designed mobile app wireframes and user flows",
-            hourlyRate: 50,
-            earnings: 200.00
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        return {
+          success: true,
+          message: "Proposal submitted successfully",
+          data: {
+            id: Date.now(),
+            ...proposalData,
+            status: "pending",
+            submittedDate: new Date().toISOString()
           }
-        ];
-      }
-
-      const response = await fetch(`${API_BASE_URL}/freelancer/time-entries/`, {
-        headers: getAuthHeaders()
-      });
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Error fetching time entries:', error);
-      throw error;
-    }
-  },
-
-  // Add Time Entry
-  addTimeEntry: async (timeEntryData) => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (token && token.includes('demo-freelancer-token')) {
-        console.log('FreelancerService: Demo time entry added');
-        return { 
-          success: true, 
-          message: "Time entry added successfully",
-          entryId: Math.floor(Math.random() * 1000)
         };
       }
-
-      const response = await fetch(`${API_BASE_URL}/freelancer/time-entries/`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(timeEntryData)
-      });
-      return handleResponse(response);
+      
+      // Real API call
+      return await freelancerAPI.createProposal(proposalData);
     } catch (error) {
-      console.error('Error adding time entry:', error);
-      throw error;
+      console.error('Error submitting proposal:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to submit proposal'
+      };
     }
   },
 
-  // Get My Contracts
-  getMyContracts: async () => {
+  // Contracts API calls
+  async getContracts() {
     try {
-      const token = localStorage.getItem('token');
-      
-      if (token && token.includes('demo-freelancer-token')) {
-        console.log('FreelancerService: Returning demo contracts');
-        return DEMO_FREELANCER_CONTRACTS;
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        return {
+          success: true,
+          data: [
+            {
+              id: 1,
+              title: "React Dashboard Development",
+              client: "Tech Corp",
+              budget: 50000,
+              status: "active",
+              startDate: "2024-01-01",
+              endDate: "2024-01-31",
+              milestones: [
+                { id: 1, title: "Design Phase", completed: true, amount: 15000 },
+                { id: 2, title: "Development Phase", completed: false, amount: 25000 },
+                { id: 3, title: "Testing Phase", completed: false, amount: 10000 }
+              ]
+            },
+            {
+              id: 2,
+              title: "API Integration",
+              client: "StartupXYZ",
+              budget: 25000,
+              status: "completed",
+              startDate: "2023-12-15",
+              endDate: "2023-12-30",
+              milestones: [
+                { id: 1, title: "Integration", completed: true, amount: 15000 },
+                { id: 2, title: "Testing", completed: true, amount: 10000 }
+              ]
+            }
+          ]
+        };
       }
-
-      const response = await fetch(`${API_BASE_URL}/freelancer/contracts/`, {
-        headers: getAuthHeaders()
-      });
-      return handleResponse(response);
+      
+      // Real API call
+      return await freelancerAPI.getContracts();
     } catch (error) {
       console.error('Error fetching contracts:', error);
-      throw error;
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch contracts'
+      };
+    }
+  },
+
+  async getMyContracts() {
+    try {
+      if (USE_MOCK_DATA) {
+        return await mockMyContractsData();
+      }
+      
+      // Real API call
+      const response = await freelancerAPI.getContracts(null, 'freelancer');
+      console.log('Contracts API response:', response); // Debug log
+      
+      // Handle different response formats
+      let contracts = [];
+      if (Array.isArray(response)) {
+        contracts = response;
+      } else if (response && response.data) {
+        contracts = response.data;
+      } else if (response && response.results) {
+        contracts = response.results;
+      } else if (response) {
+        contracts = response;
+      }
+      
+      console.log('Processed contracts array:', contracts); // Debug log
+      
+      // Ensure contracts is an array before mapping
+      if (!Array.isArray(contracts)) {
+        console.error('Contracts is not an array:', contracts);
+        return [];
+      }
+      
+      // Transform API contract format to match frontend expectations
+      return contracts.map(contract => ({
+        id: contract.id,
+        title: contract.title,
+        clientName: contract.client_name || contract.clientName || 'Client',
+        totalValue: contract.total_amount || contract.totalValue || 0,
+        paidAmount: contract.amount_paid || contract.paidAmount || 0,
+        status: contract.status,
+        startDate: contract.start_date || contract.startDate,
+        endDate: contract.end_date || contract.endDate,
+        description: contract.description || '',
+        milestoneProgress: contract.progress_percentage || 0,
+        created_at: contract.created_at,
+        // Add any other fields that the frontend expects
+        budget: contract.total_amount || 0 // Map total_amount to budget for compatibility
+      }));
+    } catch (error) {
+      console.error('Error fetching my contracts:', error);
+      throw new Error(error.message || 'Failed to fetch my contracts');
+    }
+  },
+
+  // Earnings API calls
+  async getEarnings() {
+    try {
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return {
+          success: true,
+          data: {
+            totalEarnings: 125000,
+            thisMonth: 28000,
+            lastMonth: 35000,
+            monthlyBreakdown: [
+              { month: 'Aug', earnings: 25000 },
+              { month: 'Sep', earnings: 32000 },
+              { month: 'Oct', earnings: 28000 },
+              { month: 'Nov', earnings: 35000 },
+              { month: 'Dec', earnings: 28000 }
+            ],
+            pendingPayments: 15000,
+            availableForWithdrawal: 8000
+          }
+        };
+      }
+      
+      // Real API call
+      return await freelancerAPI.getEarnings();
+    } catch (error) {
+      console.error('Error fetching earnings:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch earnings data'
+      };
+    }
+  },
+
+  // Analytics API calls
+  async getAnalytics() {
+    try {
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        return {
+          success: true,
+          data: {
+            profileViews: {
+              total: 234,
+              thisMonth: 45,
+              lastMonth: 38
+            },
+            proposalStats: {
+              submitted: 15,
+              accepted: 8,
+              rejected: 4,
+              pending: 3,
+              successRate: 53.3
+            },
+            clientRatings: {
+              average: 4.8,
+              totalReviews: 24,
+              fiveStar: 18,
+              fourStar: 5,
+              threeStar: 1,
+              twoStar: 0,
+              oneStar: 0
+            },
+            skillsPerformance: [
+              { skill: 'React', projects: 12, rating: 4.9, earnings: 65000 },
+              { skill: 'Node.js', projects: 8, rating: 4.7, earnings: 45000 },
+              { skill: 'UI/UX', projects: 6, rating: 4.8, earnings: 30000 },
+              { skill: 'Python', projects: 6, rating: 4.6, earnings: 28000 }
+            ]
+          }
+        };
+      }
+      
+      // Real API call
+      return await freelancerAPI.getAnalytics();
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch analytics data'
+      };
+    }
+  },
+
+  // Skills API calls
+  async getSkills() {
+    try {
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        return {
+          success: true,
+          data: {
+            technicalSkills: [
+              { name: 'React', level: 'Expert', years: 4, certified: true },
+              { name: 'Node.js', level: 'Expert', years: 3, certified: false },
+              { name: 'JavaScript', level: 'Expert', years: 5, certified: true },
+              { name: 'MongoDB', level: 'Intermediate', years: 2, certified: false }
+            ],
+            softSkills: [
+              'Problem Solving',
+              'Communication',
+              'Team Leadership',
+              'Project Management'
+            ],
+            languages: [
+              { language: 'English', proficiency: 'Native' },
+              { language: 'Hindi', proficiency: 'Fluent' }
+            ]
+          }
+        };
+      }
+      
+      // Real API call
+      return await freelancerAPI.getSkills();
+    } catch (error) {
+      console.error('Error fetching skills:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch skills data'
+      };
+    }
+  },
+
+  async getMyJobs() {
+    try {
+      if (USE_MOCK_DATA) {
+        return await mockMyJobsData();
+      }
+      
+      // Real API call
+      const response = await freelancerAPI.getJobs();
+      
+      // Handle different response formats
+      let jobs = [];
+      if (Array.isArray(response)) {
+        jobs = response;
+      } else if (response && response.data) {
+        jobs = response.data;
+      }
+      
+      return jobs;
+    } catch (error) {
+      console.error('Error fetching my jobs:', error);
+      throw new Error(error.message || 'Failed to fetch my jobs');
+    }
+  },
+
+  // Portfolio API calls
+  async getPortfolio() {
+    try {
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        return {
+          success: true,
+          data: {
+            items: [
+              {
+                id: 1,
+                title: "E-commerce Platform",
+                description: "Full-stack e-commerce solution with React and Node.js",
+                imageUrl: "/api/placeholder/400/300",
+                projectUrl: "https://example-ecommerce.com",
+                technologies: ["React", "Node.js", "MongoDB", "Stripe"],
+                completionDate: "2023-11-15",
+                clientRating: 5.0
+              },
+              {
+                id: 2,
+                title: "Task Management App",
+                description: "Collaborative task management application",
+                imageUrl: "/api/placeholder/400/300",
+                projectUrl: "https://example-tasks.com",
+                technologies: ["Vue.js", "Firebase", "Tailwind CSS"],
+                completionDate: "2023-09-20",
+                clientRating: 4.8
+              }
+            ]
+          }
+        };
+      }
+      
+      // Real API call
+      return await freelancerAPI.getPortfolio();
+    } catch (error) {
+      console.error('Error fetching portfolio:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch portfolio data'
+      };
+    }
+  },
+
+  // Additional API methods for job management
+  async updateJobStatus(jobId, status) {
+    try {
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        return {
+          success: true,
+          message: "Job status updated successfully"
+        };
+      }
+      
+      // Real API call
+      return await freelancerAPI.updateJobStatus(jobId, status);
+    } catch (error) {
+      console.error('Error updating job status:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to update job status'
+      };
+    }
+  },
+
+  async submitWork(jobId, workData) {
+    try {
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return {
+          success: true,
+          message: "Work submitted successfully"
+        };
+      }
+      
+      // Real API call
+      return await freelancerAPI.submitWork(jobId, workData);
+    } catch (error) {
+      console.error('Error submitting work:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to submit work'
+      };
+    }
+  },
+
+  async requestPayment(jobId) {
+    try {
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        return {
+          success: true,
+          message: "Payment request submitted successfully"
+        };
+      }
+      
+      // Real API call
+      return await freelancerAPI.requestPayment(jobId);
+    } catch (error) {
+      console.error('Error requesting payment:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to request payment'
+      };
     }
   }
 };
+
+export default freelancerService;

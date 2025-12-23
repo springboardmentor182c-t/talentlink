@@ -28,10 +28,36 @@ class ContractViewSet(viewsets.ModelViewSet):
         # For anonymous users or testing, return all contracts
         if not user.is_authenticated:
             queryset = Contract.objects.all()
+            
+            # For anonymous users, only apply role filter if we have test data
+            role = self.request.query_params.get('role')
+            if role == 'freelancer':
+                # For testing, return contracts where freelancer is the admin user
+                from django.contrib.auth.models import User
+                admin_user = User.objects.filter(username='admin').first()
+                if admin_user:
+                    queryset = queryset.filter(freelancer=admin_user)
+                else:
+                    queryset = Contract.objects.none()  # Return empty queryset if no test user
+            elif role == 'client':
+                # For testing, return contracts where client is the admin user
+                from django.contrib.auth.models import User
+                admin_user = User.objects.filter(username='admin').first()
+                if admin_user:
+                    queryset = queryset.filter(client=admin_user)
+                else:
+                    queryset = Contract.objects.none()
         else:
             queryset = Contract.objects.filter(
                 models.Q(freelancer=user) | models.Q(client=user)
             ).distinct()
+            
+            # Filter by user role for authenticated users
+            role = self.request.query_params.get('role')
+            if role == 'freelancer':
+                queryset = queryset.filter(freelancer=user)
+            elif role == 'client':
+                queryset = queryset.filter(client=user)
         
         # Filter by status
         status_filter = self.request.query_params.get('status')
@@ -42,13 +68,6 @@ class ContractViewSet(viewsets.ModelViewSet):
         contract_type = self.request.query_params.get('contract_type')
         if contract_type:
             queryset = queryset.filter(contract_type=contract_type)
-        
-        # Filter by user role
-        role = self.request.query_params.get('role')
-        if role == 'freelancer':
-            queryset = queryset.filter(freelancer=user)
-        elif role == 'client':
-            queryset = queryset.filter(client=user)
         
         # Search by title or description
         search = self.request.query_params.get('search')
