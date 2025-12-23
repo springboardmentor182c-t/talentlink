@@ -7,7 +7,7 @@ from rest_framework.permissions import BasePermission
 
 from .models import Contract
 from .serializers import ContractSerializer
-from proposals.models import Proposal
+from apps.proposals.models import Proposal
 from rest_framework.permissions import IsAuthenticated, BasePermission
 from django.db.models import Q
 

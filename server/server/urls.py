@@ -30,4 +30,7 @@ urlpatterns = [
     # path('api/contracts/', include('apps.contracts.urls')),
     path('api/v1/notifications/', include('apps.notifications.urls')),
 
+    path('api/v1/projects/', include('apps.projects.urls')),
+    path('api/v1/proposals/', include('apps.proposals.urls')),
+    path('api/v1/contracts/', include('apps.contracts.urls')),
 ]

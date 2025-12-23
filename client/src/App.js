@@ -255,7 +255,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 
 /* ===== Context Providers ===== */
 import { UserProvider } from "./context/UserContext";
-import { ProjectProvider } from "./context/ProjectContext"; // <--- NEW: Enables data sharing
 
 /* ===== AuthFlow UI Pages ===== */
 import Home from "./pages/Home";
@@ -286,6 +285,7 @@ import CalendarPage from "./freelancer_pages/freelancer/CalendarPage";
 import Clients from "./freelancer_pages/freelancer/Clients";
 import Reports from "./freelancer_pages/freelancer/Reports";
 import Settings from "./freelancer_pages/freelancer/Settings";
+import FreelancerMessages from "./freelancer_pages/freelancer/Messages";
 
 /* ===== Notifications ===== */
 import NotificationHome from "./notifications/features/notifications/pages/NotificationsPage";
@@ -320,7 +320,7 @@ export default function App() {
             <Route path="projects" element={<ClientProjects />} />
             <Route path="financials" element={<ClientFinancials />} />
             <Route path="documents" element={<ClientDocuments />} />
-            <Route path="messages" element={<Messages userRole="client" />} />
+            <Route path="messages" element={<ClientMessages />} />
             <Route path="settings" element={<ClientSettings />} />
             <Route path="help" element={<ClientHelp />} />
             <Route path="profile" element={<div style={phStyle}>User Profile</div>} />
@@ -336,9 +336,10 @@ export default function App() {
           <Route path="/freelancer/inquiry" element={<Inquiry />} />
           <Route path="/freelancer/contracts" element={<Contracts />} />
           <Route path="/freelancer/calendar" element={<CalendarPage />} />
-          <Route path="/freelancer/clients" element={<ClientsFreelancer />} />
-          <Route path="/freelancer/reports" element={<ReportsFreelancer />} />
-          <Route path="/freelancer/settings" element={<SettingsFreelancer />} />
+          <Route path="/freelancer/clients" element={<Clients />} />
+          <Route path="/freelancer/reports" element={<Reports />} />
+          <Route path="/freelancer/settings" element={<Settings />} />
+          <Route path="/freelancer/messages" element={<FreelancerMessages />} />
 
           {/* ===================== */}
           {/* NOTIFICATIONS & 404 */}
@@ -352,13 +353,3 @@ export default function App() {
     </UserProvider>
   );
 }
-
-// Simple Placeholder Style
-const phStyle = {
-  padding: '40px',
-  fontSize: '24px',
-  fontWeight: 'bold',
-  color: '#475569'
-};
-
-export default App;
