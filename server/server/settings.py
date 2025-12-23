@@ -34,7 +34,11 @@ INSTALLED_APPS = [
     "apps.reactions",
     "apps.adminpanel",
     "apps.projects",
+    "apps.notifications",  # Add notifications app
+
+    # Auth (OTP / reset password)
 ]
+
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -103,6 +107,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom User Model
+# Use the users app User model
 AUTH_USER_MODEL = 'users.User'
 
 # REST Framework settings
@@ -136,3 +141,12 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
 ]
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+
+# Email settings (for development, use console backend)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = 'smtp.example.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'your@email.com'
+EMAIL_HOST_PASSWORD = 'yourpassword'
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = 'TalentLink <no-reply@talentlink.com>'

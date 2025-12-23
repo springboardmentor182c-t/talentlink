@@ -23,6 +23,12 @@ urlpatterns = [
     path("api/messaging/", include("apps.messaging.urls")),
     path("api/profile/", include("apps.profile.urls")),
     path("api/contracts/", include("apps.contracts.urls")),
+
+    # Auth endpoints (OTP, reset password)
+    path("api/auth/", include("authapp.urls")),
+
+    # Notifications app
+    path("api/notifications/", include("apps.notifications.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
