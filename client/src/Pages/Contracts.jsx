@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   DollarSign, 
   Clock, 
@@ -403,6 +404,7 @@ const ContractDetails = ({ contract, onStatusUpdate, onPayment }) => {
 // Main Contracts Component
 // Contracts Component (updated grid layout)
 const Contracts = () => {
+  const { user } = useAuth();
   const [contracts, setContracts] = useState([]);
   const [stats, setStats] = useState({
     activeContracts: 0,
@@ -442,13 +444,15 @@ const Contracts = () => {
     return () => {
       stopMonitoringContracts();
     };
-  }, [contracts.length]);
+  }, [contracts.length, user]);
 
   const fetchContracts = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await contractService.getContracts();
+      // Add role filter based on user role
+      const filters = user?.role ? { role: user.role } : {};
+      const data = await contractService.getContracts(filters);
       setContracts(data);
     } catch (err) {
       console.error('Failed to fetch contracts:', err);

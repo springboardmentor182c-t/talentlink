@@ -1,15 +1,16 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+import { NotificationProvider } from "./contexts/NotificationContext.jsx";
 
 import MainLayout from "./layout/MainLayout.jsx";
 import Dashboard from "./components/Dashboard/Dashboard.jsx";
 
 // 🔓 Auth pages
-import Login from "./Pages/Login.jsx";
-import Signup from "./Pages/Signup.jsx";
-import ForgotPassword from "./Pages/ForgotPassword.jsx";
-import OtpVerify from "./Pages/OtpVerify.jsx";
-import ResetPassword from "./Pages/ResetPassword.jsx";
+import Login from "./components/Auth/Login.jsx";
+import Signup from "./components/Auth/Signup.jsx";
+import ForgotPassword from "./components/Auth/ForgotPassword.jsx";
+import OtpVerify from "./components/Auth/OtpVerify.jsx";
+import ResetPassword from "./components/Auth/ResetPassword.jsx";
 
 // 📄 Dashboard pages
 import Candidates from "./Pages/Candidates.jsx";
@@ -32,6 +33,8 @@ import Proposals from "./Pages/Proposals.jsx";
 import FreelancerDashboard from "./Pages/FreelancerDashboard.jsx";
 import FreelancerProfileCreateEdit from "./Pages/Profile/FreelancerProfileCreateEdit.jsx";
 import FreelancerProfileView from "./Pages/Profile/FreelancerProfileView.jsx";
+import FreelancerDashboardLayout from "./layout/FreelancerDashboardLayout.jsx";
+import FreelancerContracts from "./components/FreelancerContracts.jsx";
 
 // Projects
 import PostNewProject from "./Pages/PostNewProject.jsx";
@@ -67,7 +70,7 @@ function App() {
 
         {/* Communication */}
         <Route path="messages" element={<Messages />} />
-        <Route path="contracts" element={<Contracts />} />
+        <Route path="contracts" element={<FreelancerContracts />} />
         <Route path="notifications" element={<Notifications />} />
 
         {/* Client profile */}
@@ -88,17 +91,25 @@ function App() {
         <Route path="client/profile/portfolio" element={<Portfolio basePath="/client/profile" />} />
         <Route path="client/profile/settings" element={<Settings basePath="/client/profile" />} />
 
-        {/* Freelancer */}
-        <Route path="freelancer" element={<FreelancerDashboard />} />
-        <Route path="freelancer/profile" element={<FreelancerProfileView />} />
-        <Route path="freelancer/profile/create" element={<FreelancerProfileCreateEdit />} />
-        <Route path="freelancer/profile/edit" element={<FreelancerProfileCreateEdit />} />
-        <Route path="freelancer/profile/view" element={<FreelancerProfileView />} />
+      </Route>
 
-        <Route path="freelancer/profile/skills" element={<Skills basePath="/freelancer/profile" />} />
-        <Route path="freelancer/profile/work" element={<Work basePath="/freelancer/profile" />} />
-        <Route path="freelancer/profile/portfolio" element={<Portfolio basePath="/freelancer/profile" />} />
-        <Route path="freelancer/profile/settings" element={<Settings basePath="/freelancer/profile" />} />
+      {/* 🔐 Freelancer Dashboard routes (WITH FreelancerDashboardLayout) */}
+      <Route path="/freelancer" element={<FreelancerDashboardLayout />}>
+        <Route index element={<FreelancerDashboard />} />
+        <Route path="proposals" element={<Proposals />} />
+        <Route path="contracts" element={<FreelancerContracts />} />
+        <Route path="messages" element={<Messages />} />
+        <Route path="my-jobs" element={<Projects />} />
+        <Route path="earnings" element={<Dashboard />} />
+        <Route path="reviews" element={<Dashboard />} />
+        <Route path="profile" element={<FreelancerProfileView />} />
+        <Route path="profile/create" element={<FreelancerProfileCreateEdit />} />
+        <Route path="profile/edit" element={<FreelancerProfileCreateEdit />} />
+        <Route path="profile/view" element={<FreelancerProfileView />} />
+        <Route path="profile/skills" element={<Skills basePath="/freelancer/profile" />} />
+        <Route path="profile/work" element={<Work basePath="/freelancer/profile" />} />
+        <Route path="profile/portfolio" element={<Portfolio basePath="/freelancer/profile" />} />
+        <Route path="profile/settings" element={<Settings basePath="/freelancer/profile" />} />
       </Route>
     </Routes>
   );

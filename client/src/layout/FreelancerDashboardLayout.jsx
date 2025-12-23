@@ -13,14 +13,25 @@ import {
   Home,
   Clock,
   Star,
-  Award
+  Award,
+  LogOut,
+  Menu,
+  Search,
+  Bell
 } from "lucide-react";
 
 const FreelancerDashboardLayout = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleLogout = async () => {
+    const result = await logout();
+    if (result.success) {
+      navigate('/login');
+    }
+  };
 
   // Freelancer-specific sidebar navigation
   const freelancerSidebarItems = [
@@ -51,7 +62,7 @@ const FreelancerDashboardLayout = () => {
     {
       section: "Communication",
       items: [
-        { icon: MessageSquare, label: "Messages", path: "/messages" },
+        { icon: MessageSquare, label: "Messages", path: "/freelancer/messages" },
       ]
     }
   ];
@@ -73,20 +84,20 @@ const FreelancerDashboardLayout = () => {
                 <User className="w-5 h-5 text-indigo-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">{user?.name || 'Freelancer'}</h3>
-                <p className="text-sm text-gray-500 capitalize">{user?.role}</p>
+                <h3 className="font-bold text-gray-900 leading-tight">John Doe</h3>
+                <p className="text-xs text-gray-500 font-medium">Freelancer</p>
               </div>
             </div>
             
             {/* Quick Stats */}
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="bg-green-50 p-3 rounded-lg">
-                <p className="text-xs text-green-600 font-medium">Active</p>
-                <p className="text-lg font-bold text-green-700">{user?.activeContracts || 0}</p>
+              <div className="bg-green-50 p-3 rounded-lg flex flex-col items-center justify-center">
+                <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider">Active</p>
+                <p className="text-sm font-bold text-green-700">3</p>
               </div>
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-xs text-blue-600 font-medium">Rating</p>
-                <p className="text-lg font-bold text-blue-700">{user?.rating || 'N/A'}</p>
+              <div className="bg-blue-50 p-3 rounded-lg flex flex-col items-center justify-center">
+                <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Rating</p>
+                <p className="text-sm font-bold text-blue-700">4.8</p>
               </div>
             </div>
           </div>
@@ -120,10 +131,16 @@ const FreelancerDashboardLayout = () => {
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="text-xs text-gray-500 text-center">
-              <p>Freelancer Dashboard</p>
-              <p className="mt-1">v1.0.0</p>
+          <div className="p-4 border-t border-gray-200 space-y-2">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Logout</span>
+            </button>
+            <div className="text-[10px] text-gray-400 text-center pt-2">
+              <p>Freelancer Dashboard v1.0.0</p>
             </div>
           </div>
         </div>
@@ -139,12 +156,41 @@ const FreelancerDashboardLayout = () => {
 
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 w-full overflow-hidden">
-        {/* Role-based Navbar */}
-        <RoleBasedNavbar onMenuClick={() => setIsOpen(!isOpen)} />
+        {/* Simplified Freelancer Header */}
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsOpen(true)}
+              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+            >
+              <Menu className="w-6 h-6 text-gray-600" />
+            </button>
+            
+            {/* TalentLink Logo and Freelancer text */}
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-indigo-600 cursor-pointer" onClick={() => navigate('/freelancer')}>
+                TalentLink
+              </h1>
+              <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
+                Freelancer
+              </span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <button className="p-2 text-gray-400 hover:text-gray-600">
+              <Search className="w-5 h-5" />
+            </button>
+            <button className="p-2 text-gray-400 hover:text-gray-600 relative">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+            </button>
+          </div>
+        </header>
 
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto w-full">
-          <div className="p-6">
+          <div className="p-8 max-w-7xl mx-auto">
             <Outlet />
           </div>
         </div>

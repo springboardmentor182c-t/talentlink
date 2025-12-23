@@ -1,9 +1,18 @@
 import React from "react";
-import { Search, Bell, User, Menu } from "lucide-react";
+import { Search, Bell, User, Menu, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
-const Navbar = ({ onMenuClick, userName = "John" }) => {
+const Navbar = ({ onMenuClick }) => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    const result = await logout();
+    if (result.success) {
+      navigate('/login');
+    }
+  };
 
   const goToNotifications = () => {
     navigate("/notifications");
@@ -47,6 +56,14 @@ const Navbar = ({ onMenuClick, userName = "John" }) => {
           </button>
 
           <button
+            className="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors"
+            onClick={handleLogout}
+            title="Logout"
+          >
+            <LogOut className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+
+          <button
             className="flex items-center gap-2 p-1 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
             onClick={goToProfile}
             title="Profile"
@@ -55,7 +72,7 @@ const Navbar = ({ onMenuClick, userName = "John" }) => {
               <User className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
             </div>
             <span className="hidden sm:inline text-xs sm:text-sm font-medium text-gray-700">
-              {userName}
+              {user?.name || 'User'}
             </span>
           </button>
         </div>

@@ -18,9 +18,9 @@ export const AuthProvider = ({ children }) => {
   // Mock user data - in real app, this would come from API
   const mockUsers = {
     freelancer: {
-      id: 1,
+      id: 2,
       name: 'John Doe',
-      email: 'john@example.com',
+      email: 'freelancer@test.com',
       role: 'freelancer',
       avatar: null,
       profileComplete: false,
@@ -58,6 +58,8 @@ export const AuthProvider = ({ children }) => {
         if (userData) {
           setUser(userData);
           localStorage.setItem('user', JSON.stringify(userData));
+          // Store auth token for API calls
+          localStorage.setItem('authToken', 'mock-token-for-development');
           return { success: true };
         }
       }
@@ -80,6 +82,7 @@ export const AuthProvider = ({ children }) => {
       
       setUser(null);
       localStorage.removeItem('user');
+      localStorage.removeItem('authToken');
       return { success: true };
     } catch (err) {
       setError(err.message);
@@ -131,6 +134,10 @@ export const AuthProvider = ({ children }) => {
         if (storedUser) {
           const parsedUser = JSON.parse(storedUser);
           setUser(parsedUser);
+          // Restore auth token if not present
+          if (!localStorage.getItem('authToken')) {
+            localStorage.setItem('authToken', 'mock-token-for-development');
+          }
         }
       } catch (err) {
         console.error('Error loading user from storage:', err);

@@ -20,7 +20,7 @@ from .serializers import (
 class ContractViewSet(viewsets.ModelViewSet):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
-    # permission_classes = [IsAuthenticated]  # Temporarily disabled for testing
+    # permission_classes = [IsAuthenticated]  # Disabled for mock authentication
 
     def get_queryset(self):
         user = self.request.user
@@ -32,11 +32,11 @@ class ContractViewSet(viewsets.ModelViewSet):
             # For anonymous users, only apply role filter if we have test data
             role = self.request.query_params.get('role')
             if role == 'freelancer':
-                # For testing, return contracts where freelancer is the admin user
+                # For testing, return contracts where freelancer is the test freelancer user
                 from django.contrib.auth.models import User
-                admin_user = User.objects.filter(username='admin').first()
-                if admin_user:
-                    queryset = queryset.filter(freelancer=admin_user)
+                freelancer_user = User.objects.filter(username='freelancer_test').first()
+                if freelancer_user:
+                    queryset = queryset.filter(freelancer=freelancer_user)
                 else:
                     queryset = Contract.objects.none()  # Return empty queryset if no test user
             elif role == 'client':

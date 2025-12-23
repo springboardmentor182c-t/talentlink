@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     "apps.users",
     "apps.proposals",
     "apps.messaging",
-    "apps.freelancers",
     "apps.contracts",
     "apps.shoutouts",
     "apps.comments",
