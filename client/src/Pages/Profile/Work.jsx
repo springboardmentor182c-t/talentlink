@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import ProfileLayout from '../../components/Profile/ProfileLayout.jsx';
 import profileService from '../../services/profileService.js';
 
-const Work = ({ basePath = '/profile' }) => {
+const Work = ({ basePath = '/client/profile' }) => {
   const location = useLocation();
   const isEditMode = location.pathname.includes('/edit') || location.pathname.includes('/create');
   const isFreelancer = basePath && basePath.includes('/freelancer');

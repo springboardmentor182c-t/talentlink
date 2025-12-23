@@ -21,7 +21,7 @@ const ProposalSidebar = ({ currentProjectId }) => {
     const loadProjects = async () => {
       setLoadingProjects(true);
       try {
-        const res = await api.get('/api/projects/');
+        const res = await api.get('/projects/');
         const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
         setProjects(data);
       } catch (err) {

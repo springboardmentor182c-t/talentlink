@@ -36,6 +36,7 @@ const ClientProfile = () => {
     loadProfile();
   }, []);
 
+  // Proper async function for loading profile
   const loadProfile = async () => {
     try {
       setLoading(true);
@@ -43,14 +44,12 @@ const ClientProfile = () => {
       setProfile(data);
       setError('');
     } catch (err) {
-      setProfile(null);
       setError('');
     } finally {
       setLoading(false);
     }
   };
   const [projects] = useState({ active: [], completed: [] });
-  const [invitations] = useState({ invitations: [], applications: [] });
   const [messages] = useState([]);
 
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -92,7 +91,7 @@ const ClientProfile = () => {
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <button
-                  onClick={() => navigate('/messages')}
+                  onClick={() => navigate('/client/messages')}
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   <MessageSquare size={18} />

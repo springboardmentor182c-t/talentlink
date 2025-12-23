@@ -1,8 +1,11 @@
 from rest_framework import serializers
-from .models import User
+from apps.users.models import User
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    # Accept a 'role' field from the client and map it to User.user_type
+    role = serializers.ChoiceField(choices=[('client', 'Client'), ('freelancer', 'Freelancer')], write_only=True)
+
     class Meta:
         model = User
         fields = ("email", "password", "role")
@@ -11,10 +14,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        role = validated_data.pop('role')
         user = User.objects.create_user(
             username=validated_data["email"],
             email=validated_data["email"],
             password=validated_data["password"],
-            role=validated_data["role"]
+            user_type=role
         )
         return user

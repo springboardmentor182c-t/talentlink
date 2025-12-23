@@ -47,7 +47,7 @@ export default function ProposalForm({ projectId, onSuccess, client_id }) {
       for (const file of attachments) {
         const fd = new FormData();
         fd.append('file', file);
-        await api.post(`/api/proposals/${proposalId}/attachments/`, fd, {
+        await api.post(`/proposals/${proposalId}/attachments/`, fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
@@ -70,7 +70,7 @@ export default function ProposalForm({ projectId, onSuccess, client_id }) {
         cover_letter: coverLetter,
       };
 
-      const response = await api.post("/api/proposals/submit/", data);
+      const response = await api.post("/proposals/submit/", data);
 
       if (response.status === 201 || response.status === 200) {
         alert("Proposal submitted successfully!");

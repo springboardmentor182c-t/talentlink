@@ -1,17 +1,24 @@
 import React, { useState } from "react";
-import Sidebar from "./Sidebar.jsx";
+import { ClientSidebar } from "./ClientSidebar.jsx";
+import FreelancerSidebar from "./FreelancerSidebar.jsx";
 import Navbar from "./Navbar.jsx";
+import { useLocation } from "react-router-dom";
 import { Outlet } from "react-router-dom";
 import { NotificationProvider } from "../contexts/NotificationContext.jsx";
 
 const MainLayout = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <NotificationProvider>
       <div className="flex h-screen w-full overflow-hidden bg-white">
-        {/* Sidebar */}
-        <Sidebar isOpen={isOpen} onClose={() => setIsOpen(false)} />
+        {/* Sidebar: use FreelancerSidebar for /freelancer routes, Sidebar for /client */}
+        {location.pathname.startsWith("/freelancer") ? (
+          <FreelancerSidebar isOpen={isOpen} onClose={() => setIsOpen(false)} />
+        ) : (
+          <ClientSidebar isOpen={isOpen} onClose={() => setIsOpen(false)} />
+        )}
 
         {/* Main Content Area */}
         <div className="flex flex-col flex-1 w-full overflow-hidden">

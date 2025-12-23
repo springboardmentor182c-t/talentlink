@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 import random
 
 from .serializers import RegisterSerializer
-from .models import User
+from apps.users.models import User
 
 # 🔐 TEMP OTP STORAGE (for demo / internship)
 OTP_STORE = {}
@@ -19,6 +19,32 @@ OTP_STORE = {}
 # =========================
 class RegisterView(APIView):
     def post(self, request):
+        email = request.data.get('email')
+        role = request.data.get('role')
+
+        # If a user with this email already exists, handle it gracefully
+        existing = User.objects.filter(email=email).first()
+        if existing:
+            # If role is same (or user already supports both), prompt login
+            if existing.user_type == role or existing.user_type == 'both':
+                return Response({"error": "Email already registered. Please login."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Otherwise, upgrade the account to support both roles and return tokens
+            existing.user_type = 'both'
+            existing.save()
+
+            refresh = RefreshToken.for_user(existing)
+            return Response({
+                "message": "Account updated to support both roles",
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": existing.id,
+                    "email": existing.email,
+                    "user_type": existing.user_type
+                }
+            }, status=status.HTTP_200_OK)
+
         serializer = RegisterSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -40,13 +66,31 @@ class LoginView(APIView):
         password = request.data.get("password")
         role = request.data.get("role")
 
+        # Debug: incoming payload
+        print(f"Login attempt payload: email={email} role={role}")
+
         user = authenticate(username=email, password=password)
 
-        if user is None or user.role != role:
+        # Normalize role/user_type and accept users with 'both' role
+        role_req = (role or '').lower()
+        user_type = (getattr(user, 'user_type', '') or '').lower() if user else ''
+
+        if user is None:
             return Response(
                 {"error": "Invalid credentials"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
+
+        if role_req != user_type and user_type != 'both':
+            # Helpful debug info during development
+            print(f"Login role mismatch: requested={role_req} stored={user_type} for user={email}")
+            return Response(
+                {"error": "Invalid credentials or role mismatch"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Debug: successful match
+        print(f"Login success for {email} with stored user_type={user.user_type} and requested role={role_req}")
 
         refresh = RefreshToken.for_user(user)
 
@@ -56,7 +100,7 @@ class LoginView(APIView):
             "user": {
                 "id": user.id,
                 "email": user.email,
-                "role": user.role
+                "user_type": user.user_type
             }
         })
 

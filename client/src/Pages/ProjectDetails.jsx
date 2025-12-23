@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../services/api";
 import {
   ArrowLeft,
   Briefcase,
@@ -22,9 +22,7 @@ const ProjectDetails = () => {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const res = await axios.get(
-          `http://127.0.0.1:8000/api/projects/${id}/`
-        );
+        const res = await api.get(`/projects/${id}/`);
         setProject(res.data);
       } catch (err) {
         console.error("Error fetching project details:", err);
@@ -48,7 +46,7 @@ const ProjectDetails = () => {
     if (!confirmed) return;
 
     try {
-      await axios.patch(`http://127.0.0.1:8000/api/projects/${id}/`, {
+      await api.patch(`/projects/${id}/`, {
         status: "completed",
       });
       setProject((prev) => ({ ...prev, status: "completed" }));

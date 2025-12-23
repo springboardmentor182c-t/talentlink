@@ -36,8 +36,8 @@ const Dashboard = () => {
       setStatsError(null);
       try {
         const [freelancersRes, projectsRes] = await Promise.all([
-          api.get('/api/profile/freelancer-profile/'),
-          api.get('/api/projects/')
+          api.get('/profile/freelancer-profile/'),
+          api.get('/projects/')
         ]);
 
         const freelancers = Array.isArray(freelancersRes.data) ? freelancersRes.data : (freelancersRes.data.results || []);
@@ -210,7 +210,7 @@ const Dashboard = () => {
                   const userData = localStorage.getItem('user');
                   const role = userData ? JSON.parse(userData).role : null;
                   if (role === 'freelancer') navigate('/freelancer/profile/create');
-                  else navigate('/profile/create');
+                  else navigate('/client/profile/create');
                 }}
                 className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
               >
@@ -246,7 +246,7 @@ const Dashboard = () => {
             color="green"
           />
           <StatsCard 
-            title="Completed" 
+            title="Completed"
             value={loadingStats ? '...' : stats.completedProjects}
             icon={MessageSquare}
             color="yellow"

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import api from "../services/api";
 
@@ -9,6 +11,13 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [focusedField, setFocusedField] = useState('');
+  // Debug: show role detected on login
+  const [debugRole, setDebugRole] = useState('');
+  // Debug helpers: show last request payload and last response
+  const [lastRequest, setLastRequest] = useState(null);
+  const [lastResponse, setLastResponse] = useState(null);
+
+  const navigate = useNavigate();
 
   // ✅ REAL LOGIN (CONNECTED TO BACKEND)
   const handleLogin = async (userType) => {
@@ -22,26 +31,55 @@ export default function Login() {
     try {
       setIsLoading(true);
 
+      // Debug: store exact payload to show on screen
+      const payload = { email: email, password: '(hidden)', role: userType.toLowerCase() };
+      setLastRequest(payload);
+
       const response = await api.post('/auth/login/', {
         email: email,
         password: password,
         role: userType.toLowerCase(),
       });
+      setLastResponse(response.data); // store full response for debugging
 
       // ✅ Save JWT tokens
       localStorage.setItem('accessToken', response.data.access);
       localStorage.setItem('refreshToken', response.data.refresh);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
-      // ✅ ROLE-BASED REDIRECT
-      if (userType.toLowerCase() === "client") {
-        window.location.href = "/";
-      } else {
-        window.location.href = "/freelancer-pending";
+      // Determine role from server response (preferred) and persist it
+      const role = (response.data.user?.user_type || response.data.user?.role || userType.toLowerCase()).toLowerCase();
+      console.log('Login successful — server response:', response.data);
+      console.log('Computed role:', role);
+      setDebugRole(role);
+      localStorage.setItem('userRole', role);
+
+      // If the user clicked "Login as Client" explicitly, always send them to client-pending
+      if (userType.toLowerCase() === 'client') {
+        navigate('/client');
+        return;
       }
 
-    } catch (err) {
-      setError('Invalid email, password, or role');
+      // For freelancers, check profile completeness and navigate accordingly
+      try {
+        // api interceptor will attach the access token from localStorage
+        const profileResp = await api.get('/profile/me/');
+
+        // send freelancer to freelancer profile view
+        navigate('/freelancer/profile');
+      } catch (err) {
+        // 404 means profile not found — send to freelancer pending
+        const status = err?.response?.status;
+        if (status === 404) {
+          navigate('/freelancer-pending');
+        } else {
+          // fallback
+          navigate('/freelancer-pending');
+        }
+      }
+
+    } catch (err) {      // Save server error response if any
+      setLastResponse(err?.response?.data || { error: err.message });      setError('Invalid email, password, or role');
     } finally {
       setIsLoading(false);
     }
@@ -77,6 +115,25 @@ export default function Login() {
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-blue-900 mb-3">Welcome Back</h1>
           <p className="text-gray-600 text-lg">Log in to your TalentLink account</p>
+          {debugRole && (
+            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
+              Debug: detected role = <strong>{debugRole}</strong>
+            </div>
+          )}
+
+          {/* Debug: show last request and response payloads */}
+          {lastRequest && (
+            <div className="mt-3 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-700">
+              <div><strong>Last login request:</strong></div>
+              <pre className="text-xs">{JSON.stringify(lastRequest, null, 2)}</pre>
+            </div>
+          )}
+          {lastResponse && (
+            <div className="mt-3 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-700">
+              <div><strong>Last login response:</strong></div>
+              <pre className="text-xs">{JSON.stringify(lastResponse, null, 2)}</pre>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -93,7 +150,7 @@ export default function Login() {
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); setLastRequest(null); setLastResponse(null); setDebugRole(''); setError(''); }}
             onFocus={() => setFocusedField('email')}
             onBlur={() => setFocusedField('')}
             className={`w-full px-4 py-3.5 rounded-xl border ${
@@ -115,7 +172,7 @@ export default function Login() {
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); setLastRequest(null); setLastResponse(null); setDebugRole(''); setError(''); }}
               onFocus={() => setFocusedField('password')}
               onBlur={() => setFocusedField('')}
               className={`w-full px-4 py-3.5 rounded-xl border ${

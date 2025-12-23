@@ -20,17 +20,16 @@ const ProposalCard = ({ proposal, onAction, loadingId }) => {
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <h3 className="text-lg font-semibold text-gray-900">
-              {proposal.project_title}
+              Project #{proposal.project_id}
             </h3>
             <span
-              className={`px-2 py-1 text-xs font-semibold rounded-full ${statusPill[proposal.status] || statusPill.submitted
-                }`}
+              className={`px-2 py-1 text-xs font-semibold rounded-full ${statusPill[proposal.status] || statusPill.submitted}`}
             >
               {proposal.status}
             </span>
           </div>
           <p className="text-sm text-gray-700 mb-3 line-clamp-3">
-            {proposal.description}
+            {proposal.cover_letter}
           </p>
           <div className="text-sm text-gray-600 space-y-1">
             <p>
@@ -39,10 +38,10 @@ const ProposalCard = ({ proposal, onAction, loadingId }) => {
             </p>
             <p>
               <span className="font-semibold text-gray-800">Freelancer:</span>{" "}
-              {proposal.freelancer_name || proposal.freelancer}
+              {proposal.freelancer?.username || "Unknown"}
             </p>
             <p className="text-xs text-gray-500">
-              Submitted {new Date(proposal.created_at).toLocaleString()}
+              Submitted {proposal.created_at ? new Date(proposal.created_at).toLocaleString() : ""}
             </p>
           </div>
         </div>
@@ -114,8 +113,17 @@ const Proposals = () => {
       });
       if (!res.ok) throw new Error("Failed to load proposals");
       const data = await res.json();
-      setProposals(data);
+      console.log("Fetched proposals:", data);
+      // If paginated, use data.results, else use data
+      if (Array.isArray(data)) {
+        setProposals(data);
+      } else if (Array.isArray(data.results)) {
+        setProposals(data.results);
+      } else {
+        setProposals([]);
+      }
     } catch (err) {
+      console.error("Error loading proposals:", err);
       setError(err.message || "Unable to load proposals");
     } finally {
       setLoading(false);

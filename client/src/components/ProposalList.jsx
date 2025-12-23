@@ -11,7 +11,7 @@ export default function ProposalList({ projectId, refresh }) {
     setError(null);
     try {
       console.log("Fetching proposals for projectId:", projectId);
-      const response = await api.get("/api/proposals/", {
+      const response = await api.get("/proposals/", {
         params: {
           project_id: projectId,
         },

@@ -73,29 +73,50 @@ const ProfileMenu = ({ isOpen, setIsOpen, menuRef, buttonRef }) => {
             {loading && <p className="text-xs text-gray-400">Loading profile...</p>}
           </div>
 
-          <button
-            onClick={() => navigate(role === 'freelancer' ? '/freelancer/profile/view' : '/client/profile/view')}
-            className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            <User className="h-4 w-4 mr-3" />
-            Profile
-          </button>
-
-          <button
-            onClick={() => navigate('/projects')}
-            className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            <Briefcase className="h-4 w-4 mr-3" />
-            My Projects
-          </button>
-
-          <button
-            onClick={() => navigate(role === 'freelancer' ? '/freelancer/profile/settings' : '/client/profile/settings')}
-            className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            <Settings className="h-4 w-4 mr-3" />
-            Settings
-          </button>
+          {/* Show profile/settings links based on role */}
+          {role === 'freelancer' && (
+            <>
+              <button
+                onClick={() => navigate('/freelancer/profile')}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <User className="h-4 w-4 mr-3" />
+                Profile
+              </button>
+              <button
+                onClick={() => navigate('/freelancer/profile/settings')}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <Settings className="h-4 w-4 mr-3" />
+                Settings
+              </button>
+            </>
+          )}
+          {role === 'client' && (
+            <>
+              <button
+                onClick={() => navigate('/client/profile')}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <User className="h-4 w-4 mr-3" />
+                Profile
+              </button>
+              <button
+                onClick={() => navigate('/client/projects')}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <Briefcase className="h-4 w-4 mr-3" />
+                My Projects
+              </button>
+              <button
+                onClick={() => navigate('/client/profile/settings')}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <Settings className="h-4 w-4 mr-3" />
+                Settings
+              </button>
+            </>
+          )}
 
           <div className="border-t border-gray-200">
             <button

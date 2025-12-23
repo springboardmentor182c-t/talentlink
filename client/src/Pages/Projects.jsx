@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Eye, Edit, X, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../services/api";
 
 // Project Card Component
 const ProjectCard = ({ project, onView, onEdit, onClose, onComplete }) => {
@@ -90,7 +90,7 @@ const MyProjects = () => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://127.0.0.1:8000/api/projects/");
+        const res = await api.get("/projects/");
         setProjects(res.data || []);
       } catch (err) {
         console.error("Error fetching projects:", err);
@@ -123,7 +123,7 @@ const MyProjects = () => {
   const handleCloseProject = async (id) => {
     if (window.confirm("Are you sure you want to delete this project?")) {
       try {
-        await axios.delete(`http://127.0.0.1:8000/api/projects/${id}/`);
+        await api.delete(`/projects/${id}/`);
         setProjects((prev) => prev.filter((p) => p.id !== id));
         alert("🗑️ Project deleted successfully.");
       } catch {
@@ -135,7 +135,7 @@ const MyProjects = () => {
   const handleCompleteProject = async (id) => {
     if (window.confirm("Mark this project as Completed?")) {
       try {
-        await axios.patch(`http://127.0.0.1:8000/api/projects/${id}/`, {
+        await api.patch(`/projects/${id}/`, {
           status: "completed",
         });
         setProjects((prev) =>
@@ -161,7 +161,7 @@ const MyProjects = () => {
           <div className="flex gap-3">
             {/* Proposals Button (new) */}
             <button
-              onClick={() => navigate("/proposals")}
+              onClick={() => navigate("/client/proposals")}
               className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
             >
               Proposals
@@ -169,7 +169,7 @@ const MyProjects = () => {
 
             {/* Existing Post New Project Button */}
             <button
-              onClick={() => navigate("/projects/new")}
+              onClick={() => navigate("/client/projects/new")}
               className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
             >
               Post new project
