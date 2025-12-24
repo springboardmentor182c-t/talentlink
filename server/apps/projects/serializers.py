@@ -1,6 +1,8 @@
+
+
+
 from rest_framework import serializers
 from .models import Project, Skill
-# IMPORT PROPOSAL FROM THE OTHER APP
 from apps.proposals.models import Proposal 
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -9,19 +11,28 @@ class SkillSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 class ProjectSerializer(serializers.ModelSerializer):
-    client_name = serializers.ReadOnlyField(source='client.username')
-    freelancer_name = serializers.ReadOnlyField(source='freelancer.username')
+    # Use MethodField to safely get a name even if username is empty
+    client_name = serializers.SerializerMethodField()
+    freelancer_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
-        fields = [
-            'id', 'client', 'client_name', 'freelancer', 'freelancer_name',
-            'title', 'description', 'budget', 'deadline', 
-            'experience_years', 'required_skills', 'status', 'created_at'
-        ]
-        read_only_fields = ['client', 'created_at']
+        fields = "__all__"
+        read_only_fields = ['client']
+
+    def get_client_name(self, obj):
+        if not obj.client:
+            return "Unknown"
+        # Try username -> then first_name -> then email -> finally User ID
+        return obj.client.username or obj.client.first_name or obj.client.email or f"User #{obj.client.id}"
+
+    def get_freelancer_name(self, obj):
+        if not obj.freelancer:
+            return None
+        return obj.freelancer.username or obj.freelancer.first_name or obj.freelancer.email or f"User #{obj.freelancer.id}"
 
 class ProposalSerializer(serializers.ModelSerializer):
+    # We can apply the same safe logic here if needed, or keep as is
     freelancer_name = serializers.ReadOnlyField(source='freelancer.username')
     project_title = serializers.ReadOnlyField(source='project.title')
 
@@ -33,4 +44,4 @@ class ProposalSerializer(serializers.ModelSerializer):
             'cover_letter', 'bid_amount', 
             'status', 'created_at'
         ]
-        read_only_fields = ['freelancer', 'status', 'created_at']
+        read_only_fields = ["client", "freelancer", "created_at"]

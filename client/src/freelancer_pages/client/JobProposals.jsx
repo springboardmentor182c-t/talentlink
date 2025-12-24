@@ -1,10 +1,14 @@
+
+
+
 import React, { useState, useEffect } from "react";
 import { 
   Box, Typography, Paper, Table, TableBody, TableCell, 
   TableContainer, TableHead, TableRow, Button, Avatar 
 } from "@mui/material";
-import CreateContractModal from "../../components/Modals/CreateContractModal"; // Import Step 1
+import CreateContractModal from "../../components/Modals/CreateContractModal"; 
 import axiosInstance from "../../utils/axiosInstance";
+import "../../App.css";
 
 export default function JobProposals() {
   const [proposals, setProposals] = useState([]);
@@ -12,70 +16,94 @@ export default function JobProposals() {
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
 
   useEffect(() => {
-    // Fetch all proposals sent to this client
+    fetchProposals();
+  }, []);
+
+  // ✅ FIX #1: correct API for CLIENT
+  const fetchProposals = () => {
     axiosInstance.get("/proposals/received/").then((res) => {
       setProposals(res.data);
     });
-  }, []);
+  };
 
-  // Handler for the "Hire" button
   const handleHireClick = (proposal) => {
     setSelectedProposal(proposal);
     setIsContractModalOpen(true);
   };
 
+  // ✅ KEEP your step-2 (local update)
+  const handleContractSuccess = () => {
+    if (selectedProposal) {
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === selectedProposal.id
+            ? { ...p, status: "accepted" }   // 🔥 IMPORTANT
+            : p
+        )
+      );
+    }
+  };
+
   return (
-    <Box sx={{ p: 3 }}>
+    <Box className="proposals-page-container" sx={{ p: 3 }}>
       <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
         Review Proposals
       </Typography>
 
-      <TableContainer component={Paper} sx={{ boxShadow: "none", border: "1px solid #e0e0e0" }}>
+      <TableContainer component={Paper}>
         <Table>
-          <TableHead sx={{ bgcolor: "#f8fafc" }}>
+          <TableHead>
             <TableRow>
               <TableCell>Freelancer</TableCell>
               <TableCell>Job Applied For</TableCell>
               <TableCell>Bid</TableCell>
+              <TableCell>Status</TableCell>
               <TableCell>Action</TableCell>
             </TableRow>
           </TableHead>
+
           <TableBody>
-            {proposals.map((prop) => (
-              <TableRow key={prop.id}>
-                <TableCell sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Avatar>{prop.freelancer_name[0]}</Avatar>
-                  {prop.freelancer_name}
-                </TableCell>
-                <TableCell>{prop.job_title}</TableCell>
-                <TableCell sx={{ color: "green", fontWeight: "bold" }}>
-                  ${prop.bid_amount}
-                </TableCell>
-                <TableCell>
-                  {/* The Hire Button */}
-                  <Button 
-                    variant="contained" 
-                    size="small" 
-                    onClick={() => handleHireClick(prop)}
-                  >
-                    Hire / Create Contract
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {proposals.map((prop) => {
+              // ✅ FIX #2: backend sends "accepted"
+              const isHired = prop.status?.toLowerCase() === "accepted";
+
+              return (
+                <TableRow key={prop.id}>
+                  <TableCell>
+                    <Avatar>{prop.freelancer_name?.[0]}</Avatar>
+                    {prop.freelancer_name}
+                  </TableCell>
+
+                  <TableCell>{prop.job_title}</TableCell>
+
+                  <TableCell>${prop.bid_amount}</TableCell>
+
+                  <TableCell>
+                    {isHired ? "Hired" : "Pending"}
+                  </TableCell>
+
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      disabled={isHired}
+                      onClick={() => handleHireClick(prop)}
+                    >
+                      {isHired ? "Contract Created" : "Hire Freelancer"}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
 
-      {/* RENDER THE MODAL FROM STEP 1 */}
-      <CreateContractModal 
-        open={isContractModalOpen} 
-        onClose={() => setIsContractModalOpen(false)} 
+      <CreateContractModal
+        open={isContractModalOpen}
+        onClose={() => setIsContractModalOpen(false)}
         proposal={selectedProposal}
-        onSuccess={() => {
-             // Optional: Refresh list to remove the hired proposal
-             console.log("Contract created successfully");
-        }}
+        onSuccess={handleContractSuccess}
       />
     </Box>
   );

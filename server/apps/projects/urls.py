@@ -1,15 +1,3 @@
-# from django.urls import path, include
-# from rest_framework.routers import DefaultRouter
-# from .views import ProjectViewSet, SkillViewSet  # <--- Import SkillViewSet
-
-# router = DefaultRouter()
-# # This handles GET /api/v1/projects/ and POST /api/v1/projects/
-# router.register(r'skills', SkillViewSet, basename='skills') # <--- New Endpoint
-# router.register(r'', ProjectViewSet, basename='projects')
-
-# urlpatterns = [
-#     path('', include(router.urls)),
-# ]
 
 
 
@@ -23,9 +11,9 @@ router.register(r'proposals', ProposalViewSet, basename='proposals')
 router.register(r'', ProjectViewSet, basename='projects')
 
 urlpatterns = [
-    # 1. Specific Paths (MUST BE FIRST)
-    path('open/', get_open_projects, name='open-projects'),
+    # FIX 2: Renamed to 'marketplace/' to prevent conflicts with the router
+    path('projects/', get_open_projects, name='open-projects'),
     
-    # 2. Router Paths (Catch-all)
+    # Router catch-all (Must be last)
     path('', include(router.urls)),
 ]

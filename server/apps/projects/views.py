@@ -1,50 +1,101 @@
+
+
 from rest_framework import viewsets, permissions, filters
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from django.db.models import Q 
+from django.db.models import Q
 
 from .models import Project, Skill
-# IMPORT PROPOSAL FROM THE OTHER APP
-from apps.proposals.models import Proposal 
+from apps.proposals.models import Proposal
 from .serializers import ProjectSerializer, SkillSerializer, ProposalSerializer
 
+
+# =========================
+# SKILLS
+# =========================
 class SkillViewSet(viewsets.ModelViewSet):
-    queryset = Skill.objects.all().order_by('name')
+    queryset = Skill.objects.all().order_by("name")
     serializer_class = SkillSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+
+# =========================
+# PROPOSALS
+# =========================
 class ProposalViewSet(viewsets.ModelViewSet):
     serializer_class = ProposalSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Freelancer sees only HIS proposals
         return Proposal.objects.filter(freelancer=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(freelancer=self.request.user)
 
+
+# =========================
+# PROJECTS (MAIN FIX)
+# =========================
 class ProjectViewSet(viewsets.ModelViewSet):
+    """
+    Single endpoint: /api/projects/
+
+    - Client:
+        • sees ONLY projects created by him
+    - Freelancer:
+        • sees ALL OPEN projects (freelancer is NULL)
+    """
+
     serializer_class = ProjectSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['title', 'description', 'required_skills']
+    search_fields = ["title", "description", "required_skills"]
 
     def get_queryset(self):
         user = self.request.user
-        if not user.is_authenticated:
-            return Project.objects.none()
 
-        # Show Client posts OR Freelancer hired jobs (excluding Open ones)
-        return Project.objects.filter(
-            Q(client=user) | Q(freelancer=user)
-        ).exclude(status='Open').distinct().order_by('-created_at')
+        # ---------- CLIENT ----------
+        if user.role == "client":
+            return Project.objects.filter(
+                client=user
+            ).order_by("-created_at")
+
+        # ---------- FREELANCER ----------
+        if user.role == "freelancer":
+            return Project.objects.filter(
+                status__iexact="Open",
+                freelancer__isnull=True
+            ).order_by("-created_at")
+
+        return Project.objects.none()
 
     def perform_create(self, serializer):
-        serializer.save(client=self.request.user, status='Open')
+        """
+        Client creates project:
+        - freelancer MUST be NULL
+        - status MUST be Open
+        """
+        serializer.save(
+            client=self.request.user,
+            freelancer=None,
+            status="Open"
+        )
 
-@api_view(['GET'])
-@permission_classes([permissions.AllowAny]) 
+
+# =========================
+# OPTIONAL: MARKETPLACE (NOT REQUIRED)
+# =========================
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
 def get_open_projects(request):
-    projects = Project.objects.filter(status='Open').order_by('-created_at')
+    """
+    OPTIONAL endpoint (not used since projects/ handles it)
+    """
+    projects = Project.objects.filter(
+        status__iexact="Open",
+        freelancer__isnull=True
+    ).order_by("-created_at")
+
     serializer = ProjectSerializer(projects, many=True)
     return Response(serializer.data)

@@ -1,12 +1,14 @@
 
 
 
+
 // import React from "react";
 // import "./App.css";
 // import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-// /* ===== Context Provider ===== */
+// /* ===== Context Providers ===== */
 // import { UserProvider } from "./context/UserContext";
+// import { ProjectProvider } from "./context/ProjectContext"; // <--- NEW: Enables data sharing
 
 // /* ===== AuthFlow UI Pages ===== */
 // import Home from "./pages/Home";
@@ -19,9 +21,14 @@
 // /* ===== Client Dashboard Pages & Layout ===== */
 // import ClientLayout from "./freelancer_layouts/ClientLayout"; 
 // import ClientDashboard from "./freelancer_pages/client/ClientDashboard";
-
-// import ClientFinancials from "./freelancer_pages/client/ClientFinancials";
 // import ClientProjects from "./freelancer_pages/client/ClientProjects";
+// import ClientFinancials from "./freelancer_pages/client/ClientFinancials";
+
+// import ClientContracts from './freelancer_pages/client/ClientContracts';
+// // Import your layout (to keep the sidebar and header)
+
+// import JobProposals from "./freelancer_pages/client/JobProposals";
+
 // import ClientDocuments from "./freelancer_pages/client/ClientDocuments";
 // import ClientMessages from "./freelancer_pages/client/ClientMessages";
 // import ClientSettings from "./freelancer_pages/client/ClientSettings";
@@ -29,9 +36,10 @@
 
 // /* ===== Freelancer Dashboard Pages ===== */
 // import FreelancerDashboard from "./freelancer_pages/freelancer/FreelancerDashboard";
+// import Projects from "./freelancer_pages/freelancer/Projects"; // Ensure this is the new Freelancer Project page
+// import FreelancerProposals from "./freelancer_pages/freelancer/FreelancerProposals";
 // import Accounting from "./freelancer_pages/freelancer/Accounting";
 // import Expenses from "./freelancer_pages/freelancer/Expenses";
-// import Projects from "./freelancer_pages/freelancer/Projects";
 // import Inquiry from "./freelancer_pages/freelancer/Inquiry";
 // import Contracts from "./freelancer_pages/freelancer/Contracts";
 // import CalendarPage from "./freelancer_pages/freelancer/CalendarPage";
@@ -49,72 +57,73 @@
 // function App() {
 //   return (
 //     <UserProvider>
-//       <Router>
-//         <Routes>
-//           {/* ===================== */}
-//           {/* PUBLIC AUTHFLOW ROUTES */}
-//           {/* ===================== */}
-//           <Route path="/" element={<Home />} />
-//           <Route path="/login" element={<Login />} />
-//           <Route path="/signup" element={<Signup />} />
-//           <Route path="/verify-otp" element={<VerifyOtp />} />
-//           <Route path="/forgot-password" element={<ForgotPassword />} />
-//           <Route path="/reset-password" element={<ResetPassword />} />
+//       <ProjectProvider> {/* <--- Wraps App so Clients & Freelancers see the same data */}
+//         <Router>
+//           <Routes>
+//             {/* ===================== */}
+//             {/* PUBLIC AUTHFLOW ROUTES */}
+//             {/* ===================== */}
+//             <Route path="/" element={<Home />} />
+//             <Route path="/login" element={<Login />} />
+//             <Route path="/signup" element={<Signup />} />
+//             <Route path="/verify-otp" element={<VerifyOtp />} />
+//             <Route path="/forgot-password" element={<ForgotPassword />} />
+//             <Route path="/reset-password" element={<ResetPassword />} />
 
-//           {/* ===================== */}
-//           {/* CLIENT PORTAL ROUTES */}
-//           {/* ===================== */}
-//           <Route path="/client" element={<ClientLayout />}>
-//              <Route index element={<ClientDashboard />} />
-//              <Route path="dashboard" element={<ClientDashboard />} />
+//             {/* ===================== */}
+//             {/* CLIENT PORTAL ROUTES */}
+//             {/* ===================== */}
+//             <Route path="/client" element={<ClientLayout />}>
+//                <Route index element={<ClientDashboard />} />
+               
+//                {/* Real Client Components */}
+//                <Route path="dashboard" element={<ClientDashboard />} />
+//                <Route path="projects" element={<ClientProjects />} />
+//                <Route path="financials" element={<ClientFinancials />} />
+//                <Route  path="/client/contracts" element={<ClientContracts />} />
+//                <Route path="/client/proposals" element={<JobProposals />} />
+//                <Route path="documents" element={<ClientDocuments />} />
+//                <Route path="messages" element={<ClientMessages />} />
+//                <Route path="settings" element={<ClientSettings />} />
+//                <Route path="help" element={<ClientHelp />} />
+               
+//                {/* Profile placeholder */}
+//                <Route path="profile" element={<div style={phStyle}>User Profile</div>} />
+//             </Route>
 
-//              <Route path="projects" element={<ClientProjects />} />
-//              <Route path="financials" element={<ClientFinancials />} />
-//             <Route path="documents" element={<ClientDocuments />} />
-//             <Route path="messages" element={<ClientMessages />} />
-//            <Route path="settings" element={<ClientSettings />} />
-//             <Route path="help" element={<ClientHelp />} />
-             
-//              {/* New Sidebar Routes (Placeholders) */}
-//              <Route path="projects" element={<div style={phStyle}>My Projects Page</div>} />
-//              <Route path="financials" element={<div style={phStyle}>Financials & Invoices</div>} />
-//              <Route path="documents" element={<div style={phStyle}>Documents Repository</div>} />
-//              <Route path="messages" element={<div style={phStyle}>Messages Inbox</div>} />
-//              <Route path="settings" element={<div style={phStyle}>Account Settings</div>} />
-//              <Route path="help" element={<div style={phStyle}>Help Center & Support</div>} />
-             
-//              {/* Profile is now in Navbar, but keeping route just in case */}
-//              <Route path="profile" element={<div style={phStyle}>User Profile</div>} />
-//           </Route>
+//             {/* ===================== */}
+//             {/* FREELANCER ROUTES */}
+//             {/* ===================== */}
+//             <Route path="/freelancer" element={<FreelancerDashboard />} />
+//             <Route path="/freelancer/projects" element={<Projects />} />
+//             <Route path="/freelancer/proposals" element={<FreelancerProposals />} />
+//             <Route path="/freelancer/accounting" element={<Accounting />} />
+//             <Route path="/freelancer/expenses" element={<Expenses />} />
+//             <Route path="/freelancer/inquiry" element={<Inquiry />} />
+//             <Route path="/freelancer/contracts" element={<Contracts />} />
+//             <Route path="/freelancer/calendar" element={<CalendarPage />} />
+//             <Route path="/freelancer/clients" element={<Clients />} />
+//             <Route path="/freelancer/reports" element={<Reports />} />
+//             <Route path="/freelancer/settings" element={<Settings />} />
 
-//           {/* ===================== */}
-//           {/* FREELANCER ROUTES */}
-//           {/* ===================== */}
-//           <Route path="/freelancer" element={<FreelancerDashboard />} />
-//           <Route path="/freelancer/accounting" element={<Accounting />} />
-//           <Route path="/freelancer/expenses" element={<Expenses />} />
-//           <Route path="/freelancer/projects" element={<Projects />} />
-//           <Route path="/freelancer/inquiry" element={<Inquiry />} />
-//           <Route path="/freelancer/contracts" element={<Contracts />} />
-//           <Route path="/freelancer/calendar" element={<CalendarPage />} />
-//           <Route path="/freelancer/clients" element={<Clients />} />
-//           <Route path="/freelancer/reports" element={<Reports />} />
-//           <Route path="/freelancer/settings" element={<Settings />} />
+//             {/* ===================== */}
+//             {/* NOTIFICATIONS & 404 */}
+//             {/* ===================== */}
+//             <Route path="/notifications" element={<NotificationHome />} />
+//             <Route path="/notifications/:id" element={<NotificationItem />} />
+//             <Route path="/404" element={<NotFound />} />
+//             <Route path="*" element={<Navigate to="/404" />} />
 
-//           {/* ===================== */}
-//           {/* NOTIFICATIONS & 404 */}
-//           {/* ===================== */}
-//           <Route path="/notifications" element={<NotificationHome />} />
-//           <Route path="/notifications/:id" element={<NotificationItem />} />
-//           <Route path="/404" element={<NotFound />} />
-//           <Route path="*" element={<Navigate to="/404" />} />
-//         </Routes>
-//       </Router>
+
+
+//           </Routes>
+//         </Router>
+//       </ProjectProvider>
 //     </UserProvider>
 //   );
 // }
 
-// // Simple Placeholder Style for new pages
+// // Simple Placeholder Style
 // const phStyle = {
 //   padding: '40px',
 //   fontSize: '24px',
@@ -123,129 +132,6 @@
 // };
 
 // export default App;
-
-
-
-// import React from "react";
-// import "./App.css";
-// import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-
-// /* ===== Context Provider ===== */
-// import { UserProvider } from "./context/UserContext";
-
-// /* ===== AuthFlow UI Pages ===== */
-// import Home from "./pages/Home";
-// import Login from "./pages/Login";
-// import Signup from "./pages/Signup";
-// import VerifyOtp from "./pages/VerifyOtp";
-// import ForgotPassword from "./pages/ForgotPassword";
-// import ResetPassword from "./pages/ResetPassword";
-
-// /* ===== Client Dashboard Pages & Layout ===== */
-// import ClientLayout from "./freelancer_layouts/ClientLayout"; 
-// import ClientDashboard from "./freelancer_pages/client/ClientDashboard";
-// import ClientFinancials from "./freelancer_pages/client/ClientFinancials";
-// import ClientProjects from "./freelancer_pages/client/ClientProjects";
-// import ClientDocuments from "./freelancer_pages/client/ClientDocuments";
-// import ClientMessages from "./freelancer_pages/client/ClientMessages";
-// import ClientSettings from "./freelancer_pages/client/ClientSettings";
-// import ClientHelp from "./freelancer_pages/client/ClientHelp";
-
-// /* ===== Freelancer Dashboard Pages ===== */
-// import FreelancerDashboard from "./freelancer_pages/freelancer/FreelancerDashboard";
-// import Accounting from "./freelancer_pages/freelancer/Accounting";
-// import Expenses from "./freelancer_pages/freelancer/Expenses";
-// import Projects from "./freelancer_pages/freelancer/Projects";
-// import Inquiry from "./freelancer_pages/freelancer/Inquiry";
-// import Contracts from "./freelancer_pages/freelancer/Contracts";
-// import CalendarPage from "./freelancer_pages/freelancer/CalendarPage";
-// import Clients from "./freelancer_pages/freelancer/Clients";
-// import Reports from "./freelancer_pages/freelancer/Reports";
-// import Settings from "./freelancer_pages/freelancer/Settings";
-
-// /* ===== Notifications ===== */
-// import NotificationHome from "./notifications/features/notifications/pages/NotificationsPage";
-// import NotificationItem from "./notifications/features/notifications/components/NotificationItem";
-
-// /* ===== Optional 404 Page ===== */
-// import NotFound from "./freelancer_pages/NotFound";
-
-// function App() {
-//   return (
-//     <UserProvider>
-//       <Router>
-//         <Routes>
-//           {/* ===================== */}
-//           {/* PUBLIC AUTHFLOW ROUTES */}
-//           {/* ===================== */}
-//           <Route path="/" element={<Home />} />
-//           <Route path="/login" element={<Login />} />
-//           <Route path="/signup" element={<Signup />} />
-//           <Route path="/verify-otp" element={<VerifyOtp />} />
-//           <Route path="/forgot-password" element={<ForgotPassword />} />
-//           <Route path="/reset-password" element={<ResetPassword />} />
-
-//           {/* ===================== */}
-//           {/* CLIENT PORTAL ROUTES */}
-//           {/* ===================== */}
-//           <Route path="/client" element={<ClientLayout />}>
-//              {/* Default route redirects to dashboard or renders dashboard */}
-//              <Route index element={<ClientDashboard />} />
-             
-//              {/* Real Components */}
-//              <Route path="dashboard" element={<ClientDashboard />} />
-//              <Route path="projects" element={<ClientProjects />} />
-//              <Route path="financials" element={<ClientFinancials />} />
-//              <Route path="documents" element={<ClientDocuments />} />
-//              <Route path="messages" element={<ClientMessages />} />
-//              <Route path="settings" element={<ClientSettings />} />
-//              <Route path="help" element={<ClientHelp />} />
-             
-//              {/* Profile placeholder (Keep only if you don't have a component yet) */}
-//              <Route path="profile" element={<div style={phStyle}>User Profile</div>} />
-//           </Route>
-
-//           {/* ===================== */}
-//           {/* FREELANCER ROUTES */}
-//           {/* ===================== */}
-//           <Route path="/freelancer" element={<FreelancerDashboard />} />
-//           <Route path="/freelancer/accounting" element={<Accounting />} />
-//           <Route path="/freelancer/expenses" element={<Expenses />} />
-//           <Route path="/freelancer/projects" element={<Projects />} />
-//           <Route path="/freelancer/inquiry" element={<Inquiry />} />
-//           <Route path="/freelancer/contracts" element={<Contracts />} />
-//           <Route path="/freelancer/calendar" element={<CalendarPage />} />
-//           <Route path="/freelancer/clients" element={<Clients />} />
-//           <Route path="/freelancer/reports" element={<Reports />} />
-//           <Route path="/freelancer/settings" element={<Settings />} />
-
-//           {/* ===================== */}
-//           {/* NOTIFICATIONS & 404 */}
-//           {/* ===================== */}
-//           <Route path="/notifications" element={<NotificationHome />} />
-//           <Route path="/notifications/:id" element={<NotificationItem />} />
-//           <Route path="/404" element={<NotFound />} />
-//           <Route path="*" element={<Navigate to="/404" />} />
-//         </Routes>
-//       </Router>
-//     </UserProvider>
-//   );
-// }
-
-// // Simple Placeholder Style for new pages (Only used for Profile now)
-// const phStyle = {
-//   padding: '40px',
-//   fontSize: '24px',
-//   fontWeight: 'bold',
-//   color: '#475569'
-// };
-
-// export default App;
-
-
-
-
-
 
 
 
@@ -255,7 +141,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 
 /* ===== Context Providers ===== */
 import { UserProvider } from "./context/UserContext";
-import { ProjectProvider } from "./context/ProjectContext"; // <--- NEW: Enables data sharing
+import { ProjectProvider } from "./context/ProjectContext"; 
+import { ThemeProvider } from "./context/ThemeContext";
 
 /* ===== AuthFlow UI Pages ===== */
 import Home from "./pages/Home";
@@ -270,12 +157,8 @@ import ClientLayout from "./freelancer_layouts/ClientLayout";
 import ClientDashboard from "./freelancer_pages/client/ClientDashboard";
 import ClientProjects from "./freelancer_pages/client/ClientProjects";
 import ClientFinancials from "./freelancer_pages/client/ClientFinancials";
-
 import ClientContracts from './freelancer_pages/client/ClientContracts';
-// Import your layout (to keep the sidebar and header)
-
 import JobProposals from "./freelancer_pages/client/JobProposals";
-
 import ClientDocuments from "./freelancer_pages/client/ClientDocuments";
 import ClientMessages from "./freelancer_pages/client/ClientMessages";
 import ClientSettings from "./freelancer_pages/client/ClientSettings";
@@ -283,7 +166,7 @@ import ClientHelp from "./freelancer_pages/client/ClientHelp";
 
 /* ===== Freelancer Dashboard Pages ===== */
 import FreelancerDashboard from "./freelancer_pages/freelancer/FreelancerDashboard";
-import Projects from "./freelancer_pages/freelancer/Projects"; // Ensure this is the new Freelancer Project page
+import Projects from "./freelancer_pages/freelancer/Projects"; 
 import FreelancerProposals from "./freelancer_pages/freelancer/FreelancerProposals";
 import Accounting from "./freelancer_pages/freelancer/Accounting";
 import Expenses from "./freelancer_pages/freelancer/Expenses";
@@ -303,8 +186,9 @@ import NotFound from "./freelancer_pages/NotFound";
 
 function App() {
   return (
+    <ThemeProvider>
     <UserProvider>
-      <ProjectProvider> {/* <--- Wraps App so Clients & Freelancers see the same data */}
+      <ProjectProvider> 
         <Router>
           <Routes>
             {/* ===================== */}
@@ -320,21 +204,23 @@ function App() {
             {/* ===================== */}
             {/* CLIENT PORTAL ROUTES */}
             {/* ===================== */}
+            {/* Anything inside here gets the Sidebar + Navbar */}
             <Route path="/client" element={<ClientLayout />}>
                <Route index element={<ClientDashboard />} />
                
-               {/* Real Client Components */}
                <Route path="dashboard" element={<ClientDashboard />} />
                <Route path="projects" element={<ClientProjects />} />
                <Route path="financials" element={<ClientFinancials />} />
-               <Route  path="/client/contracts" element={<ClientContracts />} />
-               <Route path="/client/proposals" element={<JobProposals />} />
+               <Route path="contracts" element={<ClientContracts />} />
+               <Route path="proposals" element={<JobProposals />} />
                <Route path="documents" element={<ClientDocuments />} />
                <Route path="messages" element={<ClientMessages />} />
                <Route path="settings" element={<ClientSettings />} />
                <Route path="help" element={<ClientHelp />} />
                
-               {/* Profile placeholder */}
+               {/* --- MOVED HERE: Now it will have Sidebar & Navbar --- */}
+               <Route path="notifications" element={<NotificationHome />} />
+               
                <Route path="profile" element={<div style={phStyle}>User Profile</div>} />
             </Route>
 
@@ -354,23 +240,23 @@ function App() {
             <Route path="/freelancer/settings" element={<Settings />} />
 
             {/* ===================== */}
-            {/* NOTIFICATIONS & 404 */}
+            {/* 404 & Fallbacks */}
             {/* ===================== */}
-            <Route path="/notifications" element={<NotificationHome />} />
+            {/* Note: I commented out the standalone /notifications since we moved it into /client */}
+            {/* <Route path="/notifications" element={<NotificationHome />} /> */}
+            
             <Route path="/notifications/:id" element={<NotificationItem />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<Navigate to="/404" />} />
-
-
 
           </Routes>
         </Router>
       </ProjectProvider>
     </UserProvider>
+    </ThemeProvider>
   );
 }
 
-// Simple Placeholder Style
 const phStyle = {
   padding: '40px',
   fontSize: '24px',

@@ -1,3 +1,6 @@
+
+
+
 import React, { useState } from "react";
 import { 
   AppBar, Toolbar, Box, Avatar, IconButton, Typography, InputBase, Badge, 
@@ -15,7 +18,8 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext"; 
 
-export default function FreelancerNavbar() {
+// 1. Accept the prop here
+export default function FreelancerNavbar({ onNotificationClick }) {
   const { user, updateProfile } = useUser();
   const navigate = useNavigate();
 
@@ -33,10 +37,8 @@ export default function FreelancerNavbar() {
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
 
-  // --- LOGOUT LOGIC (UPDATED) ---
   const handleLogout = () => {
     handleMenuClose();
-    // Redirect to Signup Page as requested
     navigate("/signup"); 
   };
 
@@ -66,7 +68,6 @@ export default function FreelancerNavbar() {
         position="fixed"
         elevation={0}
         sx={{
-          // Glassmorphism Effect
           bgcolor: "rgba(255, 255, 255, 0.8)", 
           backdropFilter: "blur(12px)",
           borderBottom: "1px solid",
@@ -80,13 +81,13 @@ export default function FreelancerNavbar() {
       >
         <Toolbar sx={{ justifyContent: "space-between", height: 70 }}>
           
-          {/* 1. Modern Pill-Shaped Search Bar */}
+          {/* Search Bar */}
           <Box
             sx={{
               display: "flex", 
               alignItems: "center", 
               bgcolor: "grey.100",
-              borderRadius: "50px", // Pill shape
+              borderRadius: "50px", 
               px: 2.5, 
               py: 0.8, 
               width: "100%", 
@@ -112,9 +113,10 @@ export default function FreelancerNavbar() {
           {/* Right Section */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
             
-            {/* Notifications */}
+            {/* 2. Notifications Trigger */}
             <IconButton 
-                onClick={() => navigate("/notifications")}
+                // Changed onClick to use the prop passed from Layout
+                onClick={onNotificationClick} 
                 sx={{ 
                     border: '1px solid rgba(0,0,0,0.05)',
                     bgcolor: 'background.paper'
@@ -159,7 +161,7 @@ export default function FreelancerNavbar() {
               anchorEl={anchorEl}
               open={openMenu}
               onClose={handleMenuClose}
-              TransitionComponent={Fade} // Smooth fade animation
+              TransitionComponent={Fade}
               PaperProps={{
                 elevation: 0,
                 sx: {
@@ -168,7 +170,7 @@ export default function FreelancerNavbar() {
                   mt: 2, 
                   borderRadius: 3, 
                   minWidth: 220,
-                  '&:before': { // The little triangle arrow
+                  '&:before': { 
                     content: '""',
                     display: 'block',
                     position: 'absolute',
@@ -186,7 +188,7 @@ export default function FreelancerNavbar() {
               anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             >
               <Box sx={{ px: 2, py: 1.5 }}>
-                 <Typography variant="subtitle2" color="text.secondary">Account</Typography>
+                  <Typography variant="subtitle2" color="text.secondary">Account</Typography>
               </Box>
               
               <MenuItem onClick={handleEditProfile} sx={{ py: 1.5 }}>
@@ -211,7 +213,7 @@ export default function FreelancerNavbar() {
         </Toolbar>
       </AppBar>
 
-      {/* --- EDIT PROFILE MODAL (Cleaned Up) --- */}
+      {/* Edit Profile Dialog - Kept same logic */}
       <Dialog 
         open={openModal} 
         onClose={() => setOpenModal(false)} 
@@ -222,8 +224,6 @@ export default function FreelancerNavbar() {
         <DialogTitle sx={{ fontWeight: 700, textAlign: 'center' }}>Update Profile Details</DialogTitle>
         <DialogContent>
           <Stack spacing={4} alignItems="center" sx={{ mt: 2 }}>
-            
-            {/* Image Upload Area */}
             <Box sx={{ position: "relative" }}>
               <Avatar src={preview} sx={{ width: 120, height: 120, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
               <IconButton 
