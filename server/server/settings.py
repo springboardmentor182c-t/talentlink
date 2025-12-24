@@ -123,6 +123,7 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+
 # NOTE: For local dev without Postgres, you can switch to SQLite:
 # DATABASES = {
 #     'default': {
