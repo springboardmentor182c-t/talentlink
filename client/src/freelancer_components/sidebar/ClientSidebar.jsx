@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -8,18 +10,21 @@ import {
   FaEnvelope, 
   FaCog, 
   FaQuestionCircle,
-  FaSignOutAlt 
+  FaSignOutAlt,
+  FaFileContract,
+  FaUserFriends 
 } from 'react-icons/fa';
+
+// 1. IMPORT YOUR CSS TO GET THE .hide-scrollbar CLASS
+// Adjust the path "../../App.css" if your folder structure is different
+import '../../App.css'; 
 
 const ClientSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // 1. Clear user session logic here
     console.log("Logging out from sidebar...");
-    
-    // 2. Redirect to Login
     navigate('/login');
   };
 
@@ -34,7 +39,9 @@ const ClientSidebar = () => {
       </div>
 
       {/* --- Main Menu Section --- */}
-      <div style={styles.scrollableContent}>
+      {/* 2. ADD className="hide-scrollbar" HERE */}
+      {/* This is the div that actually scrolls, so it needs the class to hide the bar */}
+      <div style={styles.scrollableContent} className="hide-scrollbar">
         <div style={styles.sectionLabel}>MENU</div>
         
         <NavItem 
@@ -49,12 +56,28 @@ const ClientSidebar = () => {
           label="My Projects" 
           isActive={location.pathname === '/client/projects'} 
         />
+        
+        <NavItem 
+          to="/client/proposals" 
+          icon={<FaUserFriends />} 
+          label="Review Proposals" 
+          isActive={location.pathname === '/client/proposals'} 
+        />
+
         <NavItem 
           to="/client/financials" 
           icon={<FaFileInvoiceDollar />} 
           label="Financials" 
           isActive={location.pathname === '/client/financials'} 
         />
+        
+        <NavItem 
+          to="/client/contracts" 
+          icon={<FaFileContract />} 
+          label="Contracts" 
+          isActive={location.pathname === '/client/contracts'} 
+        />
+
         <NavItem 
           to="/client/documents" 
           icon={<FaFileAlt />} 
@@ -111,7 +134,7 @@ const styles = {
   sidebar: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#0a1f44', // Dark Blue Theme
+    backgroundColor: '#0a1f44', 
     color: 'white',
     display: 'flex',
     flexDirection: 'column',
@@ -158,17 +181,17 @@ const styles = {
     alignItems: 'center',
     padding: '12px 15px',
     textDecoration: 'none',
-    color: '#cbd5e1', // Light grey text
+    color: '#cbd5e1', 
     fontSize: '14px',
     borderRadius: '8px',
     transition: 'all 0.2s ease',
     marginBottom: '5px',
   },
   activeLink: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)', // Semi-transparent Blue
+    backgroundColor: 'rgba(59, 130, 246, 0.2)', 
     color: '#ffffff',
     fontWeight: '600',
-    borderLeft: '3px solid #3b82f6', // Left accent border
+    borderLeft: '3px solid #3b82f6', 
   },
   icon: {
     marginRight: '15px',

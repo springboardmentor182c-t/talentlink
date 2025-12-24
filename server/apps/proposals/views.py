@@ -1,118 +1,116 @@
-from rest_framework import generics, viewsets, status
+
+
+
+from rest_framework import generics, permissions, status
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
 from django.db.models import Q
-
 from .models import Proposal
-from .serializers import ProposalSerializer, ProposalCreateSerializer
+from .serializers import ProposalSerializer
 
+# --- EXISTING VIEWS (Unchanged) ---
 
-class ProposalViewSet(viewsets.ModelViewSet):
-    """
-    API endpoints for Proposal CRUD operations.
-    
-    GET /api/v1/proposals/ - List all proposals for the freelancer
-    POST /api/v1/proposals/ - Create a new proposal
-    GET /api/v1/proposals/{id}/ - Get a specific proposal
-    PUT/PATCH /api/v1/proposals/{id}/ - Update a proposal
-    DELETE /api/v1/proposals/{id}/ - Delete a proposal
-    """
-    permission_classes = [IsAuthenticated]
-    
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return ProposalCreateSerializer
-        return ProposalSerializer
-    
-    def get_queryset(self):
-        """Return proposals for the logged-in user (as freelancer)"""
-        user = self.request.user
-        return Proposal.objects.filter(freelancer=user).order_by('-created_at')
-    
-    def perform_create(self, serializer):
-        """Automatically set the freelancer to the logged-in user"""
-        serializer.save(freelancer=self.request.user)
-    
-    @action(detail=True, methods=['patch'])
-    def update_status(self, request, pk=None):
-        """
-        Update the status of a proposal.
-        PATCH /api/v1/proposals/{id}/update_status/
-        Body: {"status": "accepted" | "rejected"}
-        """
-        proposal = self.get_object()
-        new_status = request.data.get('status')
-        
-        if new_status not in ['pending', 'accepted', 'rejected']:
-            return Response(
-                {'error': 'Invalid status. Must be pending, accepted, or rejected.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        proposal.status = new_status
-        proposal.save()
-        
-        serializer = self.get_serializer(proposal)
-        return Response(serializer.data)
-
-
-class ProposalListView(generics.ListCreateAPIView):
-    """
-    List and create proposals for the freelancer.
-    """
+class ProposalListCreateView(generics.ListCreateAPIView):
     serializer_class = ProposalSerializer
-    permission_classes = [IsAuthenticated]
-    
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return ProposalCreateSerializer
-        return ProposalSerializer
-    
+    permission_classes = [permissions.IsAuthenticated]
+
     def get_queryset(self):
         user = self.request.user
-        status_filter = self.request.query_params.get('status')
-        
-        # Proposals where the user is the freelancer
-        qs = Proposal.objects.filter(freelancer=user).order_by('-created_at')
-        
-        if status_filter:
-            qs = qs.filter(status=status_filter)
-        
-        return qs
-    
+        return Proposal.objects.filter(
+            Q(freelancer=user) | Q(project__client=user)
+        ).distinct()
+
     def perform_create(self, serializer):
-        serializer.save(freelancer=self.request.user)
+        serializer.save(
+            freelancer=self.request.user,  # ✅ CORRECT
+            status='sent'
+        )
 
 
 class ProposalDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    Retrieve, update, or delete a specific proposal.
+    GET, PUT, DELETE a specific proposal.
     """
+    queryset = Proposal.objects.all()
     serializer_class = ProposalSerializer
-    permission_classes = [IsAuthenticated]
-    
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Security: Only allow access if user is involved in the proposal
+        user = self.request.user
+        return Proposal.objects.filter(
+            Q(freelancer=user) | Q(project__client=user)
+        )
+
+class AcceptProposalView(APIView):
+    """
+    POST: Mark a proposal as 'accepted'.
+    This triggers the logic needed for Contracts and Messaging permissions.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        proposal = get_object_or_404(Proposal, pk=pk)
+
+        # Security Check: Only the Client who owns the project can accept
+        if proposal.project.client != request.user:
+            return Response(
+                {"detail": "You do not have permission to accept this proposal."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Update Status
+        proposal.status = 'accepted'
+        proposal.save()
+
+        return Response({
+            "message": "Proposal accepted.",
+            "status": "accepted",
+            "project_id": proposal.project.id,
+            "freelancer_id": proposal.freelancer.id
+        }, status=status.HTTP_200_OK)
+
+class ReceivedProposalsList(generics.ListAPIView):
+    serializer_class = ProposalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
     def get_queryset(self):
         user = self.request.user
-        return Proposal.objects.filter(freelancer=user)
 
+        return (
+            Proposal.objects
+            .filter(project__client=user)
+            .exclude(freelancer__isnull=True)
+            .select_related("project", "freelancer")
+            .order_by("-created_at")
+        )
 
-class ClientProposalsView(generics.ListAPIView):
+# --- NEW VIEW ADDED BELOW ---
+
+class HireProposalView(APIView):
     """
-    List proposals received by a client from freelancers.
-    GET /api/v1/proposals/client-proposals/
+    POST: Mark a proposal as 'Hired'.
+    Call this view immediately after creating a contract to update the proposal status.
     """
-    serializer_class = ProposalSerializer
-    permission_classes = [IsAuthenticated]
-    
-    def get_queryset(self):
-        user = self.request.user
-        status_filter = self.request.query_params.get('status')
-        
-        # Proposals where the user is the client
-        qs = Proposal.objects.filter(client=user).order_by('-created_at')
-        
-        if status_filter:
-            qs = qs.filter(status=status_filter)
-        
-        return qs
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        proposal = get_object_or_404(Proposal, pk=pk)
+
+        # 1. Security Check: Only the Client who owns the project can hire
+        if proposal.project.client != request.user:
+            return Response(
+                {"detail": "You do not have permission to hire for this proposal."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 2. Update Status to 'Hired'
+        proposal.status = 'Hired'
+        proposal.save()
+
+        return Response({
+            "message": "Freelancer hired successfully.",
+            "status": "Hired",
+            "proposal_id": proposal.id
+        }, status=status.HTTP_200_OK)

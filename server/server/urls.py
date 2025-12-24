@@ -24,13 +24,14 @@ urlpatterns = [
     path('api/profiles/', include('apps.profiles.urls')), 
     path('api/messaging/', include('apps.messaging.urls')),
 
-    path('api/v1/analytics/', include('apps.analytics.urls')),
+    # path('api/v1/analytics/', include('apps.analytics.urls')),
     path('api/v1/auth/', include('apps.users.urls')),
-    # path('api/v1/projects/', include('apps.projects.urls')),
-    # path('api/contracts/', include('apps.contracts.urls')),
-    path('api/v1/notifications/', include('apps.notifications.urls')),
 
-    path('api/v1/projects/', include('apps.projects.urls')),
-    path('api/v1/proposals/', include('apps.proposals.urls')),
-    path('api/v1/contracts/', include('apps.contracts.urls')),
+    path('api/projects/', include('apps.projects.urls')),
+    # path('api/v1/projects/', include('apps.projects.urls')),
+    path('api/contracts/', include('apps.contracts.urls')),
+
+    path('api/proposals/', include('apps.proposals.urls')),
+
+
 ]
