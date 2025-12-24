@@ -245,17 +245,13 @@
 
 
 
-
-
-
-
 import React from "react";
 import "./App.css";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
 /* ===== Context Providers ===== */
 import { UserProvider } from "./context/UserContext";
-import { ProjectProvider } from "./context/ProjectContext"; // <--- NEW: Enables data sharing
+import { ProjectProvider } from "./context/ProjectContext";
 
 /* ===== AuthFlow UI Pages ===== */
 import Home from "./pages/Home";
@@ -277,7 +273,7 @@ import ClientHelp from "./freelancer_pages/client/ClientHelp";
 
 /* ===== Freelancer Dashboard Pages ===== */
 import FreelancerDashboard from "./freelancer_pages/freelancer/FreelancerDashboard";
-import Projects from "./freelancer_pages/freelancer/Projects"; // Ensure this is the new Freelancer Project page
+import Projects from "./freelancer_pages/freelancer/Projects";
 import Accounting from "./freelancer_pages/freelancer/Accounting";
 import Expenses from "./freelancer_pages/freelancer/Expenses";
 import Inquiry from "./freelancer_pages/freelancer/Inquiry";
@@ -286,6 +282,9 @@ import CalendarPage from "./freelancer_pages/freelancer/CalendarPage";
 import Clients from "./freelancer_pages/freelancer/Clients";
 import Reports from "./freelancer_pages/freelancer/Reports";
 import Settings from "./freelancer_pages/freelancer/Settings";
+
+/* ===== 🔥 YOUR TASK: Freelancer Profile CRUD UI ===== */
+import FreelancerProfile from "./freelancer_pages/freelancer/FreelancerProfile";
 
 /* ===== Notifications ===== */
 import NotificationHome from "./notifications/features/notifications/pages/NotificationsPage";
@@ -297,9 +296,10 @@ import NotFound from "./freelancer_pages/NotFound";
 function App() {
   return (
     <UserProvider>
-      <ProjectProvider> {/* <--- Wraps App so Clients & Freelancers see the same data */}
+      <ProjectProvider>
         <Router>
           <Routes>
+
             {/* ===================== */}
             {/* PUBLIC AUTHFLOW ROUTES */}
             {/* ===================== */}
@@ -314,19 +314,15 @@ function App() {
             {/* CLIENT PORTAL ROUTES */}
             {/* ===================== */}
             <Route path="/client" element={<ClientLayout />}>
-               <Route index element={<ClientDashboard />} />
-               
-               {/* Real Client Components */}
-               <Route path="dashboard" element={<ClientDashboard />} />
-               <Route path="projects" element={<ClientProjects />} />
-               <Route path="financials" element={<ClientFinancials />} />
-               <Route path="documents" element={<ClientDocuments />} />
-               <Route path="messages" element={<ClientMessages />} />
-               <Route path="settings" element={<ClientSettings />} />
-               <Route path="help" element={<ClientHelp />} />
-               
-               {/* Profile placeholder */}
-               <Route path="profile" element={<div style={phStyle}>User Profile</div>} />
+              <Route index element={<ClientDashboard />} />
+              <Route path="dashboard" element={<ClientDashboard />} />
+              <Route path="projects" element={<ClientProjects />} />
+              <Route path="financials" element={<ClientFinancials />} />
+              <Route path="documents" element={<ClientDocuments />} />
+              <Route path="messages" element={<ClientMessages />} />
+              <Route path="settings" element={<ClientSettings />} />
+              <Route path="help" element={<ClientHelp />} />
+              <Route path="profile" element={<div style={phStyle}>User Profile</div>} />
             </Route>
 
             {/* ===================== */}
@@ -343,6 +339,12 @@ function App() {
             <Route path="/freelancer/reports" element={<Reports />} />
             <Route path="/freelancer/settings" element={<Settings />} />
 
+            {/* 🔥 NEW ROUTE — THIS IS YOUR TASK */}
+            <Route
+              path="/freelancer/profile"
+              element={<FreelancerProfile />}
+            />
+
             {/* ===================== */}
             {/* NOTIFICATIONS & 404 */}
             {/* ===================== */}
@@ -350,6 +352,7 @@ function App() {
             <Route path="/notifications/:id" element={<NotificationItem />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<Navigate to="/404" />} />
+
           </Routes>
         </Router>
       </ProjectProvider>
@@ -357,12 +360,12 @@ function App() {
   );
 }
 
-// Simple Placeholder Style
+/* ===== Placeholder Style ===== */
 const phStyle = {
-  padding: '40px',
-  fontSize: '24px',
-  fontWeight: 'bold',
-  color: '#475569'
+  padding: "40px",
+  fontSize: "24px",
+  fontWeight: "bold",
+  color: "#475569",
 };
 
 export default App;
