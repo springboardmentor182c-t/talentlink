@@ -38,23 +38,18 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # ... django apps
     'rest_framework',
-    'rest_framework_simplejwt',
     'corsheaders',
 
     'apps.users.apps.UsersConfig',
-    'apps.core',
-    'apps.profiles',
-    'apps.messaging',
-    'apps.analytics',
-    'apps.projects',
-    'apps.contracts.apps.ContractsConfig',
+    'apps.profiles.apps.ProfilesConfig',
+    'apps.projects.apps.ProjectsConfig',
     'apps.proposals.apps.ProposalsConfig',
-
-    
-
+    'apps.contracts.apps.ContractsConfig',
+    'apps.messaging.apps.MessagingConfig',
+    'apps.notifications.apps.NotificationsConfig',
 ]
+
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -121,13 +116,20 @@ WSGI_APPLICATION = 'server.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Talentlink',      # The name you just gave the DB in pgAdmin
-        'USER': 'postgres',        # Default is usually 'postgres'
-        'PASSWORD': 'Kumar@psql', # <--- PUT YOUR PGADMIN PASSWORD HERE
+        'NAME': 'Talentlink',
+        'USER': 'postgres',
+        'PASSWORD': 'Kumar@psql',
         'HOST': 'localhost',
-        'PORT': '5432',            # Default postgres port
+        'PORT': '5432',
     }
 }
+# NOTE: For local dev without Postgres, you can switch to SQLite:
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation
