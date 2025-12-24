@@ -1,17 +1,11 @@
-import React from "react";
-import {
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Box,
-  Typography,
-  Avatar,
-  Badge
-} from "@mui/material";
 
-import { useNavigate, useLocation } from "react-router-dom";
+
+
+
+import React from "react";
+import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Box, Typography, Avatar, Badge } from "@mui/material";
+// 1. Import Router hooks
+import { useNavigate, useLocation } from "react-router-dom"; 
 
 // Icons
 import DashboardIcon from "@mui/icons-material/DashboardRounded";
@@ -24,9 +18,8 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonthRounded";
 import PeopleIcon from "@mui/icons-material/PeopleRounded";
 import AssessmentIcon from "@mui/icons-material/AssessmentRounded";
 import SettingsIcon from "@mui/icons-material/SettingsRounded";
-import PersonIcon from "@mui/icons-material/PersonRounded"; // ✅ NEW
 
-// Sidebar Menu Items
+// 2. Added 'path' to every item for future connection
 const menuItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/freelancer" },
   { text: "Accounting", icon: <AccountBalanceWalletIcon />, path: "/freelancer/accounting" },
@@ -37,22 +30,19 @@ const menuItems = [
   { text: "Calendar", icon: <CalendarMonthIcon />, path: "/freelancer/calendar" },
   { text: "Clients", icon: <PeopleIcon />, path: "/freelancer/clients" },
   { text: "Reports", icon: <AssessmentIcon />, path: "/freelancer/reports" },
-
-  // ✅ NEW PROFILE ITEM
-  { text: "Profile", icon: <PersonIcon />, path: "/freelancer/profile" },
-
   { text: "Settings", icon: <SettingsIcon />, path: "/freelancer/settings" },
 ];
 
 export default function FreelancerSidebar({ width }) {
+  // 3. Initialize Hooks (Uncomment these when ready)
   const navigate = useNavigate();
   const location = useLocation();
 
   // Professional Blue Palette
-  const sidebarBg = "#0a1f44";
-  const activeBg = "#3b82f6";
-  const activeText = "#ffffff";
-  const inactiveText = "#94a3b8";
+  const sidebarBg = '#0a1f44'; 
+  const activeBg = "#3b82f6";   
+  const activeText = "#ffffff"; 
+  const inactiveText = "#94a3b8"; 
 
   return (
     <Drawer
@@ -63,51 +53,66 @@ export default function FreelancerSidebar({ width }) {
         "& .MuiDrawer-paper": {
           width: width,
           boxSizing: "border-box",
-          bgcolor: sidebarBg,
+          bgcolor: sidebarBg, 
           color: "white",
           borderRight: "none",
         },
       }}
     >
-      {/* Logo Section */}
+      {/* --- Logo / Team Section --- */}
       <Box sx={{ p: 3, display: "flex", alignItems: "center", gap: 2 }}>
-        <Avatar sx={{ bgcolor: activeBg, fontWeight: "bold" }}>TL</Avatar>
+        <Avatar sx={{ bgcolor: activeBg, color: "white", fontWeight: "bold" }}>TL</Avatar>
         <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            Talent Link
-          </Typography>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Talent Link</Typography>
+          {/* <Typography variant="caption" sx={{ color: inactiveText }}>10 Members</Typography> */}
         </Box>
       </Box>
 
-      {/* Navigation */}
+      {/* --- Navigation Menu --- */}
       <List sx={{ px: 2 }}>
         {menuItems.map((item) => {
+          
+          // --- LOGIC TO UNCOMMENT LATER ---
+          // Check if this item is currently active based on URL
           const isActive = location.pathname === item.path;
+          
+          // For now, let's keep Dashboard active by default if no logic applies
+          // const isActive = item.text === "Dashboard"; 
 
           return (
             <ListItemButton
               key={item.text}
-              onClick={() => navigate(item.path)}
-              selected={isActive}
+              
+              // --- UNCOMMENT THIS TO ENABLE NAVIGATION ---
+               onClick={() => navigate(item.path)}
+              
+              // --- UNCOMMENT THIS TO ENABLE HIGHLIGHTING ---
+               selected={isActive}
+
+              // (Remove this manual 'selected' prop once you uncomment the line above)
+              // selected={item.text === "Dashboard"} 
+
               sx={{
                 borderRadius: 2,
                 mb: 1,
                 transition: "all 0.2s ease-in-out",
-
+                
+                // --- Active State (Blue) ---
                 "&.Mui-selected": {
                   bgcolor: activeBg,
                   color: activeText,
-                  boxShadow: "0px 4px 10px rgba(59,130,246,0.3)",
+                  boxShadow: "0px 4px 10px rgba(59, 130, 246, 0.3)",
                   "&:hover": { bgcolor: "#2563eb" },
                   "& .MuiListItemIcon-root": { color: activeText },
                 },
-
+                
+                // --- Inactive State ---
                 "&:not(.Mui-selected)": {
                   color: inactiveText,
-                  "&:hover": {
-                    bgcolor: "rgba(255,255,255,0.05)",
+                  "&:hover": { 
+                    bgcolor: "rgba(255,255,255,0.05)", 
                     color: "white",
-                    "& .MuiListItemIcon-root": { color: "white" },
+                    "& .MuiListItemIcon-root": { color: "white" }
                   },
                 },
               }}
@@ -115,21 +120,19 @@ export default function FreelancerSidebar({ width }) {
               <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>
                 {item.icon}
               </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }}
-              />
-
+              <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }} />
+              
+              {/* Badge */}
               {item.badge && (
-                <Badge
-                  badgeContent={item.badge}
-                  sx={{
-                    "& .MuiBadge-badge": {
-                      bgcolor: isActive ? "white" : activeBg,
+                <Badge 
+                  badgeContent={item.badge} 
+                  sx={{ 
+                    "& .MuiBadge-badge": { 
+                      bgcolor: isActive ? "white" : activeBg, // Uses isActive logic
                       color: isActive ? activeBg : "white",
-                      fontWeight: "bold",
-                    },
-                  }}
+                      fontWeight: "bold" 
+                    } 
+                  }} 
                 />
               )}
             </ListItemButton>
