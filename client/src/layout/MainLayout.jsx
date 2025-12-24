@@ -27,9 +27,13 @@ const MainLayout = () => {
 
           {/* Page Content (Routing Outlet) */}
           <div className="flex-1 overflow-y-auto w-full bg-gray-50">
-            <div className="p-4 sm:p-6 lg:p-8">
+            {location.pathname.startsWith("/freelancer") ? (
               <Outlet />
-            </div>
+            ) : (
+              <div className="p-4 sm:p-6 lg:p-8">
+                <Outlet />
+              </div>
+            )}
           </div>
         </div>
       </div>

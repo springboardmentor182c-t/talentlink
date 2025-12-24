@@ -37,6 +37,8 @@ import FreelancerProfileCreateEdit from "./Pages/Profile/FreelancerProfileCreate
 import FreelancerProfileView from "./Pages/Profile/FreelancerProfileView.jsx";
 import FreelancerMessages from "./Pages/FreelancerMessages.jsx";
 import ClientMessages from "./Pages/ClientMessages.jsx";
+import Earnings from "./Pages/Earnings.jsx";
+import ReviewsRatings from "./Pages/ReviewsRatings.jsx";
 
 // Projects
 import PostNewProject from "./Pages/PostNewProject.jsx";
@@ -113,10 +115,11 @@ function App() {
         <Route path="proposals" element={<Proposals />} />
         <Route path="proposal/:id" element={<ProjectProposal />} />
         <Route path="notifications" element={<Notifications />} />
-        <Route path="profile/skills" element={<Skills basePath="/freelancer/profile" />} />
-        <Route path="profile/work" element={<Work basePath="/freelancer/profile" />} />
-        <Route path="profile/portfolio" element={<Portfolio basePath="/freelancer/profile" />} />
         <Route path="profile/settings" element={<Settings basePath="/freelancer/profile" />} />
+        <Route path="earnings" element={<Earnings />} />
+        <Route path="reviews-ratings" element={<ReviewsRatings />} />
+        <Route path="profile/skills" element={<Skills basePath="/freelancer/profile" />} />
+        <Route path="profile/portfolio" element={<Portfolio basePath="/freelancer/profile" />} />
       </Route>
     </Routes>
   );

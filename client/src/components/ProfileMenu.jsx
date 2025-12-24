@@ -56,9 +56,7 @@ const ProfileMenu = ({ isOpen, setIsOpen, menuRef, buttonRef }) => {
             <span className="text-white text-sm font-medium">{initials}</span>
           )}
         </div>
-        <span className="text-sm font-medium text-gray-700 hidden sm:block">
-          {name}
-        </span>
+
         <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 

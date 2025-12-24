@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, DollarSign, Clock, MapPin, User } from 'lucide-react';
+import { Search, DollarSign, Clock, MapPin, User, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 function Jobs() {
@@ -102,38 +102,46 @@ function Jobs() {
   });
 
   return (
-    <div>
-      {/* Back Button */}
-      <button
-        onClick={() => navigate('/client/jobs')}
-        className="mb-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
-      >
-        ← Back
-      </button>
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
-        <h2 className="text-2xl font-bold text-gray-800">Available Jobs</h2>
-        <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3 w-full md:w-auto">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search jobs..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64"
-            />
-          </div>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Jobs</option>
-            <option value="open">Open</option>
-            <option value="in progress">In Progress</option>
-          </select>
-        </div>
+    <div className="flex-1 p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-2xl font-bold text-gray-800 mb-2">My Jobs</h1>
+      <p className="text-gray-600 mb-6">Manage your active and completed projects</p>
+      
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <input
+          type="text"
+          placeholder="Search jobs by title, client, or description..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
+        />
+      </div>
+      
+      <div className="flex space-x-3 mb-6">
+        <button
+          onClick={() => setFilterStatus('active')}
+          className={`px-4 py-2 rounded-lg font-medium text-sm ${
+            filterStatus === 'active' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          Active Jobs
+        </button>
+        <button
+          onClick={() => setFilterStatus('pending')}
+          className={`px-4 py-2 rounded-lg font-medium text-sm ${
+            filterStatus === 'pending' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          Pending
+        </button>
+        <button
+          onClick={() => setFilterStatus('completed')}
+          className={`px-4 py-2 rounded-lg font-medium text-sm ${
+            filterStatus === 'completed' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          Completed
+        </button>
       </div>
 
       <div className="space-y-4">
@@ -199,6 +207,20 @@ function Jobs() {
             </div>
           </div>
         ))}
+
+        {filteredJobs.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-10 bg-white rounded-lg shadow-sm">
+            <Gift className="w-16 h-16 text-gray-400 mb-4" />
+            <p className="text-xl font-semibold text-gray-700 mb-2">No jobs found</p>
+            <p className="text-gray-500 mb-6">Try adjusting your search or filters.</p>
+            <button
+              onClick={() => navigate('/freelancer/find-work')}
+              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Find Work
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Job Detail Modal */}

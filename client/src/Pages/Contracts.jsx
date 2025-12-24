@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  DollarSign, 
-  Clock, 
-  CheckCircle, 
-  FileText, 
-  AlertCircle, 
-  Calendar, 
-  Download, 
+import {
+  IndianRupee,
+  Clock,
+  CheckCircle,
+  FileText,
+  AlertCircle,
+  Calendar,
+  Download,
   Eye,
   RefreshCw,
   Filter,
@@ -97,9 +97,9 @@ const ContractListItem = ({ contract, isSelected, onClick }) => {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR'
     }).format(amount);
   };
 
@@ -178,9 +178,9 @@ const ContractDetails = ({ contract, onStatusUpdate, onPayment }) => {
   const [loading, setLoading] = useState(false);
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR'
     }).format(amount);
   };
 
@@ -377,7 +377,7 @@ const ContractDetails = ({ contract, onStatusUpdate, onPayment }) => {
             onClick={() => onPayment(contract.id)}
             className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2"
           >
-            <DollarSign className="w-4 h-4" />
+            <IndianRupee className="w-4 h-4" />
             Make Payment
           </button>
           <button 
@@ -406,8 +406,8 @@ const Contracts = () => {
   const [contracts, setContracts] = useState([]);
   const [stats, setStats] = useState({
     activeContracts: 0,
-    totalEarnings: '$0',
-    pendingPayments: '$0',
+    totalEarnings: '₹0',
+    pendingPayments: '₹0',
     completedProjects: 0
   });
   const [selectedContract, setSelectedContract] = useState(null);
@@ -449,7 +449,7 @@ const Contracts = () => {
       setLoading(true);
       setError(null);
       const data = await contractService.getContracts();
-      setContracts(data);
+      setContracts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch contracts:', err);
       setError('Failed to load contracts. Please try again.');
@@ -599,7 +599,7 @@ const Contracts = () => {
           <StatsCard 
             title="Total Earnings" 
             value={stats.totalEarnings} 
-            icon={DollarSign}
+            icon={IndianRupee}
             color="green"
             loading={loading}
           />

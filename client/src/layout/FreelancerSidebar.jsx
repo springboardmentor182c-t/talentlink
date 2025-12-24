@@ -1,13 +1,17 @@
 import React from "react";
 import {
-  Menu,
-  X,
-  MessageSquare,
-  FolderKanban,
+  LayoutDashboard,
   FileText,
   Briefcase,
+  MessageSquare,
   User,
   LogOut,
+  DollarSign,
+  Star,
+  Settings,
+  FolderKanban,
+  ClipboardList,
+  X,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -16,11 +20,16 @@ const FreelancerSidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
 
   const menuItems = [
-    { icon: <Menu className="w-5 h-5" />, label: "Dashboard", path: "/freelancer" },
-    { icon: <Briefcase className="w-5 h-5" />, label: "Jobs", path: "/freelancer/jobs" },
-    { icon: <FileText className="w-5 h-5" />, label: "Contracts", path: "/freelancer/contracts" },
+    { icon: <LayoutDashboard className="w-5 h-5" />, label: "Dashboard Overview", path: "/freelancer" },
+    { icon: <FileText className="w-5 h-5" />, label: "My Proposals", path: "/freelancer/proposals" },
+    { icon: <Briefcase className="w-5 h-5" />, label: "Active Contracts", path: "/freelancer/contracts" },
+    { icon: <ClipboardList className="w-5 h-5" />, label: "My Jobs", path: "/freelancer/jobs" },
+    { icon: <DollarSign className="w-5 h-5" />, label: "Earnings", path: "/freelancer/earnings" },
+          { icon: <Star className="w-5 h-5" />, label: "Reviews & Ratings", path: "/freelancer/reviews-ratings" },
+          { icon: <User className="w-5 h-5" />, label: "My Profile", path: "/freelancer/profile" },
+          { icon: <FolderKanban className="w-5 h-5" />, label: "Skills & Portfolio", path: "/freelancer/profile/portfolio" },
+          { icon: <Settings className="w-5 h-5" />, label: "Settings", path: "/freelancer/profile/settings" },
     { icon: <MessageSquare className="w-5 h-5" />, label: "Messages", path: "/freelancer/messages" },
-    { icon: <User className="w-5 h-5" />, label: "Profile", path: "/freelancer/profile" },
   ];
 
   const handleClick = (path) => {
@@ -37,7 +46,7 @@ const FreelancerSidebar = ({ isOpen, onClose }) => {
   };
 
   const isActive = (path) => {
-    if (path === "/") return location.pathname === "/";
+    if (path === "/freelancer") return location.pathname === "/freelancer";
     return location.pathname.startsWith(path);
   };
 
@@ -58,7 +67,7 @@ const FreelancerSidebar = ({ isOpen, onClose }) => {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-teal-500">
-            <h1 className="text-lg font-bold tracking-wide">Freelancer</h1>
+            <h1 className="text-lg font-bold tracking-wide">TalentLink</h1>
             <button
               onClick={onClose}
               className="lg:hidden hover:bg-teal-500 p-2 rounded"
