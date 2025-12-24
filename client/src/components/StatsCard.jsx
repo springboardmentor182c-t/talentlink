@@ -1,6 +1,6 @@
 import React from 'react';
 
-const StatsCard = ({ title, value, icon: Icon, color = "indigo" }) => {
+const StatsCard = ({ title, value, icon: Icon, color = "indigo", loading = false }) => {
   const colorClasses = {
     indigo: 'bg-indigo-50 text-indigo-600',
     green: 'bg-green-50 text-green-600',
@@ -16,7 +16,7 @@ const StatsCard = ({ title, value, icon: Icon, color = "indigo" }) => {
             {title}
           </h3>
           <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 break-words">
-            {value}
+            {loading ? <div className="h-8 bg-gray-200 rounded w-3/4 animate-pulse"></div> : value}
           </p>
         </div>
         {Icon && (
