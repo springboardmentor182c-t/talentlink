@@ -1,32 +1,31 @@
 
 
-
-import React from "react";
+import React, { useState } from "react";
 import { Box, CssBaseline, ThemeProvider, createTheme, Toolbar } from "@mui/material";
 import FreelancerSidebar from "../freelancer_components/sidebar/FreelancerSidebar";
 import FreelancerNavbar from "../freelancer_components/navbar/FreelancerNavbar";
-
-// --- 1. Define the Custom Theme based on the image ---
+import NotificationSidebar from "../notifications/features/notifications/components/NotificationSidebar";
+// --- 1. Define the Custom Theme ---
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#1b4332", // Dark Green for Sidebar
+      main: "#1b4332", 
       light: "#2d6a4f",
     },
     secondary: {
-      main: "#4ade80", // Bright Green for Accents/Active states
+      main: "#4ade80", 
       contrastText: "#1b4332",
     },
     background: {
-      default: "#f3f4f6", // Light Gray background for the main content area
-      paper: "#ffffff",   // White for cards and navbar
+      default: "#f3f4f6", 
+      paper: "#ffffff",   
     },
     text: {
-      primary: "#1f2937", // Dark Gray for main text
-      secondary: "#6b7280", // Softer gray for labels
+      primary: "#1f2937", 
+      secondary: "#6b7280", 
     },
-    success: { main: "#22c55e" }, // Green for positive stats
-    error: { main: "#ef4444" },   // Red for negative stats
+    success: { main: "#22c55e" }, 
+    error: { main: "#ef4444" },   
   },
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
@@ -39,8 +38,8 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: "16px", // Soft, modern roundness
-          boxShadow: "0px 2px 4px rgba(0,0,0,0.05)", // Very subtle shadow
+          borderRadius: "16px", 
+          boxShadow: "0px 2px 4px rgba(0,0,0,0.05)", 
           border: "none",
         },
       },
@@ -49,7 +48,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: "8px",
-          textTransform: "none", // Keep button text typical case
+          textTransform: "none", 
           fontWeight: 600,
         },
       },
@@ -60,9 +59,25 @@ const theme = createTheme({
 const drawerWidth = 260;
 
 export default function FreelancerLayout({ children }) {
+  // --- STATE FOR NOTIFICATION SIDEBAR ---
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      
+      {/* --- CSS TO HIDE SCROLLBARS --- */}
+      <style>{`
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+
       <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
         
         {/* --- 2. Sidebar (Fixed Left) --- */}
@@ -71,6 +86,7 @@ export default function FreelancerLayout({ children }) {
         {/* --- 3. Main Content Area --- */}
         <Box
           component="main"
+          className="hide-scrollbar" // Apply hide class here
           sx={{
             flexGrow: 1,
             width: `calc(100% - ${drawerWidth}px)`,
@@ -79,16 +95,27 @@ export default function FreelancerLayout({ children }) {
             flexDirection: "column",
           }}
         >
-          {/* Navbar (Fixed Top) */}
-          <FreelancerNavbar />
+          {/* Navbar (Pass the click handler) */}
+          <FreelancerNavbar onNotificationClick={() => setIsNotifOpen(true)} />
 
           {/* Scrollable Dashboard Content */}
-          <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: "auto" }}>
+          <Box 
+            component="main" 
+            className="hide-scrollbar" // Apply hide class here too
+            sx={{ flexGrow: 1, p: 3, overflow: "auto" }}
+          >
             {/* Toolbar fix to prevent content from going under the navbar */}
             <Toolbar /> 
             {children}
           </Box>
         </Box>
+
+        {/* --- 4. NOTIFICATION SIDEBAR --- */}
+        <NotificationSidebar 
+          isOpen={isNotifOpen} 
+          onClose={() => setIsNotifOpen(false)} 
+        />
+        
       </Box>
     </ThemeProvider>
   );
