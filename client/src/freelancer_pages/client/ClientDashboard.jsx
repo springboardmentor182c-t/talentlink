@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
+import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../../utils/axiosInstance';
 
 // --- SVG ICONS (Self-contained to avoid import errors) ---
 const Icons = {
@@ -27,38 +28,220 @@ const Icons = {
   )
 };
 
-// --- MOCK DATA (Client Specific) ---
-const spendingData = [
-  { name: 'Jan', value: 1200 }, { name: 'Feb', value: 2100 },
-  { name: 'Mar', value: 1800 }, { name: 'Apr', value: 3500 },
-  { name: 'May', value: 3100 }, { name: 'Jun', value: 5200 },
-  { name: 'Jul', value: 7800 },
-];
-
-const activityFeed = [
-  { id: 1, text: 'Received 3 new proposals for "Website Redesign"', time: '1 hour ago', icon: <Icons.FileText />, color: '#3b82f6' },
-  { id: 2, text: 'Payment released to Sarah for "UI Milestone"', time: '4 hours ago', icon: <Icons.Wallet />, color: '#10b981' },
-  { id: 3, text: 'Invoice #1024 is pending approval', time: '1 day ago', icon: <Icons.Invoice />, color: '#f59e0b' },
-  { id: 4, text: 'Job Post "React Developer" is now live', time: '2 days ago', icon: <Icons.Briefcase />, color: '#6366f1' },
-];
-
-const deadlines = [
-  { id: 1, title: 'Approve Milestone 2', date: 'Due Tomorrow', tag: 'Action Required', color: '#ef4444' },
-  { id: 2, title: 'Review "Mobile App" Proposal', date: 'Expires in 2 days', tag: 'Hiring', color: '#f59e0b' },
-];
-
-const activeJobs = [
-  { id: 1, title: 'Website Redesign', applicants: 12, status: 'Interviewing' },
-  { id: 2, title: 'SEO Optimization', applicants: 5, status: 'Reviewing' },
-  { id: 3, title: 'Mobile App Dev', applicants: 0, status: 'Draft' },
-];
-
 const ClientDashboard = () => {
-  const navigate = useNavigate(); // 2. Initialize hook
+  const navigate = useNavigate();
+
+  // State Management
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Dashboard Stats
+  const [stats, setStats] = useState({
+    totalSpent: '$0',
+    openJobPosts: 0,
+    newProposals: 0,
+    hiredTalent: 0,
+  });
+
+  // Data Arrays
+  const [spendingData, setSpendingData] = useState([]);
+  const [activityFeed, setActivityFeed] = useState([]);
+  const [proposals, setProposals] = useState([]);
+  const [projects, setProjects] = useState([]);
+
+  // Helper function to get relative time
+  const getRelativeTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+  };
+
+  // Fetch all dashboard data
+  useEffect(() => {
+    const generateSpendingHistory = (contractsData) => {
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const currentMonth = new Date().getMonth();
+      const spendingByMonth = {};
+
+      // Initialize last 7 months
+      for (let i = 6; i >= 0; i--) {
+        const monthIndex = (currentMonth - i + 12) % 12;
+        spendingByMonth[monthNames[monthIndex]] = 0;
+      }
+
+      // Aggregate spending by month
+      contractsData.forEach(contract => {
+        const date = new Date(contract.created_at);
+        const month = monthNames[date.getMonth()];
+        
+        if (spendingByMonth.hasOwnProperty(month)) {
+          // Extract numeric value from bid_amount if it's a string
+          const amount = parseFloat(contract.proposal?.bid_amount || 0);
+          spendingByMonth[month] += amount;
+        }
+      });
+
+      // Convert to chart format
+      const chartData = Object.keys(spendingByMonth).map(month => ({
+        name: month,
+        value: Math.round(spendingByMonth[month])
+      }));
+
+      setSpendingData(chartData);
+    };
+
+    const generateActivityFeed = (proposalsData, contractsData, projectsData) => {
+      const activities = [];
+
+      // Recent proposals (pending)
+      const recentProposals = proposalsData
+        .filter(p => p.status === 'pending')
+        .slice(0, 2)
+        .map(p => ({
+          id: `proposal-${p.id}`,
+          text: `New proposal received for "${p.project_title}"`,
+          time: getRelativeTime(p.created_at),
+          icon: <Icons.FileText />,
+          color: '#3b82f6',
+          timestamp: new Date(p.created_at),
+        }));
+
+      // Recent contracts
+      const recentContracts = contractsData
+        .slice(0, 2)
+        .map(c => ({
+          id: `contract-${c.id}`,
+          text: `Contract created: "${c.title}"`,
+          time: getRelativeTime(c.created_at),
+          icon: <Icons.Wallet />,
+          color: '#10b981',
+          timestamp: new Date(c.created_at),
+        }));
+
+      // Recent projects
+      const recentProjects = projectsData
+        .slice(0, 2)
+        .map(p => ({
+          id: `project-${p.id}`,
+          text: `Project "${p.title}" is ${p.status?.toLowerCase() || 'active'}`,
+          time: getRelativeTime(p.created_at),
+          icon: <Icons.Briefcase />,
+          color: '#6366f1',
+          timestamp: new Date(p.created_at),
+        }));
+
+      // Combine and sort by timestamp
+      activities.push(...recentProposals, ...recentContracts, ...recentProjects);
+      activities.sort((a, b) => b.timestamp - a.timestamp);
+
+      setActivityFeed(activities.slice(0, 5));
+    };
+
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Parallel API calls for better performance
+        const [statsRes, proposalsRes, projectsRes, contractsRes] = await Promise.all([
+          axiosInstance.get('/api/v1/analytics/dashboard-stats/'),
+          axiosInstance.get('/api/v1/proposals/client-proposals/'),
+          axiosInstance.get('/api/v1/projects/'),
+          axiosInstance.get('/api/v1/contracts/'),
+        ]);
+
+        // Set stats from API
+        if (statsRes.data) {
+          setStats({
+            totalSpent: statsRes.data.this_month_revenue || '$0',
+            openJobPosts: statsRes.data.active_projects || 0,
+            newProposals: statsRes.data.pending_proposals || 0,
+            hiredTalent: statsRes.data.active_contracts || 0,
+          });
+        }
+
+        // Set proposals
+        if (proposalsRes.data) {
+          setProposals(proposalsRes.data);
+        }
+
+        // Set projects
+        if (projectsRes.data) {
+          setProjects(projectsRes.data);
+        }
+
+        // Generate spending data from contracts
+        generateSpendingHistory(contractsRes.data || []);
+
+        // Generate activity feed from proposals and contracts
+        generateActivityFeed(proposalsRes.data || [], contractsRes.data || [], projectsRes.data || []);
+
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err.response?.data?.message || 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Prepare deadlines from pending proposals
+  const deadlines = proposals
+    .filter(p => p.status === 'pending')
+    .slice(0, 3)
+    .map(p => ({
+      id: p.id,
+      title: `Review "${p.project_title}"`,
+      date: getRelativeTime(p.created_at),
+      tag: 'Pending Review',
+      color: '#f59e0b',
+    }));
+
+  // Prepare active jobs from projects
+  const activeJobs = projects
+    .filter(p => p.status === 'ACTIVE' || p.status === 'PENDING')
+    .slice(0, 3)
+    .map(p => {
+      const projectProposals = proposals.filter(pr => pr.project_title === p.title);
+      return {
+        id: p.id,
+        title: p.title,
+        applicants: projectProposals.length,
+        status: p.status === 'ACTIVE' ? 'Active' : 'Pending',
+      };
+    });
 
   const handlePostJob = () => {
-    navigate('/client/projects'); // 3. Navigation logic
+    navigate('/client/projects');
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+        <div style={{ fontSize: '18px', color: '#64748b' }}>Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px', flexDirection: 'column' }}>
+        <div style={{ fontSize: '18px', color: '#ef4444', marginBottom: '10px' }}>Error loading dashboard</div>
+        <div style={{ fontSize: '14px', color: '#64748b' }}>{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -79,29 +262,29 @@ const ClientDashboard = () => {
         <StatCard 
           icon={<Icons.Wallet />} 
           title="Total Spent" 
-          value="$12,450" 
-          change="+15% vs last mo" 
+          value={stats.totalSpent} 
+          change="This month" 
           color="#3b82f6"
         />
         <StatCard 
           icon={<Icons.Briefcase />} 
           title="Open Job Posts" 
-          value="3" 
-          change="1 Draft" 
+          value={stats.openJobPosts} 
+          change="Active projects" 
           color="#8b5cf6"
         />
         <StatCard 
           icon={<Icons.FileText />} 
-          title="New Proposals" 
-          value="18" 
-          change="5 to review" 
+          title="Pending Proposals" 
+          value={stats.newProposals} 
+          change="Need review" 
           color="#10b981"
         />
         <StatCard 
           icon={<Icons.Users />} 
-          title="Hired Talent" 
-          value="4" 
-          change="Active Contracts" 
+          title="Active Contracts" 
+          value={stats.hiredTalent} 
+          change="Hired talent" 
           color="#ec4899"
         />
       </div>
@@ -146,49 +329,61 @@ const ClientDashboard = () => {
           {/* Deadlines Widget */}
           <div style={{...styles.card, marginBottom: '20px'}}>
             <h2 style={styles.cardTitle}>Actions Required</h2>
-            <div style={styles.list}>
-              {deadlines.map(d => (
-                <div key={d.id} style={styles.deadlineItem}>
-                  <div style={styles.deadlineInfo}>
-                    <span style={{color: d.color, marginRight:'10px', display:'flex'}}><Icons.Clock /></span>
-                    <div>
-                      <div style={styles.itemTitle}>{d.title}</div>
-                      <div style={styles.itemSub}>{d.date}</div>
+            {deadlines.length > 0 ? (
+              <div style={styles.list}>
+                {deadlines.map(d => (
+                  <div key={d.id} style={styles.deadlineItem}>
+                    <div style={styles.deadlineInfo}>
+                      <span style={{color: d.color, marginRight:'10px', display:'flex'}}><Icons.Clock /></span>
+                      <div>
+                        <div style={styles.itemTitle}>{d.title}</div>
+                        <div style={styles.itemSub}>{d.date}</div>
+                      </div>
                     </div>
+                    <span style={{...styles.tag, color: d.color, backgroundColor: `${d.color}20`}}>
+                      {d.tag}
+                    </span>
                   </div>
-                  <span style={{...styles.tag, color: d.color, backgroundColor: `${d.color}20`}}>
-                    {d.tag}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
+                No pending actions
+              </div>
+            )}
           </div>
 
           {/* Job Postings Status */}
           <div style={styles.card}>
             <h2 style={styles.cardTitle}>Job Postings</h2>
-            <div style={styles.list}>
-              {activeJobs.map(job => (
-                <div key={job.id} style={{marginBottom: '15px'}}>
-                   <div style={styles.flexBetween}>
-                      <span style={styles.itemTitle}>{job.title}</span>
-                      <span style={{...styles.itemSub, fontWeight: '600', color: '#3b82f6'}}>
-                        {job.status}
-                      </span>
-                   </div>
-                   <div style={styles.itemSub}>
-                     {job.applicants} Applicants
-                   </div>
-                   <div style={styles.progressBarBg}>
-                      <div style={{
-                        ...styles.progressBarFill, 
-                        width: job.status === 'Interviewing' ? '70%' : job.status === 'Reviewing' ? '40%' : '10%',
-                        backgroundColor: job.status === 'Draft' ? '#94a3b8' : '#3b82f6'
-                      }}></div>
-                   </div>
-                </div>
-              ))}
-            </div>
+            {activeJobs.length > 0 ? (
+              <div style={styles.list}>
+                {activeJobs.map(job => (
+                  <div key={job.id} style={{marginBottom: '15px'}}>
+                     <div style={styles.flexBetween}>
+                        <span style={styles.itemTitle}>{job.title}</span>
+                        <span style={{...styles.itemSub, fontWeight: '600', color: '#3b82f6'}}>
+                          {job.status}
+                        </span>
+                     </div>
+                     <div style={styles.itemSub}>
+                       {job.applicants} Proposal{job.applicants !== 1 ? 's' : ''}
+                     </div>
+                     <div style={styles.progressBarBg}>
+                        <div style={{
+                          ...styles.progressBarFill, 
+                          width: job.status === 'Active' ? '70%' : job.status === 'Pending' ? '40%' : '10%',
+                          backgroundColor: job.status === 'Draft' ? '#94a3b8' : '#3b82f6'
+                        }}></div>
+                     </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
+                No active job postings
+              </div>
+            )}
           </div>
 
         </div>
@@ -196,22 +391,28 @@ const ClientDashboard = () => {
 
       {/* --- Bottom Section: Recent Activity --- */}
       <div style={styles.card}>
-        <h2 style={styles.cardTitle}>Hiring & Payment Activity</h2>
-        <div style={styles.activityList}>
-          {activityFeed.map((item, index) => (
-            <div key={item.id} style={styles.activityItem}>
-              <div style={{...styles.activityIcon, backgroundColor: `${item.color}20`, color: item.color}}>
-                {item.icon}
+        <h2 style={styles.cardTitle}>Recent Activity</h2>
+        {activityFeed.length > 0 ? (
+          <div style={styles.activityList}>
+            {activityFeed.map((item, index) => (
+              <div key={item.id} style={styles.activityItem}>
+                <div style={{...styles.activityIcon, backgroundColor: `${item.color}20`, color: item.color}}>
+                  {item.icon}
+                </div>
+                <div style={styles.activityContent}>
+                  <div style={styles.activityText}>{item.text}</div>
+                  <div style={styles.activityTime}>{item.time}</div>
+                </div>
+                {/* Connector Line */}
+                {index !== activityFeed.length - 1 && <div style={styles.connectorLine}></div>}
               </div>
-              <div style={styles.activityContent}>
-                <div style={styles.activityText}>{item.text}</div>
-                <div style={styles.activityTime}>{item.time}</div>
-              </div>
-              {/* Connector Line */}
-              {index !== activityFeed.length - 1 && <div style={styles.connectorLine}></div>}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
+            No recent activity
+          </div>
+        )}
       </div>
 
     </div>
