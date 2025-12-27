@@ -1,46 +1,41 @@
-"""
-URL configuration for server project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-from django.contrib import admin
-from django.urls import path, include
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/contracts/', include('contracts.urls')),
-    # path('api/proposals/', include('proposals.urls')),  # only if you have this file
-    path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-
-    path('api/users/', include('apps.users.urls')),
-    path('api/projects/', include('apps.projects.urls')),
-    path('api/', include('apps.core.urls')),
-    path('api/profiles/', include('apps.profiles.urls')), 
-    
-    path('api/messaging/', include('apps.messaging.urls')),
-    path('api/reviews/', include('apps.reviews.urls')),
-
-]
-
-
-
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-def home(_):
-    return HttpResponse("TalentLink API running. Try /admin/ or /api/contracts/")
+urlpatterns = [
+    # Root test endpoint
+    path("", lambda request: HttpResponse("API is running 🚀")),
 
+    # Admin
+    path("admin/", admin.site.urls),
+
+    # JWT Authentication
+    path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+
+    # Users and Freelancers
+    path("api/users/", include("apps.users.urls")),
+    path("api/freelancers/", include("apps.users.urls")),  # If you want both
+
+    # Core app
+    path("api/", include("apps.core.urls")),
+
+    # Profiles
+    path("api/profiles/", include("apps.profiles.urls")),
+
+    # Messaging
+    path("api/messaging/", include("apps.messaging.urls")),
+
+    # Reviews
+    path("api/reviews/", include("apps.reviews.urls")),
+
+    # Projects
+    path("api/projects/", include("apps.projects.urls")),
+
+    # Contracts
+    path("api/contracts/", include("apps.contracts.urls")),
+
+    # Proposals
+    path("api/proposals/", include("apps.proposals.urls")),
+]

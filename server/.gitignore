@@ -1,3 +1,14 @@
+ Group-C-feature/projectproposal-Ambika
+__pycache__/
+*.pyc
+env/
+venv/
+*.sqlite3
+media/
+static/
+.DS_Store
+.env
+
 # Python cache
 __pycache__/
 *.pyc
@@ -10,9 +21,10 @@ env/
 
 # Django stuff
 *.log
-db.sqlite3
 
 # VS Code
 .vscode/
 
 **/migrations/
+
+ main-group-C
