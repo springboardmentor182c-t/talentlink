@@ -1,6 +1,14 @@
+ Group-C-feature/projectproposal-Ambika
 Django>=4.2
 psycopg2-binary
 uvicorn
 gunicorn
 djangorestframework
 python-dotenv
+
+Django
+djangorestframework
+djangorestframework-simplejwt
+psycopg2-binary
+django-cors-headers
+ main-group-C
