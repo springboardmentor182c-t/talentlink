@@ -1,3 +1,9 @@
+ Group-C-feature/projectproposal-Ambika
+import os
+from django.core.asgi import get_asgi_application
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "server.settings")
+
 """
 ASGI config for server project.
 
@@ -13,4 +19,5 @@ from django.core.asgi import get_asgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
 
+ main-group-C
 application = get_asgi_application()
