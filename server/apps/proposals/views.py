@@ -19,15 +19,28 @@ class ProposalViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
+        user = self.request.user
         project_id = self.request.query_params.get("project_id")
+        queryset = self.queryset
+        # If filtering by project_id (for client proposals page)
         if project_id:
             try:
                 pid = int(project_id)
             except (ValueError, TypeError):
                 logging.warning("Invalid project_id filter: %s", project_id)
-                return self.queryset.none()
-            return self.queryset.filter(project_id=pid)
-        return self.queryset
+                return queryset.none()
+            queryset = queryset.filter(project_id=pid)
+        # If user is authenticated, filter by freelancer or client
+        if user and user.is_authenticated:
+            # If user is a freelancer (has freelancer_profile), show only their proposals
+            if hasattr(user, "freelancer_profile"):
+                queryset = queryset.filter(freelancer=user)
+            # If user is a client (has client_profile), show only proposals for their projects
+            elif hasattr(user, "client_profile"):
+                from apps.projects.models import Project
+                project_ids = Project.objects.filter(client=user).values_list("id", flat=True)
+                queryset = queryset.filter(project_id__in=project_ids)
+        return queryset
 
     def list(self, request, *args, **kwargs):
         try:
@@ -45,7 +58,10 @@ class ProposalViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def _ensure_client(self, request, proposal):
+        # Debug logging for troubleshooting
+        print(f"[DEBUG] Proposal action: request.user={request.user} (id={getattr(request.user, 'id', None)}), proposal.client={proposal.client} (id={getattr(proposal.client, 'id', None)})")
         if proposal.client != request.user:
+            print(f"[DEBUG] Forbidden: request.user.id={getattr(request.user, 'id', None)} != proposal.client.id={getattr(proposal.client, 'id', None)}")
             return Response({"detail": "Only the client can update this proposal."}, status=status.HTTP_403_FORBIDDEN)
         return None
 
@@ -68,7 +84,7 @@ class ProposalViewSet(viewsets.ModelViewSet):
 
         already_accepted = ProjectProposal.objects.filter(
             client=proposal.client,
-            project_title=proposal.project_title,
+            project_id=proposal.project_id,
             status="accepted",
         ).exclude(id=proposal.id).exists()
         if already_accepted:
@@ -112,10 +128,37 @@ class ProposalCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         try:
-            serializer.save()
+            freelancer = self.get_serializer_context().get("freelancer")
+            project_id = serializer.validated_data.get("project_id")
+            from apps.projects.models import Project
+            project = None
+            client = None
+            if project_id:
+                try:
+                    project = Project.objects.get(id=project_id)
+                    client = project.client
+                except Project.DoesNotExist:
+                    pass
+            serializer.save(freelancer=freelancer, client=client)
+
+            response_data = serializer.data
+            response_data.update({
+                "freelancer_name": f"{freelancer.first_name} {freelancer.last_name}".strip() or freelancer.username,
+                "freelancer_email": freelancer.email,
+            })
+            self.response_data = response_data
+
         except Exception as e:
             print("Error creating proposal:", e)
             raise
+
+    def create(self, request, *args, **kwargs):
+        """
+        Override create to include freelancer name & email in response.
+        """
+        super().create(request, *args, **kwargs)
+        return Response(getattr(self, 'response_data', {}), status=status.HTTP_201_CREATED)
+
 
 
 class ProposalAttachmentUploadView(generics.CreateAPIView):

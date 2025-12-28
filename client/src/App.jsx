@@ -47,7 +47,6 @@ import EditProject from "./Pages/EditProject.jsx";
 import Jobs from "./Pages/Jobs.jsx";
 
 function App() {
-  // Helper to check if user is freelancer
   const isFreelancer = (() => {
     try {
       const userData = localStorage.getItem('user');
@@ -85,8 +84,8 @@ function App() {
         <Route path="projects/:id/edit" element={<EditProject />} />
         {/* Proposals */}
         <Route path="proposals" element={<Proposals />} />
-        {/* Client proposals (if needed) */}
-        {/* <Route path="proposal/:id" element={<ProjectProposal />} /> */}
+        {/* Client proposals */}
+        <Route path="client/proposals" element={<Proposals clientOnly={true} />} />
         {/* Communication */}
         <Route path="messages" element={<ClientMessages />} />
         <Route path="contracts" element={<Contracts />} />
@@ -101,7 +100,7 @@ function App() {
         <Route path="profile/portfolio" element={<Portfolio basePath="/client/profile" />} />
         <Route path="profile/settings" element={<Settings basePath="/client/profile" />} />
       </Route>
-      {/* Freelancer dashboard route (no protection) */}
+      {/* Freelancer dashboard route */}
       <Route path="/freelancer" element={<MainLayout />}>
         <Route index element={<FreelancerDashboard />} />
         <Route path="profile" element={<FreelancerProfileView />} />
@@ -120,6 +119,7 @@ function App() {
         <Route path="reviews-ratings" element={<ReviewsRatings />} />
         <Route path="profile/skills" element={<Skills basePath="/freelancer/profile" />} />
         <Route path="profile/portfolio" element={<Portfolio basePath="/freelancer/profile" />} />
+        <Route path="profile/work" element={<Work basePath="/freelancer/profile" />} />
       </Route>
     </Routes>
   );

@@ -11,8 +11,11 @@ const statusPill = {
   rejected: "bg-red-100 text-red-800",
 };
 
-const ProposalCard = ({ proposal, onAction, loadingId }) => {
+
+const ProposalCard = ({ proposal, onAction, loadingId, forceHideActions = false }) => {
   const actionDisabled = loadingId === proposal.id;
+  const userRole = useMemo(() => (localStorage.getItem("userRole") || "").toLowerCase(), []);
+  const showActions = !forceHideActions && (userRole === "client" || userRole === "both" || proposal._showActions);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
@@ -50,49 +53,52 @@ const ProposalCard = ({ proposal, onAction, loadingId }) => {
         </button>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          onClick={() => onAction(proposal.id, "consider")}
-          disabled={actionDisabled}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-yellow-700 bg-yellow-50 rounded-lg hover:bg-yellow-100 disabled:opacity-60"
-        >
-          {actionDisabled ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Lightbulb className="w-4 h-4" />
-          )}
-          Consider
-        </button>
-        <button
-          onClick={() => onAction(proposal.id, "accept")}
-          disabled={actionDisabled}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 disabled:opacity-60"
-        >
-          {actionDisabled ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <CheckCircle className="w-4 h-4" />
-          )}
-          Accept
-        </button>
-        <button
-          onClick={() => onAction(proposal.id, "reject")}
-          disabled={actionDisabled}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 disabled:opacity-60"
-        >
-          {actionDisabled ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <XCircle className="w-4 h-4" />
-          )}
-          Reject
-        </button>
-      </div>
+      {showActions && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            onClick={() => onAction(proposal.id, "consider")}
+            disabled={actionDisabled}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-yellow-700 bg-yellow-50 rounded-lg hover:bg-yellow-100 disabled:opacity-60"
+          >
+            {actionDisabled ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Lightbulb className="w-4 h-4" />
+            )}
+            Consider
+          </button>
+          <button
+            onClick={() => onAction(proposal.id, "accept")}
+            disabled={actionDisabled}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 disabled:opacity-60"
+          >
+            {actionDisabled ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <CheckCircle className="w-4 h-4" />
+            )}
+            Accept
+          </button>
+          <button
+            onClick={() => onAction(proposal.id, "reject")}
+            disabled={actionDisabled}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 disabled:opacity-60"
+          >
+            {actionDisabled ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <XCircle className="w-4 h-4" />
+            )}
+            Reject
+          </button>
+        </div>
+      )}
     </div>
   );
 };
 
-const Proposals = () => {
+
+const Proposals = ({ clientOnly = false }) => {
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -100,6 +106,13 @@ const Proposals = () => {
   const [info, setInfo] = useState("");
 
   const token = useMemo(() => localStorage.getItem("token"), []);
+  const user = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      return null;
+    }
+  }, []);
 
   const fetchProposals = async () => {
     setLoading(true);
@@ -108,20 +121,16 @@ const Proposals = () => {
       const res = await fetch(PROPOSALS_ENDPOINT, {
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Token ${token}` } : {}),
+          ...(token ? { Authorization: `Token ${token}` } : {}), // Switch back to Token for DRF TokenAuth
         },
       });
       if (!res.ok) throw new Error("Failed to load proposals");
       const data = await res.json();
-      console.log("Fetched proposals:", data);
-      // If paginated, use data.results, else use data
-      if (Array.isArray(data)) {
-        setProposals(data);
-      } else if (Array.isArray(data.results)) {
-        setProposals(data.results);
-      } else {
-        setProposals([]);
+      let proposalsArr = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
+      if (clientOnly && user && user.id) {
+        proposalsArr = proposalsArr.filter((p) => p.client === user.id).map((p) => ({ ...p, _showActions: true }));
       }
+      setProposals(proposalsArr);
     } catch (err) {
       console.error("Error loading proposals:", err);
       setError(err.message || "Unable to load proposals");
@@ -132,7 +141,7 @@ const Proposals = () => {
 
   useEffect(() => {
     fetchProposals();
-  }, []);
+  }, [clientOnly]);
 
   const handleAction = async (id, action) => {
     setActionLoadingId(id);
@@ -229,6 +238,7 @@ const Proposals = () => {
                         proposal={proposal}
                         onAction={handleAction}
                         loadingId={actionLoadingId}
+                        forceHideActions={!!(window.location.pathname.startsWith('/freelancer'))}
                       />
                     ))}
                   </div>

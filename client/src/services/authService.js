@@ -1,19 +1,20 @@
-import api from './api.js';
+import api, { noAuthApi } from './api.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
 export const authService = {
-  register: async (username, email, password, userType = 'freelancer') => {
+  register: async (username, email, password, userType = 'freelancer', first_name = '', last_name = '') => {
     try {
-      const response = await api.post('/auth/register/', {
+      const response = await noAuthApi.post('/auth/register/', {
         username,
         email,
         password,
         password_confirm: password,
         role: userType,
+        first_name,
+        last_name,
       });
 
-      // Accept multiple possible response shapes: { token, user } or { access, refresh, user }
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('accessToken', response.data.token);
@@ -38,14 +39,14 @@ export const authService = {
       throw error.response?.data || error;
     }
   },
-  login: async (username, password) => {
+  login: async (email, password) => {
     try {
-      const response = await api.post('/auth/login/', {
-        username,
+      const response = await noAuthApi.post('/auth/login/', {
+        email,
         password,
+        role
       });
 
-      // Support JWT response shape { access, refresh, user }
       if (response.data.access) {
         localStorage.setItem('accessToken', response.data.access);
       }

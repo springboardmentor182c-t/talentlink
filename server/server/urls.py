@@ -24,6 +24,9 @@ urlpatterns = [
     path("api/profile/", include("apps.profile.urls")),
     path("api/contracts/", include("apps.contracts.urls")),
 
+    # Analytics endpoints
+    path("api/analytics/", include("apps.analytics.urls")),
+
     # Auth endpoints (OTP, reset password)
     path("api/auth/", include("authapp.urls")),
 

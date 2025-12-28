@@ -74,13 +74,20 @@ const ProfileMenu = ({ isOpen, setIsOpen, menuRef, buttonRef }) => {
           {/* Show profile/settings links based on role */}
           {role === 'freelancer' && (
             <>
-              <button
-                onClick={() => navigate('/freelancer/profile')}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <User className="h-4 w-4 mr-3" />
-                Profile
-              </button>
+                <button
+                  onClick={() => navigate('/freelancer/profile')}
+                  className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <User className="h-4 w-4 mr-3" />
+                  Profile
+                </button>
+                <button
+                  onClick={() => navigate('/freelancer/profile/edit')}
+                  className="w-full text-left flex items-center px-4 py-2 text-sm text-blue-700 hover:bg-blue-50"
+                >
+                  <User className="h-4 w-4 mr-3" />
+                  Edit Profile
+                </button>
               <button
                 onClick={() => navigate('/freelancer/profile/settings')}
                 className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -92,13 +99,20 @@ const ProfileMenu = ({ isOpen, setIsOpen, menuRef, buttonRef }) => {
           )}
           {role === 'client' && (
             <>
-              <button
-                onClick={() => navigate('/client/profile')}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <User className="h-4 w-4 mr-3" />
-                Profile
-              </button>
+                <button
+                  onClick={() => navigate('/client/profile')}
+                  className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <User className="h-4 w-4 mr-3" />
+                  Profile
+                </button>
+                <button
+                  onClick={() => navigate('/client/profile/edit')}
+                  className="w-full text-left flex items-center px-4 py-2 text-sm text-blue-700 hover:bg-blue-50"
+                >
+                  <User className="h-4 w-4 mr-3" />
+                  Edit Profile
+                </button>
               <button
                 onClick={() => navigate('/client/projects')}
                 className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

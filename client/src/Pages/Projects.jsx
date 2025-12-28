@@ -3,7 +3,6 @@ import { Eye, Edit, X, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
-// Project Card Component
 const ProjectCard = ({ project, onView, onEdit, onClose, onComplete }) => {
   const postedDate = project.created_at
     ? new Date(project.created_at).toLocaleDateString()
@@ -75,7 +74,6 @@ const ProjectCard = ({ project, onView, onEdit, onClose, onComplete }) => {
   );
 };
 
-// Main Component
 const MyProjects = () => {
   const [activeTab, setActiveTab] = useState("Active");
   const [projects, setProjects] = useState([]);
@@ -85,12 +83,20 @@ const MyProjects = () => {
 
   const projectTabs = ["Active", "Completed", "Drafts"];
 
-  // Fetch projects
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const res = await api.get("/projects/");
+        const userData = localStorage.getItem('user');
+        let url = "/projects/";
+        if (userData) {
+          const user = JSON.parse(userData);
+          const role = (user.user_type || user.role || '').toLowerCase();
+          if (role === 'client') {
+            url = "/projects/?my=1";
+          }
+        }
+        const res = await api.get(url);
         setProjects(res.data || []);
       } catch (err) {
         console.error("Error fetching projects:", err);
@@ -99,7 +105,6 @@ const MyProjects = () => {
         setLoading(false);
       }
     };
-
     fetchProjects();
   }, []);
 
@@ -114,10 +119,7 @@ const MyProjects = () => {
     return projects;
   };
 
-  // Handlers
   const handleViewProject = (id) => navigate(`/projects/${id}`);
-
-  // 🔥 CHANGE HERE: go to /projects/:id/edit instead of alert
   const handleEditProject = (id) => navigate(`/projects/${id}/edit`);
 
   const handleCloseProject = async (id) => {

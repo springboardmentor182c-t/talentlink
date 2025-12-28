@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import api from "../services/api";
+import { useNavigate } from 'react-router-dom';
 import authService from "../services/authService";
 
 export default function SignUp() {
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,7 +14,6 @@ export default function SignUp() {
   const [error, setError] = useState('');
   const [focusedField, setFocusedField] = useState('');
 
-  // ✅ REAL SIGNUP (CONNECTED TO BACKEND)
   const handleSignUp = async (userType) => {
     setError('');
 
@@ -31,23 +32,17 @@ export default function SignUp() {
       return;
     }
 
+    const nameParts = fullName.trim().split(' ');
+    const first_name = nameParts[0] || '';
+    const last_name = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
     try {
       setIsLoading(true);
 
-      const response = await authService.register(fullName || email, email, password, userType.toLowerCase());
+      const response = await authService.register(fullName || email, email, password, userType.toLowerCase(), first_name, last_name);
 
-      // If registration returned tokens, user is auto-logged in and redirected by role
-      if (authService.getToken()) {
-        const role = (localStorage.getItem('userRole') || response.user?.user_type || response.user?.userType || userType).toLowerCase();
-        if (role === 'client') {
-          window.location.href = '/client-pending';
-        } else {
-          window.location.href = '/freelancer-pending';
-        }
-      } else {
-        alert('Account created successfully. Please login.');
-        window.location.href = '/login';
-      }
+      alert('Account created successfully. Please login.');
+      window.location.href = '/login';
 
     } catch (err) {
       const message = err?.detail || err?.email || err?.message || 'Signup failed. Email may already exist.';
@@ -68,12 +63,17 @@ export default function SignUp() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">TL</span>
-          </div>
-          <span className="text-xl font-bold text-blue-900">TalentLink</span>
+      <div 
+        className="flex items-center gap-2 cursor-pointer"
+        onClick={() => navigate('/')}
+      >
+        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+          <span className="text-white font-bold text-lg">TL</span>
         </div>
+        <span className="text-xl font-bold text-blue-900">TalentLink</span>
+      </div>
+
+
         <div className="flex items-center gap-4">
           <button
             onClick={() => window.location.href = '/login'}

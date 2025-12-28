@@ -36,7 +36,6 @@ const PostNewProject = () => {
       ...prev,
       [name]: value
     }));
-    // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -70,7 +69,6 @@ const PostNewProject = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // POST PROJECT -> status = active
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -89,7 +87,7 @@ const PostNewProject = () => {
         location: formData.location,
         experience_level: formData.experienceLevel,
         project_type: formData.projectType,
-        status: 'active' // goes to Active tab
+        status: 'active'
       };
 
       const res = await api.post('/projects/', payload);
@@ -97,7 +95,6 @@ const PostNewProject = () => {
 
       alert('🎉 Project saved successfully!');
       
-      // Reset form (optional since we navigate)
       setFormData({
         title: '',
         description: '',
@@ -110,7 +107,7 @@ const PostNewProject = () => {
         projectType: 'Fixed Price'
       });
 
-      navigate('/projects');
+      navigate('/client/projects');
     } catch (err) {
       console.error('Error saving project:', err);
       alert('Something went wrong while saving the project.');
@@ -119,9 +116,7 @@ const PostNewProject = () => {
     }
   };
 
-  // SAVE AS DRAFT -> status = draft
   const handleSaveAsDraft = async () => {
-    // For draft: at least need a title
     if (!formData.title.trim()) {
       setErrors(prev => ({
         ...prev,
@@ -143,7 +138,7 @@ const PostNewProject = () => {
         location: formData.location,
         experience_level: formData.experienceLevel,
         project_type: formData.projectType,
-        status: 'draft' // goes to Drafts tab
+        status: 'draft'
       };
 
       const res = await api.post('/projects/', payload);

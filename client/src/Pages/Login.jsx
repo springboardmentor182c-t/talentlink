@@ -2,26 +2,27 @@ import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import api from "../services/api";
+import api, { noAuthApi } from "../services/api";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [focusedField, setFocusedField] = useState('');
-  // Debug: show role detected on login
   const [debugRole, setDebugRole] = useState('');
-  // Debug helpers: show last request payload and last response
   const [lastRequest, setLastRequest] = useState(null);
   const [lastResponse, setLastResponse] = useState(null);
 
-  const navigate = useNavigate();
-
-  // ✅ REAL LOGIN (CONNECTED TO BACKEND)
   const handleLogin = async (userType) => {
     setError('');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+
 
     if (!email || !password) {
       setError('Please enter both email and password');
@@ -31,54 +32,56 @@ export default function Login() {
     try {
       setIsLoading(true);
 
-      // Debug: store exact payload to show on screen
       const payload = { email: email, password: '(hidden)', role: userType.toLowerCase() };
       setLastRequest(payload);
 
-      const response = await api.post('/auth/login/', {
+      const response = await noAuthApi.post('/auth/login/', {
         email: email,
         password: password,
         role: userType.toLowerCase(),
       });
-      setLastResponse(response.data); // store full response for debugging
+      setLastResponse(response.data);
 
-      // ✅ Save JWT tokens
       localStorage.setItem('accessToken', response.data.access);
       localStorage.setItem('refreshToken', response.data.refresh);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
-      // Determine role from server response (preferred) and persist it
       const role = (response.data.user?.user_type || response.data.user?.role || userType.toLowerCase()).toLowerCase();
       console.log('Login successful — server response:', response.data);
       console.log('Computed role:', role);
       setDebugRole(role);
       localStorage.setItem('userRole', role);
 
-      // If the user clicked "Login as Client" explicitly, always send them to client-pending
-      if (userType.toLowerCase() === 'client') {
-        navigate('/client');
-        return;
+      let profile = null;
+      let profileCompleteness = 0;
+      try {
+        if (userType.toLowerCase() === 'client') {
+          const resp = await api.get('/profile/client/profile/edit');
+          profile = resp.data;
+        } else {
+          const resp = await api.get('/profile/freelancer/profile/edit');
+          profile = resp.data;
+        }
+        profileCompleteness = profile?.profile_completeness || 0;
+      } catch (err) {
+        profileCompleteness = 0;
       }
 
-      // For freelancers, check profile completeness and navigate accordingly
-      try {
-        // api interceptor will attach the access token from localStorage
-        const profileResp = await api.get('/profile/me/');
-
-        // send freelancer to freelancer profile view
-        navigate('/freelancer/profile');
-      } catch (err) {
-        // 404 means profile not found — send to freelancer pending
-        const status = err?.response?.status;
-        if (status === 404) {
-          navigate('/freelancer-pending');
+      if (profileCompleteness > 15) {
+        if (userType.toLowerCase() === 'client') {
+          navigate('/client');
         } else {
-          // fallback
+          navigate('/freelancer');
+        }
+      } else {
+        if (userType.toLowerCase() === 'client') {
+          navigate('/client-pending');
+        } else {
           navigate('/freelancer-pending');
         }
       }
 
-    } catch (err) {      // Save server error response if any
+    } catch (err) {
       setLastResponse(err?.response?.data || { error: err.message });      setError('Invalid email, password, or role');
     } finally {
       setIsLoading(false);
@@ -91,12 +94,16 @@ export default function Login() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-        <div className="flex items-center gap-2">
+        <div 
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => navigate('/')}
+        >
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">TL</span>
           </div>
           <span className="text-xl font-bold text-blue-900">TalentLink</span>
         </div>
+
         <div className="flex items-center gap-4">
           <button className="text-blue-600 font-medium">
             Login

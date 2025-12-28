@@ -63,7 +63,7 @@ const FreelancerProfileCreateEdit = () => {
 
     if (!authService.isAuthenticated()) {
       setError('You must be logged in to create or update your profile. Redirecting to login...');
-        setTimeout(() => navigate('/login'), 900);
+      setTimeout(() => navigate('/login'), 900);
       return;
     }
 
@@ -75,6 +75,8 @@ const FreelancerProfileCreateEdit = () => {
         response = await profileService.freelancer.updateProfile(form);
       } else {
         response = await profileService.freelancer.createProfile(form);
+        // Reload profile after creation to get latest details and id
+        await loadProfile();
       }
 
       setProfileCompleteness(response.profile_completeness);

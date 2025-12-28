@@ -15,17 +15,13 @@ export default function ProjectProposal() {
   useEffect(() => {
     const load = async () => {
       try {
-        setProject({
-          title: `Project #${projectId}`,
-          client_name: "Client",
-          description: "Project description will appear here.",
-        });
-
+        const response = await api.get(`/projects/${projectId}/`);
+        setProject(response.data);
       } catch (err) {
         console.error("Failed to fetch project", err);
+        setProject(null);
       }
     };
-
     load();
   }, [projectId]);
 
@@ -33,7 +29,8 @@ export default function ProjectProposal() {
     <div className="min-h-screen p-6 bg-gray-50">
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <main className="lg:col-span-2">
-          <div className="bg-[#a2add7] p-8 rounded-[24px]">
+          {/* CHANGED COLOR ONLY HERE */}
+          <div className="bg-emerald-100 p-8 rounded-[24px]">
             <h2 className="text-3xl font-bold mb-4">Submit a Proposal</h2>
 
             {/* Project Info */}
