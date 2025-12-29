@@ -1,3 +1,15 @@
+ Group-C-feature/projectproposal-Ambika-clean
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ProposalViewSet
+
+router = DefaultRouter()
+router.register(r"", ProposalViewSet, basename="proposal")
+
+urlpatterns = [
+    path("", include(router.urls)),
+]
+
 
 
 from django.urls import path
@@ -25,3 +37,4 @@ urlpatterns = [
     path('proposals/<int:pk>/hire/', HireProposalView.as_view(), name='hire-proposal'),
 
 ]
+ main-group-C
