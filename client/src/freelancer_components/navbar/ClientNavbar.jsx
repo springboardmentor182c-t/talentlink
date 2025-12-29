@@ -1,18 +1,24 @@
+
+
 import React, { useState, useRef } from 'react';
-import { FaBell, FaChevronDown, FaPen, FaCamera, FaSave, FaTimes } from 'react-icons/fa';
+import { 
+  FaBell, FaChevronDown, FaUser, FaCog, FaSignOutAlt, 
+  FaCloudUploadAlt, FaSearch 
+} from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
-const ClientNavbar = () => {
+const ClientNavbar = ({ onNotificationClick }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
   // --- State Management ---
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   
   // User Data State
   const [user, setUser] = useState({
     name: 'Kumar Gosala',
+    role: 'CLIENT', 
     avatar: 'https://i.pravatar.cc/150?img=68'
   });
 
@@ -21,51 +27,27 @@ const ClientNavbar = () => {
   const [tempAvatar, setTempAvatar] = useState(user.avatar);
 
   // --- Handlers ---
-  const handleNotificationClick = () => {
-    navigate('/notifications');
-  };
-
   const handleLogout = () => {
-    // 1. Clear user session/token here (Example: localStorage.removeItem('token'))
-    console.log("Logging out...");
-    
-    // 2. Redirect to Login Page
+    setIsMenuOpen(false);
     navigate('/login');
   };
 
-  const toggleMenu = () => {
+  const toggleMenu = (e) => {
+    e.stopPropagation();
     setIsMenuOpen(!isMenuOpen);
-    if (isMenuOpen) {
-      setIsEditing(false);
-      setTempName(user.name);
-      setTempAvatar(user.avatar);
-    }
   };
 
   const handleEditClick = (e) => {
     e.stopPropagation();
-    setIsEditing(true);
-  };
-
-  const handleSave = (e) => {
-    e.stopPropagation();
-    setUser({ name: tempName, avatar: tempAvatar });
-    setIsEditing(false);
+    setTempName(user.name);
+    setTempAvatar(user.avatar);
+    setShowEditModal(true);
     setIsMenuOpen(false); 
   };
 
-  const handleCancel = (e) => {
-    e.stopPropagation();
-    setTempName(user.name);
-    setTempAvatar(user.avatar);
-    setIsEditing(false);
-  };
-
-  const handleAvatarClick = (e) => {
-    if (isEditing) {
-      e.stopPropagation();
-      fileInputRef.current.click();
-    }
+  const handleSaveProfile = () => {
+    setUser({ ...user, name: tempName, avatar: tempAvatar });
+    setShowEditModal(false);
   };
 
   const handleFileChange = (e) => {
@@ -77,100 +59,113 @@ const ClientNavbar = () => {
   };
 
   return (
-    <div style={styles.navbar}>
-      <div style={styles.rightSection}>
+    <>
+      <div style={styles.navbar}>
         
-        {/* --- Notification Bell --- */}
-        <div style={styles.iconWrapper} onClick={handleNotificationClick}>
-          <FaBell style={{ color: '#64748b', fontSize: '18px' }} />
-          <span style={styles.badge}>9</span>
+        {/* --- 1. SEARCH BAR (Added on Left) --- */}
+        <div style={styles.searchContainer}>
+          <FaSearch style={styles.searchIcon} />
+          <input 
+            type="text" 
+            placeholder="Search projects, talent..." 
+            style={styles.searchInput} 
+          />
         </div>
 
-        <div style={styles.separator}></div>
-
-        {/* --- User Profile Section --- */}
-        <div style={styles.profileContainer}>
-          <div style={styles.profileWrapper} onClick={toggleMenu}>
-            <div style={styles.userInfo}>
-              <span style={styles.userName}>{user.name}</span>
-              <FaChevronDown style={{ fontSize: '10px', color: '#64748b', marginLeft: '5px' }} />
-            </div>
-            <img 
-              src={user.avatar} 
-              alt="User" 
-              style={styles.avatar} 
-            />
+        {/* --- 2. RIGHT SECTION (Notifications & Profile) --- */}
+        <div style={styles.rightSection}>
+          
+          {/* Notification Bell */}
+          <div style={styles.iconWrapper} onClick={onNotificationClick}>
+            <FaBell style={{ color: '#64748b', fontSize: '18px' }} />
+            <span style={styles.dotBadge}></span> 
           </div>
 
-          {/* --- Dropdown Menu --- */}
-          {isMenuOpen && (
-            <div style={styles.dropdown}>
-              
-              {/* Header of Dropdown */}
-              <div style={styles.dropdownHeader}>
-                <div style={styles.avatarContainer} onClick={handleAvatarClick}>
-                   <img src={isEditing ? tempAvatar : user.avatar} alt="Profile" style={styles.largeAvatar} />
-                   {isEditing && (
-                     <div style={styles.cameraOverlay}>
-                       <FaCamera color="white" />
-                       <input 
-                         type="file" 
-                         ref={fileInputRef} 
-                         style={{display: 'none'}} 
-                         accept="image/*"
-                         onChange={handleFileChange}
-                       />
-                     </div>
-                   )}
+          <div style={styles.separator}></div>
+
+          {/* User Profile */}
+          <div style={styles.profileContainer}>
+            <div style={styles.profileWrapper} onClick={toggleMenu}>
+              <img src={user.avatar} alt="User" style={styles.avatar} />
+              <div style={styles.userInfo}>
+                <span style={styles.userName}>{user.name}</span>
+                <span style={styles.userRole}>{user.role}</span>
+              </div>
+              <FaChevronDown style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }} />
+            </div>
+
+            {/* Dropdown Menu */}
+            {isMenuOpen && (
+              <div style={styles.dropdown}>
+                <div style={styles.dropdownArrow}></div>
+                <div style={styles.dropdownHeader}>Account</div>
+                
+                <button style={styles.menuItem} onClick={handleEditClick}>
+                  <FaUser style={styles.menuIcon} /> Edit Profile
+                </button>
+                <button style={styles.menuItem} onClick={() => setIsMenuOpen(false)}>
+                  <FaCog style={styles.menuIcon} /> Settings
+                </button>
+                <div style={styles.menuDivider}></div>
+                <button 
+                  style={{...styles.menuItem, color: '#ef4444'}}
+                  onClick={handleLogout}
+                >
+                   <FaSignOutAlt style={{...styles.menuIcon, color: '#ef4444'}} /> Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* --- EDIT PROFILE MODAL --- */}
+      {showEditModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContent}>
+            <h2 style={styles.modalTitle}>Update Profile Details</h2>
+            
+            <div style={styles.modalBody}>
+              <div style={styles.avatarUploadWrapper}>
+                <img src={tempAvatar} alt="Profile" style={styles.largeAvatar} />
+                <div 
+                  style={styles.cameraBtn} 
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  <FaCloudUploadAlt color="white" />
                 </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  style={{display: 'none'}} 
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
               </div>
 
-              {/* Body of Dropdown */}
-              <div style={styles.dropdownBody}>
-                {isEditing ? (
-                  // --- EDIT MODE ---
-                  <div style={styles.editForm}>
-                    <label style={styles.label}>Display Name</label>
-                    <input 
-                      type="text" 
-                      value={tempName}
-                      onChange={(e) => setTempName(e.target.value)}
-                      style={styles.input}
-                    />
-                    <div style={styles.actionButtons}>
-                      <button style={styles.cancelBtn} onClick={handleCancel}>
-                        <FaTimes />
-                      </button>
-                      <button style={styles.saveBtn} onClick={handleSave}>
-                        <FaSave style={{marginRight: '5px'}}/> Save
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  // --- VIEW MODE ---
-                  <div>
-                    <div style={styles.dropdownName}>{user.name}</div>
-                    <div style={styles.dropdownEmail}>client@apex.com</div>
-                    
-                    <button style={styles.menuItem} onClick={handleEditClick}>
-                      <FaPen style={styles.menuIcon} /> Edit Profile
-                    </button>
-                    <div style={styles.menuDivider}></div>
-                    <button 
-                      style={{...styles.menuItem, color: '#ef4444'}}
-                      onClick={handleLogout} // <--- LOGOUT TRIGGER
-                    >
-                       Log Out
-                    </button>
-                  </div>
-                )}
+              <div style={styles.inputGroup}>
+                <label style={styles.inputLabel}>Full Name</label>
+                <input 
+                  type="text" 
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  style={styles.textInput}
+                />
               </div>
             </div>
-          )}
-        </div>
 
-      </div>
-    </div>
+            <div style={styles.modalFooter}>
+              <button style={styles.cancelBtn} onClick={() => setShowEditModal(false)}>
+                Cancel
+              </button>
+              <button style={styles.saveBtn} onClick={handleSaveProfile}>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
@@ -180,13 +175,41 @@ const styles = {
     height: '70px',
     backgroundColor: '#ffffff',
     display: 'flex',
-    justifyContent: 'flex-end', // Aligns everything to the right
+    justifyContent: 'space-between', // Push Search left, Profile right
     alignItems: 'center',
     padding: '0 30px',
     borderBottom: '1px solid #f1f5f9',
     position: 'relative',
-    zIndex: 50, // Ensure it stays on top
+    zIndex: 50,
   },
+  
+  // --- SEARCH BAR STYLES ---
+  searchContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc', // Light grey background
+    padding: '10px 16px',
+    borderRadius: '50px',       // Pill shape
+    width: '320px',
+    border: '1px solid #e2e8f0',
+    transition: '0.2s',
+  },
+  searchIcon: {
+    color: '#94a3b8',
+    marginRight: '12px',
+    fontSize: '14px',
+  },
+  searchInput: {
+    border: 'none',
+    backgroundColor: 'transparent',
+    outline: 'none',
+    width: '100%',
+    color: '#334155',
+    fontSize: '14px',
+    fontWeight: '500',
+  },
+
+  // --- RIGHT SECTION ---
   rightSection: {
     display: 'flex',
     alignItems: 'center',
@@ -198,115 +221,89 @@ const styles = {
     padding: '8px',
     transition: '0.2s',
   },
-  badge: {
+  dotBadge: {
     position: 'absolute',
-    top: '2px',
-    right: '2px',
-    backgroundColor: '#ef4444', // Red notification dot
-    color: 'white',
-    fontSize: '10px',
-    fontWeight: 'bold',
-    height: '16px',
-    width: '16px',
+    top: '6px',
+    right: '6px',
+    backgroundColor: '#ef4444', 
+    height: '8px',
+    width: '8px',
     borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: '2px solid white',
+    border: '1px solid white',
   },
   separator: {
     width: '1px',
     height: '24px',
     backgroundColor: '#e2e8f0',
   },
-  profileContainer: {
-    position: 'relative',
-  },
-  profileWrapper: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    cursor: 'pointer',
-    userSelect: 'none',
-  },
-  userInfo: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  userName: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#334155',
-  },
-  avatar: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    border: '2px solid #e2e8f0',
-  },
   
-  // Dropdown Styles
+  // Profile Section
+  profileContainer: { position: 'relative' },
+  profileWrapper: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '12px', 
+    cursor: 'pointer',
+    padding: '4px 8px',
+    borderRadius: '8px',
+    transition: '0.2s',
+  },
+  avatar: { 
+    width: '40px', 
+    height: '40px', 
+    borderRadius: '50%', 
+    objectFit: 'cover', 
+    border: '2px solid #e2e8f0' 
+  },
+  userInfo: { 
+    display: 'flex', 
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  userName: { 
+    fontSize: '14px', 
+    fontWeight: '700', 
+    color: '#0f172a',
+    lineHeight: '1.2'
+  },
+  userRole: {
+    fontSize: '11px',
+    color: '#64748b',
+    fontWeight: '500',
+    textTransform: 'uppercase'
+  },
+
+  // Dropdown Menu
   dropdown: {
     position: 'absolute',
-    top: '50px',
+    top: '55px',
     right: '0',
-    width: '260px',
+    width: '220px',
     backgroundColor: 'white',
     borderRadius: '12px',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
     border: '1px solid #f1f5f9',
-    overflow: 'hidden',
+    padding: '8px',
+    zIndex: 100,
     animation: 'fadeIn 0.2s ease-out',
   },
-  dropdownHeader: {
-    backgroundColor: '#f8fafc',
-    padding: '20px',
-    display: 'flex',
-    justifyContent: 'center',
-    borderBottom: '1px solid #e2e8f0',
-  },
-  avatarContainer: {
-    position: 'relative',
-    width: '80px',
-    height: '80px',
-  },
-  largeAvatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    border: '3px solid white',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  },
-  cameraOverlay: {
+  dropdownArrow: {
     position: 'absolute',
-    bottom: '0',
-    right: '0',
-    backgroundColor: '#3b82f6',
-    width: '28px',
-    height: '28px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    border: '2px solid white',
+    top: '-6px',
+    right: '20px',
+    width: '12px',
+    height: '12px',
+    backgroundColor: 'white',
+    borderLeft: '1px solid #f1f5f9',
+    borderTop: '1px solid #f1f5f9',
+    transform: 'rotate(45deg)',
   },
-  dropdownBody: {
-    padding: '15px',
-  },
-  dropdownName: {
-    textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: '16px',
-    color: '#1e293b',
-  },
-  dropdownEmail: {
-    textAlign: 'center',
+  dropdownHeader: {
+    padding: '8px 12px',
     fontSize: '12px',
-    color: '#64748b',
-    marginBottom: '15px',
+    fontWeight: '600',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
   },
   menuItem: {
     width: '100%',
@@ -314,71 +311,136 @@ const styles = {
     alignItems: 'center',
     padding: '10px 12px',
     fontSize: '14px',
-    color: '#475569',
+    color: '#1e293b',
     backgroundColor: 'transparent',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '8px',
     cursor: 'pointer',
-    transition: '0.2s',
     textAlign: 'left',
+    fontWeight: '500',
   },
   menuIcon: {
     marginRight: '10px',
-    color: '#94a3b8',
+    color: '#1b4332', 
+    fontSize: '16px'
   },
   menuDivider: {
     height: '1px',
     backgroundColor: '#e2e8f0',
-    margin: '8px 0',
+    margin: '6px 0',
   },
-  
-  // Edit Form Styles
-  editForm: {
+
+  // Modal Styles
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000,
+    backdropFilter: 'blur(4px)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    width: '500px',
+    padding: '30px',
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+    position: 'relative',
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
+    gap: '24px',
   },
-  label: {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#64748b',
+  modalTitle: {
+    margin: 0,
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1e293b',
+    textAlign: 'center',
   },
-  input: {
-    padding: '8px 12px',
-    borderRadius: '6px',
-    border: '1px solid #cbd5e1',
-    fontSize: '14px',
-    outline: 'none',
-  },
-  actionButtons: {
+  modalBody: {
     display: 'flex',
-    gap: '10px',
-    marginTop: '5px',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '24px',
   },
-  saveBtn: {
-    flex: 1,
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    border: 'none',
-    padding: '8px',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: '600',
+  avatarUploadWrapper: {
+    position: 'relative',
+    width: '100px',
+    height: '100px',
+  },
+  largeAvatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+  },
+  cameraBtn: {
+    position: 'absolute',
+    bottom: '0',
+    right: '0',
+    backgroundColor: '#1b4332', 
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    cursor: 'pointer',
+    border: '2px solid white',
+  },
+  inputGroup: {
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  inputLabel: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  textInput: {
+    padding: '12px',
+    borderRadius: '8px',
+    border: '1px solid #cbd5e1',
+    fontSize: '15px',
+    color: '#1e293b',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+  modalFooter: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '16px',
+    marginTop: '10px',
   },
   cancelBtn: {
-    width: '36px',
-    backgroundColor: '#f1f5f9',
-    color: '#64748b',
+    background: 'none',
     border: 'none',
-    borderRadius: '6px',
+    color: '#64748b',
+    fontSize: '15px',
+    fontWeight: '600',
     cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  }
+    padding: '10px 20px',
+  },
+  saveBtn: {
+    backgroundColor: '#1b4332', 
+    color: 'white',
+    border: 'none',
+    padding: '10px 32px',
+    borderRadius: '8px',
+    fontWeight: '600',
+    fontSize: '15px',
+    cursor: 'pointer',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+  },
 };
 
 export default ClientNavbar;

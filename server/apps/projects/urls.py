@@ -1,15 +1,19 @@
+
+
+
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ProjectViewSet, ProjectListView, ProjectDetailView, ProjectStatsView
+from .views import ProjectViewSet, SkillViewSet, ProposalViewSet, get_open_projects
 
-# Router for ViewSet
 router = DefaultRouter()
-router.register(r'', ProjectViewSet, basename='project')
+router.register(r'skills', SkillViewSet, basename='skills')
+router.register(r'proposals', ProposalViewSet, basename='proposals')
+router.register(r'', ProjectViewSet, basename='projects')
 
 urlpatterns = [
-    # Include router URLs
-    path('', include(router.urls)),
+    # FIX 2: Renamed to 'marketplace/' to prevent conflicts with the router
+    path('projects/', get_open_projects, name='open-projects'),
     
-    # Additional endpoints
-    path('stats/', ProjectStatsView.as_view(), name='project-stats'),
+    # Router catch-all (Must be last)
+    path('', include(router.urls)),
 ]

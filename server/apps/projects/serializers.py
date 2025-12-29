@@ -1,48 +1,47 @@
+
+
+
 from rest_framework import serializers
 from .models import Project, Skill
-
+from apps.proposals.models import Proposal 
 
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Skill
         fields = ['id', 'name']
 
-
 class ProjectSerializer(serializers.ModelSerializer):
-    skills = SkillSerializer(many=True, read_only=True)
-    skill_ids = serializers.PrimaryKeyRelatedField(
-        queryset=Skill.objects.all(),
-        write_only=True,
-        many=True,
-        required=False,
-        source='skills'
-    )
-    
+    # Use MethodField to safely get a name even if username is empty
+    client_name = serializers.SerializerMethodField()
+    freelancer_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Project
+        fields = "__all__"
+        read_only_fields = ['client']
+
+    def get_client_name(self, obj):
+        if not obj.client:
+            return "Unknown"
+        # Try username -> then first_name -> then email -> finally User ID
+        return obj.client.username or obj.client.first_name or obj.client.email or f"User #{obj.client.id}"
+
+    def get_freelancer_name(self, obj):
+        if not obj.freelancer:
+            return None
+        return obj.freelancer.username or obj.freelancer.first_name or obj.freelancer.email or f"User #{obj.freelancer.id}"
+
+class ProposalSerializer(serializers.ModelSerializer):
+    # We can apply the same safe logic here if needed, or keep as is
+    freelancer_name = serializers.ReadOnlyField(source='freelancer.username')
+    project_title = serializers.ReadOnlyField(source='project.title')
+
+    class Meta:
+        model = Proposal
         fields = [
-            'id',
-            'title',
-            'description',
-            'status',
-            'created_at',
-            'skills',
-            'skill_ids',
-            'freelancer'
+            'id', 'project', 'project_title', 
+            'freelancer', 'freelancer_name', 
+            'cover_letter', 'bid_amount', 
+            'status', 'created_at'
         ]
-        read_only_fields = ['id', 'created_at', 'freelancer']
-
-    def create(self, validated_data):
-        skills = validated_data.pop('skills', [])
-        project = Project.objects.create(**validated_data)
-        project.skills.set(skills)
-        return project
-
-    def update(self, instance, validated_data):
-        skills = validated_data.pop('skills', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if skills is not None:
-            instance.skills.set(skills)
-        instance.save()
-        return instance
+        read_only_fields = ["client", "freelancer", "created_at"]
