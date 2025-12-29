@@ -8,6 +8,7 @@ export default function ProposalForm({ projectId, onSuccess, client_id }) {
   const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [project, setProject] = useState(null); 
 
   useEffect(() => {
     const draft = localStorage.getItem(`draftProposal_${projectId}`);
@@ -17,6 +18,17 @@ export default function ProposalForm({ projectId, onSuccess, client_id }) {
       setCompletionTime(completionTime || "");
       setCoverLetter(coverLetter || "");
     }
+
+    const fetchProject = async () => {
+      try {
+        const response = await api.get(`/projects/${projectId}/`);
+        setProject(response.data);
+      } catch (err) {
+        console.error("Failed to fetch project:", err);
+      }
+    };
+
+    fetchProject();
   }, [projectId]);
 
   const validate = () => {
@@ -105,6 +117,13 @@ export default function ProposalForm({ projectId, onSuccess, client_id }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {project && (
+        <div className="bg-gray-100 p-4 rounded-md mb-6">
+          <h2 className="text-xl font-bold">{project.title}</h2>
+          <p className="text-gray-700 mt-2">{project.description}</p>
+        </div>
+      )}
+
       <div>
         <label className="font-semibold">Bid Amount (₹)</label>
         <input
@@ -153,7 +172,7 @@ export default function ProposalForm({ projectId, onSuccess, client_id }) {
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-blue-800 text-white rounded"
+          className="px-6 py-2 bg-emerald-700 text-white rounded"
         >
           {loading ? "Submitting..." : "Submit Proposal"}
         </button>

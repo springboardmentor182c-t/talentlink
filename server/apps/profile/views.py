@@ -1,3 +1,55 @@
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def client_profile_create(request):
+    if ClientProfile.objects.filter(user=request.user).exists():
+        return Response({'detail': 'Client profile already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    serializer = ClientProfileSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save(user=request.user)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+@api_view(['GET', 'PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def client_profile_edit(request):
+    try:
+        profile = ClientProfile.objects.get(user=request.user)
+    except ClientProfile.DoesNotExist:
+        return Response({'detail': 'Client profile does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == 'GET':
+        serializer = ClientProfileSerializer(profile)
+        return Response(serializer.data)
+    serializer = ClientProfileSerializer(profile, data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def freelancer_profile_create(request):
+    if FreelancerProfile.objects.filter(user=request.user).exists():
+        return Response({'detail': 'Freelancer profile already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    serializer = FreelancerProfileSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save(user=request.user)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+@api_view(['GET', 'PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def freelancer_profile_edit(request):
+    try:
+        profile = FreelancerProfile.objects.get(user=request.user)
+    except FreelancerProfile.DoesNotExist:
+        return Response({'detail': 'Freelancer profile does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == 'GET':
+        serializer = FreelancerProfileSerializer(profile)
+        return Response(serializer.data)
+    serializer = FreelancerProfileSerializer(profile, data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -86,14 +138,14 @@ class ProfileViewSet(viewsets.ViewSet):
             if request.method == 'GET':
                 return Response({"detail": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
             return Response({"detail": "Authentication required to create/update profile"}, status=status.HTTP_401_UNAUTHORIZED)
-        role = getattr(request.user, 'role', None)
-        if not role:
+        user_type = getattr(request.user, 'user_type', None)
+        if not user_type:
             if FreelancerProfile.objects.filter(user=request.user).exists():
-                role = 'freelancer'
+                user_type = 'freelancer'
             elif ClientProfile.objects.filter(user=request.user).exists():
-                role = 'client'
+                user_type = 'client'
 
-        if role == 'freelancer':
+        if user_type == 'freelancer':
             try:
                 profile = FreelancerProfile.objects.get(user=request.user)
                 if request.method == 'POST':
@@ -111,7 +163,7 @@ class ProfileViewSet(viewsets.ViewSet):
                     return Response(serializer.data, status=status.HTTP_201_CREATED)
                 return Response({"detail": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        elif role == 'client':
+        elif user_type == 'client':
             try:
                 profile = ClientProfile.objects.get(user=request.user)
                 if request.method == 'POST':
@@ -130,4 +182,4 @@ class ProfileViewSet(viewsets.ViewSet):
                 return Response({"detail": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
         else:
-            return Response({"detail": "User role not recognized"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "User type not recognized"}, status=status.HTTP_400_BAD_REQUEST)

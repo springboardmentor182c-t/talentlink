@@ -4,19 +4,21 @@ import profileService from '../../services/profileService.js';
 
 export default function ProfileLayout({ children, title = 'Profile', basePath = '/profile' }) {
   const [profile, setProfile] = useState(null);
+  const [profileCompleteness, setProfileCompleteness] = useState(0);
 
   useEffect(() => {
     const load = async () => {
       try {
         const userData = localStorage.getItem('user');
         const user = userData ? JSON.parse(userData) : {};
+        let p = null;
         if (user.role === 'freelancer') {
-          const p = await profileService.freelancer.getProfile();
-          setProfile(p);
+          p = await profileService.freelancer.getProfile();
         } else if (user.role === 'client') {
-          const p = await profileService.client.getProfile();
-          setProfile(p);
+          p = await profileService.client.getProfile();
         }
+        setProfile(p);
+        setProfileCompleteness(p?.profile_completeness || 0);
       } catch (err) {
         // ignore
       }
@@ -66,7 +68,11 @@ export default function ProfileLayout({ children, title = 'Profile', basePath = 
             </nav>
 
             <div className="mt-6">
-              <button className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md">Edit profile</button>
+              {((profile?.first_name && profile?.first_name.trim()) || profileCompleteness > 15) ? (
+                <button className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md">Edit profile</button>
+              ) : (
+                <button className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md">Create profile</button>
+              )}
             </div>
           </aside>
 

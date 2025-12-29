@@ -46,8 +46,7 @@ function Candidates() {
   }, []);
 
   const filteredCandidates = profiles.filter(c => {
-    const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         c.role.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.role.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || c.status.toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesStatus;
   });
@@ -96,7 +95,16 @@ function Candidates() {
         <div className="py-8 text-center text-red-600">{error}</div>
       )}
 
+      {/* No freelancers message */}
+      {!loading && !error && filteredCandidates.length === 0 && (
+        <div className="py-8 text-center text-gray-500">
+          No freelancer profiles available at the moment. Please check back later.
+        </div>
+      )}
+
+
       {/* Candidate Cards */}
+      {!loading && !error && filteredCandidates.length > 0 && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCandidates.map(candidate => (
           <div key={candidate.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
@@ -159,6 +167,7 @@ function Candidates() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Candidate Detail Modal */}
       {selectedCandidate && (

@@ -5,6 +5,7 @@ export default function ProposalList({ projectId, refresh }) {
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [info, setInfo] = useState("");
 
   const fetchProposals = async () => {
     setLoading(true);
@@ -45,6 +46,7 @@ export default function ProposalList({ projectId, refresh }) {
   return (
     <div className="mt-6">
       <h3 className="text-2xl font-bold mb-4">Submitted Proposals</h3>
+      {info && <div className="mb-2 text-green-700">{info}</div>}
       <table className="w-full border border-gray-300 rounded-md">
         <thead className="bg-gray-100">
           <tr>

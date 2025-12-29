@@ -32,14 +32,40 @@ const ClientProfileCreateEdit = () => {
   }, []);
 
   const loadProfile = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const profile = await profileService.client.getProfile();
       setForm(profile);
       setProfileCompleteness(profile.profile_completeness || 0);
       setError('');
     } catch (err) {
-      setError('');
+      if (err?.response?.status === 404) {
+        // No profile exists, reset form to empty (create mode)
+        setForm({
+          first_name: '',
+          last_name: '',
+          company_name: '',
+          company_description: '',
+          website: '',
+          phone: '',
+          location: '',
+          country: '',
+          bio: '',
+          profile_image: null,
+          documents: null,
+          skills: '',
+          portfolio_links: '',
+          resume: null,
+          languages: '',
+          hourly_rate: '',
+          availability: false,
+        });
+        setProfileCompleteness(0);
+        setError('');
+      } else {
+        setError('Failed to load profile');
+      }
+    } finally {
       setLoading(false);
     }
   };
@@ -60,7 +86,7 @@ const ClientProfileCreateEdit = () => {
 
     if (!authService.isAuthenticated()) {
       setError('You must be logged in to create or update your profile. Redirecting to login...');
-        setTimeout(() => navigate('/login'), 900);
+      setTimeout(() => navigate('/login'), 900);
       return;
     }
 
@@ -72,6 +98,8 @@ const ClientProfileCreateEdit = () => {
         response = await profileService.client.updateProfile(form);
       } else {
         response = await profileService.client.createProfile(form);
+        // Reload profile after creation to get latest details and id
+        await loadProfile();
       }
 
       setProfileCompleteness(response.profile_completeness);
@@ -102,11 +130,11 @@ const ClientProfileCreateEdit = () => {
     }
   };
 
-  if (loading && form.id) {
+  if (loading) {
     return (
       <ProfileLayout
         title={form.first_name ? 'Edit Profile' : 'Create Profile'}
-        basePath="/client/profile"
+        basePath="/client"
       >
         <div className="flex justify-center items-center py-12">
           <p className="text-gray-500">Loading...</p>
@@ -141,7 +169,6 @@ const ClientProfileCreateEdit = () => {
           {/* Personal Information */}
           <div className="border-b pb-6">
             <h3 className="text-lg font-semibold mb-4 text-gray-900">Personal Information</h3>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">First name</label>
@@ -162,7 +189,6 @@ const ClientProfileCreateEdit = () => {
                 />
               </div>
             </div>
-
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700">Profile Picture</label>
               <FileUpload
@@ -178,7 +204,6 @@ const ClientProfileCreateEdit = () => {
           {/* Company Information */}
           <div className="border-b pb-6">
             <h3 className="text-lg font-semibold mb-4 text-gray-900">Company Information</h3>
-
             <div>
               <label className="block text-sm font-medium text-gray-700">Company Name</label>
               <input
@@ -188,7 +213,6 @@ const ClientProfileCreateEdit = () => {
                 placeholder="Acme Inc."
               />
             </div>
-
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700">Company Description</label>
               <textarea
@@ -199,7 +223,6 @@ const ClientProfileCreateEdit = () => {
                 placeholder="Tell us about your company..."
               />
             </div>
-
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700">Company Website</label>
               <input
@@ -210,7 +233,6 @@ const ClientProfileCreateEdit = () => {
                 placeholder="https://example.com"
               />
             </div>
-
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700">Company Documents</label>
               <FileUpload
@@ -225,7 +247,6 @@ const ClientProfileCreateEdit = () => {
           {/* Contact Information */}
           <div className="border-b pb-6">
             <h3 className="text-lg font-semibold mb-4 text-gray-900">Contact Information</h3>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Phone</label>
@@ -246,7 +267,6 @@ const ClientProfileCreateEdit = () => {
                 />
               </div>
             </div>
-
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700">Country</label>
               <input
@@ -258,17 +278,86 @@ const ClientProfileCreateEdit = () => {
             </div>
           </div>
 
-          {/* About */}
+
+          {/* Professional Details */}
           <div className="border-b pb-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900">About</h3>
-            <label className="block text-sm font-medium text-gray-700">Bio</label>
-            <textarea
-              value={form.bio}
-              onChange={handleChange('bio')}
-              rows={4}
-              className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Tell us more about yourself..."
-            />
+            <h3 className="text-lg font-semibold mb-4 text-gray-900">Professional Details</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">About / Bio</label>
+              <textarea
+                value={form.bio}
+                onChange={handleChange('bio')}
+                rows={5}
+                className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Tell us about your experience and expertise..."
+              />
+            </div>
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700">Skills (comma separated)</label>
+              <input
+                value={form.skills || ''}
+                onChange={handleChange('skills')}
+                className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Project Management, Communication, Leadership"
+              />
+            </div>
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700">Portfolio Links (comma separated)</label>
+              <input
+                value={form.portfolio_links || ''}
+                onChange={handleChange('portfolio_links')}
+                className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="https://companyportfolio.com, https://linkedin.com/in/username"
+              />
+            </div>
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700">Resume / CV</label>
+              <FileUpload
+                accept=".pdf,.doc,.docx"
+                onChange={handleFileChange('resume')}
+                value={form.resume}
+                helperText="PDF, DOC or DOCX (max 5MB)"
+              />
+            </div>
+          </div>
+
+          {/* Location & Availability */}
+          <div className="border-b pb-6">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900">Location & Availability</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Languages (comma separated)</label>
+                <input
+                  value={form.languages || ''}
+                  onChange={handleChange('languages')}
+                  className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="English, Spanish, French"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Hourly Rate ($)</label>
+                <input
+                  type="number"
+                  value={form.hourly_rate || ''}
+                  onChange={handleChange('hourly_rate')}
+                  className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="100"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-4 pt-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.availability || false}
+                  onChange={handleChange('availability')}
+                  className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Available for work</span>
+              </label>
+            </div>
           </div>
 
           {/* Submit Button */}

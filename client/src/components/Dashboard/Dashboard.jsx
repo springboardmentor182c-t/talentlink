@@ -92,7 +92,6 @@ const Dashboard = () => {
     }
   }, []);
 
-  // Load profile for current user (client or freelancer)
   useEffect(() => {
     const loadProfile = async () => {
       setLoadingProfile(true);
@@ -121,25 +120,21 @@ const Dashboard = () => {
     loadProfile();
   }, []);
 
-  // Fetch recent messages from API
   useEffect(() => {
     const fetchRecentMessages = async () => {
       setLoadingMessages(true);
       try {
         const conversations = await messagingAPI.getConversations();
 
-        // Transform conversations to recent messages format
         const messages = conversations
-          .filter(conv => conv.last_message) // Only include conversations with messages
+          .filter(conv => conv.last_message)
           .map(conv => {
-            // Get the other participant's name
             const otherParticipant = conv.participants?.find(
               p => p.id !== currentUserId
             );
             const name = otherParticipant?.username || "Unknown";
             const avatar = name.substring(0, 2).toUpperCase() || "U";
 
-            // Format time
             const date = new Date(conv.last_message.created_at);
             const now = new Date();
             const diffMs = now - date;
@@ -161,7 +156,7 @@ const Dashboard = () => {
               avatar,
             };
           })
-          .slice(0, 5); // Get only the first 5 recent messages
+          .slice(0, 5);
 
         setRecentMessages(messages);
       } catch (err) {
@@ -214,7 +209,7 @@ const Dashboard = () => {
                 }}
                 className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
               >
-                Create Profile
+                Profile
               </button>
             )}
           </div>

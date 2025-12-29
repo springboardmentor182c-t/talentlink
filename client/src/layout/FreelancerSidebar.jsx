@@ -21,15 +21,15 @@ const FreelancerSidebar = ({ isOpen, onClose }) => {
 
   const menuItems = [
     { icon: <LayoutDashboard className="w-5 h-5" />, label: "Dashboard Overview", path: "/freelancer" },
+    { icon: <User className="w-5 h-5" />, label: "My Profile", path: "/freelancer/profile" },
     { icon: <FileText className="w-5 h-5" />, label: "My Proposals", path: "/freelancer/proposals" },
     { icon: <Briefcase className="w-5 h-5" />, label: "Active Contracts", path: "/freelancer/contracts" },
-    { icon: <ClipboardList className="w-5 h-5" />, label: "My Jobs", path: "/freelancer/jobs" },
+    { icon: <ClipboardList className="w-5 h-5" />, label: "Find Work", path: "/freelancer/jobs" },
     { icon: <DollarSign className="w-5 h-5" />, label: "Earnings", path: "/freelancer/earnings" },
-          { icon: <Star className="w-5 h-5" />, label: "Reviews & Ratings", path: "/freelancer/reviews-ratings" },
-          { icon: <User className="w-5 h-5" />, label: "My Profile", path: "/freelancer/profile" },
-          { icon: <FolderKanban className="w-5 h-5" />, label: "Skills & Portfolio", path: "/freelancer/profile/portfolio" },
-          { icon: <Settings className="w-5 h-5" />, label: "Settings", path: "/freelancer/profile/settings" },
     { icon: <MessageSquare className="w-5 h-5" />, label: "Messages", path: "/freelancer/messages" },
+    { icon: <Star className="w-5 h-5" />, label: "Reviews & Ratings", path: "/freelancer/reviews-ratings" },
+    { icon: <Settings className="w-5 h-5" />, label: "Settings", path: "/freelancer/profile/settings" },
+
   ];
 
   const handleClick = (path) => {

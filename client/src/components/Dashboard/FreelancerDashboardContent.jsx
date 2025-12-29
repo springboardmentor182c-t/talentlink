@@ -48,7 +48,7 @@ const FreelancerDashboardContent = ({ profile }) => {
   return (
     <div className="flex-1 p-6 bg-gray-100 min-h-screen">
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-2">Welcome back, {profile?.title || 'Full Stack Developer'}!</h2>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-2">Welcome back, {profile?.title || ''}!</h2>
         <p className="text-gray-600">Here's what's happening with your freelance business today.</p>
       </div>
 

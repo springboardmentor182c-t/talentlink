@@ -23,7 +23,6 @@ class Project(models.Model):
 
     title = models.CharField(max_length=200)
     description = models.TextField()
-    # we will store skills as a comma-separated string for now
     skills = models.TextField(help_text="Comma-separated skills, e.g. React, Node.js")
 
     min_budget = models.IntegerField(null=True, blank=True)
@@ -52,7 +51,16 @@ class Project(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # later we can add: client = models.ForeignKey(User, ...) when auth is ready
+
+    from django.conf import settings
+    client = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="projects",
+        null=True,
+        blank=True,
+        help_text="The client (user) who owns this project."
+    )
 
     def __str__(self):
         return self.title

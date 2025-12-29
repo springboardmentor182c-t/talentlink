@@ -61,7 +61,7 @@ const FreelancerProfileView = () => {
             <h2 className="text-2xl font-bold mb-4 text-gray-900">No Profile Found</h2>
             <p className="mb-6 text-gray-600">You don't have a profile yet. Create one to showcase your skills.</p>
             <button
-              onClick={() => navigate('/freelancer/profile/edit')}
+              onClick={() => navigate('/freelancer/profile/create')}
               className="px-6 py-2 bg-indigo-600 text-white rounded font-medium hover:bg-indigo-700 transition-colors"
             >
               Create Profile

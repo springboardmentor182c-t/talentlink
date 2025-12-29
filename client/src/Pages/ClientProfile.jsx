@@ -32,11 +32,22 @@ const ClientProfile = () => {
 
   const navigate = useNavigate();
 
+  // Placeholder invitations & applications data
+  const [invitations] = useState({
+    invitations: [
+      { id: 1, freelancer: 'John Doe', appliedDate: '2025-12-20', skillMatch: 85 },
+      { id: 2, freelancer: 'Jane Smith', appliedDate: '2025-12-22', skillMatch: 90 },
+    ],
+    applications: [
+      { id: 1, freelancer: 'Alice Johnson', appliedDate: '2025-12-21', skillMatch: 80 },
+      { id: 2, freelancer: 'Bob Brown', appliedDate: '2025-12-23', skillMatch: 95 },
+    ]
+  });
+
   useEffect(() => {
     loadProfile();
   }, []);
 
-  // Proper async function for loading profile
   const loadProfile = async () => {
     try {
       setLoading(true);
@@ -44,11 +55,12 @@ const ClientProfile = () => {
       setProfile(data);
       setError('');
     } catch (err) {
-      setError('');
+      setError('Failed to load profile');
     } finally {
       setLoading(false);
     }
   };
+
   const [projects] = useState({ active: [], completed: [] });
   const [messages] = useState([]);
 
@@ -279,34 +291,38 @@ const ClientProfile = () => {
       </div>
     </div>
   );
-
   const renderMessagesSection = () => (
     <div className="space-y-4">
-      {messages.map((msg) => (
-        <div
-          key={msg.id}
-          className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
-          onClick={() => navigate('/messages')}
-        >
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">{msg.freelancer}</h3>
-              <p className="text-sm text-gray-600 mt-2">{msg.lastMessage}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-600">{msg.timestamp}</p>
-              {msg.unread > 0 && (
-                <span className="mt-2 inline-block px-3 py-1 bg-indigo-600 text-white rounded-full text-xs font-semibold">
-                  {msg.unread} unread
-                </span>
-              )}
+      {messages.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
+          No messages available
+        </div>
+      ) : (
+        messages.map((msg) => (
+          <div
+            key={msg.id}
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate('/messages')}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">{msg.freelancer}</h3>
+                <p className="text-sm text-gray-600 mt-2">{msg.lastMessage}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-600">{msg.timestamp}</p>
+                {msg.unread > 0 && (
+                  <span className="mt-2 inline-block px-3 py-1 bg-indigo-600 text-white rounded-full text-xs font-semibold">
+                    {msg.unread} unread
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
-
   const renderAccountSettings = () => (
     <div className="max-w-2xl space-y-6">
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -345,11 +361,11 @@ const ClientProfile = () => {
   );
 
   return (
-    <ProfileLayout title="Client Dashboard" basePath="/client/profile">
+    <ProfileLayout title="Profile Overview" basePath="/client/profile">
       {/* Back button + small header within layout */}
       <div className="mb-8 flex items-center gap-4">
         <button
-          onClick={() => navigate('/freelancer')}
+          onClick={() => navigate('/client')}
           className="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-2"
         >
           ← Back

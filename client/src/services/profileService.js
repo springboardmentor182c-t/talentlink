@@ -4,7 +4,7 @@ export const profileService = {
   freelancer: {
     getProfile: async () => {
       try {
-        const response = await noAuthApi.get('/profile/me/');
+        const response = await api.get('/profile/freelancer/profile/edit');
         return response.data;
       } catch (error) {
         console.error('Error fetching freelancer profile:', error);
@@ -14,7 +14,6 @@ export const profileService = {
     createProfile: async (profileData) => {
       try {
         const formData = new FormData();
-
         Object.keys(profileData).forEach(key => {
           if (profileData[key] !== null && profileData[key] !== undefined) {
             if (key === 'profile_image' || key === 'documents') {
@@ -26,7 +25,7 @@ export const profileService = {
             }
           }
         });
-        const response = await api.post('/profile/me/', formData, {
+        const response = await api.post('/profile/freelancer/profile/create', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -38,7 +37,6 @@ export const profileService = {
     updateProfile: async (profileData) => {
       try {
         const formData = new FormData();
-        
         Object.keys(profileData).forEach(key => {
           if (profileData[key] !== null && profileData[key] !== undefined) {
             if (key === 'profile_image' || key === 'documents') {
@@ -50,7 +48,7 @@ export const profileService = {
             }
           }
         });
-        const response = await api.post('/profile/me/', formData, {
+        const response = await api.patch('/profile/freelancer/profile/edit', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -91,7 +89,7 @@ export const profileService = {
   client: {
     getProfile: async () => {
       try {
-        const response = await noAuthApi.get('/profile/me/');
+        const response = await api.get('/profile/client/profile/edit');
         return response.data;
       } catch (error) {
         console.error('Error fetching client profile:', error);
@@ -101,7 +99,6 @@ export const profileService = {
     createProfile: async (profileData) => {
       try {
         const formData = new FormData();
-        
         Object.keys(profileData).forEach(key => {
           if (profileData[key] !== null && profileData[key] !== undefined) {
             if (key === 'profile_image' || key === 'documents') {
@@ -113,7 +110,7 @@ export const profileService = {
             }
           }
         });
-        const response = await api.post('/profile/me/', formData, {
+        const response = await api.post('/profile/client/profile/create', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -125,7 +122,6 @@ export const profileService = {
     updateProfile: async (profileData) => {
       try {
         const formData = new FormData();
-        
         Object.keys(profileData).forEach(key => {
           if (profileData[key] !== null && profileData[key] !== undefined) {
             if (key === 'profile_image' || key === 'documents') {
@@ -137,7 +133,7 @@ export const profileService = {
             }
           }
         });
-        const response = await api.post('/profile/me/', formData, {
+        const response = await api.patch('/profile/client/profile/edit', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
