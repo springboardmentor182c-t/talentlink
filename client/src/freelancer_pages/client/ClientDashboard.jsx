@@ -1,6 +1,7 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
+import { useUser } from '../../context/UserContext';
 
 // --- SVG ICONS (Self-contained to avoid import errors) ---
 const Icons = {
@@ -55,6 +56,7 @@ const activeJobs = [
 
 const ClientDashboard = () => {
   const navigate = useNavigate(); // 2. Initialize hook
+  const { user } = useUser();
 
   const handlePostJob = () => {
     navigate('/client/projects'); // 3. Navigation logic
@@ -66,6 +68,7 @@ const ClientDashboard = () => {
       {/* --- Header --- */}
       <div style={styles.header}>
         <div>
+          <p style={styles.greeting}>Welcome back, {user?.name || user?.email || 'User'}</p>
           <h1 style={styles.title}>Client Overview</h1>
           <p style={styles.subtitle}>Manage your job postings, proposals, and hired talent.</p>
         </div>
@@ -241,6 +244,13 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '30px',
+  },
+  greeting: {
+    fontSize: '14px',
+    color: '#334155',
+    margin: 0,
+    marginBottom: '4px',
+    fontWeight: '600',
   },
   title: {
     fontSize: '26px',

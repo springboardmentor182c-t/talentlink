@@ -1,54 +1,42 @@
-
-
-
 from django.db import models
 from django.conf import settings
-from apps.projects.models import Project
 
-STATUS_CHOICES = [
-    ('pending', 'Pending'),
-    ('sent', 'Sent'),
-    ('accepted', 'Accepted'),
-    ('rejected', 'Rejected'),
-]
+User = settings.AUTH_USER_MODEL
 
+class ProjectProposal(models.Model):
+    STATUS_CHOICES = [
+        ("submitted", "Submitted"),
+        ("considering", "Considering"),
+        ("accepted", "Accepted"),
+        ("rejected", "Rejected"),
+    ]
 
-class Proposal(models.Model):
-    # --- Link to Project ---
-    project = models.ForeignKey(
-        Project,
-        on_delete=models.CASCADE,
-        related_name='proposals'
-    )
-
-    # --- Link to Freelancer (User) ---
     freelancer = models.ForeignKey(
-    settings.AUTH_USER_MODEL,
-    null=True,
-    blank=True,
-    on_delete=models.SET_NULL,
-    related_name="assigned_projects"
-)
-
-    # --- Proposal Details ---
-    bid_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    cover_letter = models.TextField(blank=True, null=True)
-    estimated_days = models.IntegerField(default=7)
-
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending'
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
     )
+    client = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="received_proposals", null=True, blank=True
+    )
+
+    project_id = models.IntegerField(null=True, blank=True)
+    bid_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    completion_time = models.CharField(max_length=100, null=True, blank=True)
+    cover_letter = models.TextField(null=True, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="submitted")
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # ------------------------------------------------------------------
-    # IMPORTANT: Prevent duplicate proposals
-    # One freelancer can apply ONLY ONCE per project
-    # ------------------------------------------------------------------
-    class Meta:
-        unique_together = ('project', 'freelancer')
-        ordering = ['-created_at']
+    def __str__(self):
+        return f"{self.freelancer} → Project {self.project_id} ({self.status})"
+
+
+class ProposalAttachment(models.Model):
+    proposal = models.ForeignKey(ProjectProposal, related_name='attachments', on_delete=models.CASCADE)
+    file = models.FileField(upload_to='proposal_attachments/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.freelancer} → {self.project.title} ({self.status})"
+        return f"Attachment {self.id} for Proposal {self.proposal_id}"

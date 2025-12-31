@@ -8,7 +8,7 @@ from django.conf import settings
 
 class Contract(models.Model):
     proposal = models.OneToOneField(
-        "proposals.Proposal",
+        "proposals.ProjectProposal",
         on_delete=models.CASCADE,
         related_name="contract",
     )

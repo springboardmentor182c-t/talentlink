@@ -12,7 +12,7 @@ from django.db import models
 from collections import Counter # --- Added for manual skill counting
 
 # --- Model Imports ---
-from apps.proposals.models import Proposal
+from apps.proposals.models import ProjectProposal
 from apps.projects.models import Project
 
 # --- Serializer Imports ---
@@ -62,7 +62,7 @@ class ProposalAnalyticsView(APIView):
         user = request.user 
         
         # Django ORM Query for status distribution
-        status_distribution = Proposal.objects.filter(
+        status_distribution = ProjectProposal.objects.filter(
             freelancer=user
         ).values('status').annotate(
             count=Count('id') 

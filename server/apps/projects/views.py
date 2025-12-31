@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from django.db.models import Q
 
 from .models import Project, Skill
-from apps.proposals.models import Proposal
+from apps.proposals.models import ProjectProposal
 from .serializers import ProjectSerializer, SkillSerializer, ProposalSerializer
 
 
@@ -28,7 +28,7 @@ class ProposalViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Freelancer sees only HIS proposals
-        return Proposal.objects.filter(freelancer=self.request.user)
+        return ProjectProposal.objects.filter(freelancer=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(freelancer=self.request.user)

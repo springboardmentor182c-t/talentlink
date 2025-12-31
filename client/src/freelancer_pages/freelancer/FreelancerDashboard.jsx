@@ -13,6 +13,7 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
 import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
+import { useUser } from "../../context/UserContext";
 
 // --- Mock Data: Stats ---
 const stats = [
@@ -62,6 +63,7 @@ const transactions = [
 export default function FreelancerDashboard() {
   // 2. State to handle the active time range
   const [timeRange, setTimeRange] = useState("Daily");
+  const { user } = useUser();
 
   // 3. Logic to switch data based on state
   const getChartData = () => {
@@ -84,7 +86,7 @@ export default function FreelancerDashboard() {
   return (
     <FreelancerLayout>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h5">Hi Kumar Gosala</Typography>
+        <Typography variant="h5">{`Hi ${user?.name || "User"}`}</Typography>
         <Typography variant="body2" color="text.secondary">This is your Freelance Team dashboard overview</Typography>
       </Box>
 
