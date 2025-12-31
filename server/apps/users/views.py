@@ -6,6 +6,7 @@
 from rest_framework import generics, status, views
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 import datetime
@@ -113,3 +114,20 @@ class ResetPasswordView(views.APIView):
             except User.DoesNotExist:
                 return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# --- 6. Profile (simple current-user details) ---
+class ProfileView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        data = {
+            "id": user.id,
+            "email": getattr(user, "email", ""),
+            "username": getattr(user, "username", ""),
+            "first_name": getattr(user, "first_name", ""),
+            "last_name": getattr(user, "last_name", ""),
+            "role": getattr(user, "role", ""),
+        }
+        return Response(data, status=status.HTTP_200_OK)

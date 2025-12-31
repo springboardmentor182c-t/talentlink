@@ -1,6 +1,7 @@
 
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Typography,
   Box,
@@ -19,6 +20,7 @@ import axiosInstance from "../../utils/axiosInstance";
 import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
 
 export default function FreelancerProjects() {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [appliedProjectIds, setAppliedProjectIds] = useState([]);
   const [openModal, setOpenModal] = useState(false);
@@ -57,16 +59,12 @@ export default function FreelancerProjects() {
   };
 
   // ---------------- OPEN MODAL ----------------
-  const openApplyModal = (job) => {
+  const goToProjectProposal = (job) => {
     if (!job || typeof job.id !== "number") {
       alert("Invalid project");
       return;
     }
-    setSelectedJob(job);
-    setBidAmount("");
-    setEstimatedDays("");
-    setCoverLetter("");
-    setOpenModal(true);
+    navigate(`/freelancer/projects/${job.id}`);
   };
 
   // ---------------- SEND PROPOSAL ----------------
@@ -117,7 +115,7 @@ export default function FreelancerProjects() {
                     variant="contained"
                     endIcon={<SendIcon />}
                     disabled={alreadyApplied}
-                    onClick={() => openApplyModal(job)}
+                    onClick={() => goToProjectProposal(job)}
                     sx={{ mt: 2 }}
                   >
                     {alreadyApplied ? "Already Applied" : "Apply"}

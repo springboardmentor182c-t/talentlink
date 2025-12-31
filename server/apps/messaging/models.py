@@ -10,7 +10,7 @@ User = settings.AUTH_USER_MODEL
 
 class Conversation(models.Model):
     proposal = models.OneToOneField(
-        'proposals.Proposal',   # 🔥 IMPORTANT CHANGE
+        'proposals.ProjectProposal',
         on_delete=models.CASCADE,
         related_name='conversation'
     )

@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 
 from .models import Contract
 from .serializers import ContractSerializer
-from apps.proposals.models import Proposal
+from apps.proposals.models import ProjectProposal
 
 
 # ---------- PERMISSION ----------
@@ -35,12 +35,12 @@ class ContractCreate(APIView):
             )
 
         proposal = get_object_or_404(
-            Proposal.objects.select_related("project__client", "freelancer"),
+            ProjectProposal.objects.select_related("client", "freelancer"),
             id=proposal_id
         )
 
         # Security
-        if proposal.project.client != request.user and not request.user.is_staff:
+        if proposal.client and proposal.client != request.user and not request.user.is_staff:
             return Response(
                 {"error": "Unauthorized"},
                 status=status.HTTP_403_FORBIDDEN
@@ -62,11 +62,11 @@ class ContractCreate(APIView):
             proposal=proposal,
             client=request.user,
             freelancer=proposal.freelancer,
-            title=request.data.get("title", proposal.project.title),
+            title=request.data.get("title", f"Project #{proposal.project_id}"),
             terms=request.data.get("terms", proposal.cover_letter),
             total_amount=request.data.get("total_amount", proposal.bid_amount),
-            start_date=request.data.get("start_date"),
-            end_date=request.data.get("end_date"),
+            start_date=request.data.get("start_date") or None,
+            end_date=request.data.get("end_date") or None,
             status="active"
         )
 

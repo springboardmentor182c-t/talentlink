@@ -1,6 +1,7 @@
 
 
 import React, { useState, useRef } from 'react';
+import { useUser } from '../../context/UserContext';
 import { 
   FaBell, FaChevronDown, FaUser, FaCog, FaSignOutAlt, 
   FaCloudUploadAlt, FaSearch 
@@ -15,14 +16,8 @@ const ClientNavbar = ({ onNotificationClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   
-  // User Data State
-  const [user, setUser] = useState({
-    name: 'Kumar Gosala',
-    role: 'CLIENT', 
-    avatar: 'https://i.pravatar.cc/150?img=68'
-  });
-
-  // Temporary state for editing
+  // Use user context for dynamic user info
+  const { user, updateProfile } = useUser();
   const [tempName, setTempName] = useState(user.name);
   const [tempAvatar, setTempAvatar] = useState(user.avatar);
 
@@ -46,7 +41,7 @@ const ClientNavbar = ({ onNotificationClick }) => {
   };
 
   const handleSaveProfile = () => {
-    setUser({ ...user, name: tempName, avatar: tempAvatar });
+    updateProfile(tempName, null); // Avatar upload can be handled similarly if needed
     setShowEditModal(false);
   };
 

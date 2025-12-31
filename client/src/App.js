@@ -2,6 +2,7 @@
 
 import React from "react";
 import "./App.css";
+import "./assets/global.css";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
 /* ===== Context Providers ===== */
@@ -31,7 +32,8 @@ import ClientHelp from "./freelancer_pages/client/ClientHelp";
 
 /* ===== Freelancer Dashboard Pages ===== */
 import FreelancerDashboard from "./freelancer_pages/freelancer/FreelancerDashboard";
-import Projects from "./freelancer_pages/freelancer/Projects"; 
+import Projects from "./freelancer_pages/freelancer/Projects";
+import ProjectProposal from "./freelancer_pages/freelancer/ProjectProposal";
 import FreelancerProposals from "./freelancer_pages/freelancer/FreelancerProposals";
 import Accounting from "./freelancer_pages/freelancer/Accounting";
 import Expenses from "./freelancer_pages/freelancer/Expenses";
@@ -94,6 +96,7 @@ function App() {
             {/* ===================== */}
             <Route path="/freelancer" element={<FreelancerDashboard />} />
             <Route path="/freelancer/projects" element={<Projects />} />
+
             <Route path="/freelancer/proposals" element={<FreelancerProposals />} />
             <Route path="/freelancer/accounting" element={<Accounting />} />
             <Route path="/freelancer/expenses" element={<Expenses />} />
@@ -103,6 +106,8 @@ function App() {
             <Route path="/freelancer/clients" element={<Clients />} />
             <Route path="/freelancer/reports" element={<Reports />} />
             <Route path="/freelancer/settings" element={<Settings />} />
+            {/* Dynamic route for project proposal */}
+            <Route path="/freelancer/projects/:id" element={<ProjectProposal />} />
 
             {/* ===================== */}
             {/* 404 & Fallbacks */}

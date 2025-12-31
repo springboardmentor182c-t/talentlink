@@ -21,9 +21,15 @@ export default function JobProposals() {
 
   // ✅ FIX #1: correct API for CLIENT
   const fetchProposals = () => {
-    axiosInstance.get("/proposals/received/").then((res) => {
-      setProposals(res.data);
-    });
+    axiosInstance
+      .get("proposals/received/")
+      .then((res) => {
+        setProposals(res.data);
+      })
+      .catch((err) => {
+        console.error("Error fetching proposals", err);
+        setProposals([]);
+      });
   };
 
   const handleHireClick = (proposal) => {

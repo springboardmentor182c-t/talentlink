@@ -70,9 +70,9 @@ export default function FreelancerProposals() {
                   proposals.map((row) => (
                     <TableRow key={row.id}>
                       {/* FIX 1: Use snake_case to match Django Serializer */}
-                      <TableCell>{row.job_title || row.project_title || "Untitled Job"}</TableCell>
+                      <TableCell>{row.project_title || row.job_title || "Untitled Job"}</TableCell>
                       
-                      {/* FIX 2: Use client_name instead of client */}
+                      {/* Use serialized client display name */}
                       <TableCell>{row.client_name || "Unknown Client"}</TableCell>
                       
                       <TableCell>{formatDate(row.created_at)}</TableCell>

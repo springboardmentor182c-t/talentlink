@@ -3,7 +3,7 @@
 
 from rest_framework import serializers
 from .models import Project, Skill
-from apps.proposals.models import Proposal 
+from apps.proposals.models import ProjectProposal 
 
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,7 +37,7 @@ class ProposalSerializer(serializers.ModelSerializer):
     project_title = serializers.ReadOnlyField(source='project.title')
 
     class Meta:
-        model = Proposal
+        model = ProjectProposal
         fields = [
             'id', 'project', 'project_title', 
             'freelancer', 'freelancer_name', 
