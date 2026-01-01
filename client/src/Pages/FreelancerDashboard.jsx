@@ -3,6 +3,7 @@ import ProjectCard from "../components/ProjectCard.jsx";
 import FilterSidebar from "../components/FilterSidebar.jsx";
 import ProjectModal from "../components/ProjectModal.jsx";
 import ProfileMenu from "../components/ProfileMenu.jsx";
+import AnalyticsPanel from "../components/AnalyticsPanel.jsx";
 
 const initialProjects = [
   {
@@ -309,6 +310,9 @@ const FreelancerDashboard = () => {
                   : "Your saved projects"}
               </p>
             </div>
+
+            {/* Analytics Panel */}
+            <AnalyticsPanel />
 
             {/* Projects Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

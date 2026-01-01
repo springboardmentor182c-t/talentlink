@@ -769,6 +769,7 @@ const Contracts = () => {
           onContractCreated={handleContractCreated}
         />
       </div>
+      </div>
     </main>
   );
 };

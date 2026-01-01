@@ -14,8 +14,6 @@ import ClientProfile from "./Pages/ClientProfile.jsx";
 import ProjectProposal from "./Pages/ProjectProposal.jsx";
 import Proposals from "./Pages/Proposals.jsx";
 import FreelancerDashboard from "./Pages/FreelancerDashboard.jsx";
-import Proposals from "./Pages/Proposals.jsx";
-import Proposals from "./Pages/Proposals.jsx"; // <- keep if main has it
 
 import PostNewProject from "./Pages/PostNewProject.jsx";
 import ProjectDetails from "./Pages/ProjectDetails.jsx";
