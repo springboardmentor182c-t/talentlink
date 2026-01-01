@@ -1,0 +1,19 @@
+{
+  "totalCandidates": 20,
+  "candidatesByPosition": [
+    { "position": "Frontend", "count": 30 },
+    { "position": "Backend", "count": 25 },
+    { "position": "QA", "count": 15 },
+    { "position": "DevOps", "count": 28 }
+  ],
+  "candidatesByStatus": [
+    { "status": "Applied", "count": 45, "color": "#7C3AED" },
+    { "status": "Screening", "count": 25, "color": "#4F46E5" },
+    { "status": "Interview", "count": 20, "color": "#2563EB" },
+    { "status": "Offer", "count": 10, "color": "#0EA5E9" }
+  ],
+  "recentMessages": [
+    { "name": "Alex Torres", "message": "Great job on the update!", "time": "10:24 AM", "avatar": "AT" },
+    { "name": "Megan Simon", "message": "When is the next class?", "time": "2:47 AM", "avatar": "MS" }
+  ]
+}
