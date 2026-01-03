@@ -10,8 +10,9 @@ class Skill(models.Model):
 # 2. Project Model
 class Project(models.Model):
     STATUS_CHOICES = [
-        ('Open', 'Open'),       
-        ('Active', 'Active'),   
+        ('Open', 'Open'),
+        ('Pending', 'Pending'),
+        ('Active', 'Active'),
         ('Completed', 'Completed'),
         ('Cancelled', 'Cancelled'),
     ]
@@ -32,11 +33,13 @@ class Project(models.Model):
     
     title = models.CharField(max_length=255)
     description = models.TextField()
-    budget = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    deadline = models.DateField(null=True, blank=True)
-    experience_years = models.IntegerField(default=0)
-    required_skills = models.TextField(help_text="Comma-separated skills like 'React, Python'")
-    
+    skills = models.TextField(help_text="Comma-separated skills like 'React, Python'", default='')
+    min_budget = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    max_budget = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    duration = models.CharField(max_length=100, blank=True, default='')
+    location = models.CharField(max_length=100, blank=True, default='')
+    experience_level = models.CharField(max_length=50, blank=True, default='Any')
+    project_type = models.CharField(max_length=50, blank=True, default='Fixed Price')
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Open')
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -13,6 +13,11 @@ class FreelancerSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "email"]
 
+class ProposalAttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProposalAttachment
+        fields = ['id', 'proposal', 'file', 'uploaded_at']
+        read_only_fields = ['id', 'uploaded_at']
 class ProposalSerializer(serializers.ModelSerializer):
     freelancer = serializers.SerializerMethodField()
     client_name = serializers.SerializerMethodField()
@@ -20,6 +25,7 @@ class ProposalSerializer(serializers.ModelSerializer):
     project_title = serializers.SerializerMethodField()
     freelancer_name = serializers.SerializerMethodField()
     freelancer_email = serializers.SerializerMethodField()
+    attachments = ProposalAttachmentSerializer(many=True, read_only=True)
 
     class Meta:
         model = ProjectProposal
@@ -38,6 +44,7 @@ class ProposalSerializer(serializers.ModelSerializer):
             "cover_letter",
             "status",
             "created_at",
+            "attachments",
         ]
         read_only_fields = ["freelancer", "status", "created_at"]
 
@@ -88,10 +95,3 @@ class ProposalSerializer(serializers.ModelSerializer):
         if freelancer:
             validated_data["freelancer"] = freelancer
         return super().create(validated_data)
-
-
-class ProposalAttachmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProposalAttachment
-        fields = ['id', 'proposal', 'file', 'uploaded_at']
-        read_only_fields = ['id', 'uploaded_at']

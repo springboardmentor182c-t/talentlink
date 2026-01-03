@@ -2,7 +2,20 @@
 
 
 import React from "react";
-import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Box, Typography, Avatar, Badge } from "@mui/material";
+import {
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Box,
+  Typography,
+  Avatar,
+  Badge,
+  Button
+} from "@mui/material";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import LogoutIcon from "@mui/icons-material/Logout";
 import { useNavigate, useLocation } from "react-router-dom"; 
 
 // Icons
@@ -32,7 +45,7 @@ const menuItems = [
   { text: "Settings", icon: <SettingsIcon />, path: "/freelancer/settings" },
 ];
 
-export default function FreelancerSidebar({ width }) {
+export default function FreelancerSidebar({ width = 260, open = true }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -41,14 +54,22 @@ export default function FreelancerSidebar({ width }) {
   const activeText = "#ffffff"; 
   const inactiveText = "#94a3b8"; 
 
+  const handleLogout = () => {
+    navigate('/login');
+  };
+
+  if (!open) {
+    return null;
+  }
+
   return (
     <Drawer
       variant="permanent"
       sx={{
-        width: width,
+        width,
         flexShrink: 0,
         "& .MuiDrawer-paper": {
-          width: width,
+          width,
           boxSizing: "border-box",
           bgcolor: sidebarBg, 
           color: "white",
@@ -61,16 +82,37 @@ export default function FreelancerSidebar({ width }) {
         },
       }}
     >
-      {/* --- Logo / Team Section --- */}
-      <Box sx={{ p: 3, display: "flex", alignItems: "center", gap: 2 }}>
-        <Avatar sx={{ bgcolor: activeBg, color: "white", fontWeight: "bold" }}>TL</Avatar>
-        <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Talent Link</Typography>
+      <Box sx={{ p: 3.5, pb: 3, borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: 0.75 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 1.5,
+              bgcolor: "rgba(59,130,246,0.15)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700, color: activeBg }}>
+              TL
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Talent Link</Typography>
+            <Typography variant="caption" sx={{ color: "#94a3b8", letterSpacing: 0.3 }}>
+              FREELANCER PORTAL
+            </Typography>
+          </Box>
         </Box>
       </Box>
 
-      {/* --- Navigation Menu --- */}
-      <List sx={{ px: 2 }}>
+      <List sx={{ px: 2, pt: 2 }}>
+        <Typography variant="caption" sx={{ color: "#64748b", px: 2, letterSpacing: 1, fontWeight: 600 }}>
+          MENU
+        </Typography>
+        <Box sx={{ mt: 1 }}>
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
           
@@ -85,11 +127,13 @@ export default function FreelancerSidebar({ width }) {
                 transition: "all 0.2s ease-in-out",
                 
                 "&.Mui-selected": {
-                  bgcolor: activeBg,
+                  bgcolor: "rgba(59,130,246,0.15)",
                   color: activeText,
-                  boxShadow: "0px 4px 10px rgba(59, 130, 246, 0.3)",
-                  "&:hover": { bgcolor: "#2563eb" },
+                  borderLeft: "4px solid #3b82f6",
+                  pl: 1.5,
+                  "&:hover": { bgcolor: "rgba(59,130,246,0.2)" },
                   "& .MuiListItemIcon-root": { color: activeText },
+                  "& .MuiListItemText-primary": { fontWeight: 600 },
                 },
                 
                 "&:not(.Mui-selected)": {
@@ -122,7 +166,33 @@ export default function FreelancerSidebar({ width }) {
             </ListItemButton>
           );
         })}
+      </Box>
       </List>
+
+      <Box sx={{ px: 2, py: 2.5, mt: "auto", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <Button
+          fullWidth
+          variant="text"
+          startIcon={<LogoutIcon sx={{ color: '#cbd5e1', mr: 1 }} />}
+          onClick={handleLogout}
+          sx={{
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            color: '#cbd5e1',
+            fontWeight: 600,
+            textTransform: 'none',
+            borderRadius: 2,
+            justifyContent: 'center',
+            gap: 1.5,
+            py: 1.2,
+            '&:hover': {
+              backgroundColor: 'rgba(255,255,255,0.08)'
+            },
+            border: 'none'
+          }}
+        >
+          Log Out
+        </Button>
+      </Box>
     </Drawer>
   );
 }

@@ -14,12 +14,19 @@ import Logout from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import Settings from '@mui/icons-material/Settings';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext"; 
 
 // 1. Accept the prop here
-export default function FreelancerNavbar({ onNotificationClick }) {
+export default function FreelancerNavbar({
+  onNotificationClick,
+  onSidebarToggle,
+  sidebarOpen = true,
+  sidebarWidth = 260,
+}) {
   const { user, updateProfile } = useUser();
   const navigate = useNavigate();
 
@@ -74,14 +81,26 @@ export default function FreelancerNavbar({ onNotificationClick }) {
           borderColor: "rgba(0,0,0,0.08)",
           color: "text.primary",
           zIndex: (theme) => theme.zIndex.drawer + 1,
-          width: { sm: `calc(100% - 260px)` },
-          ml: { sm: `260px` },
+          width: { sm: sidebarOpen ? `calc(100% - ${sidebarWidth}px)` : '100%' },
+          ml: { sm: sidebarOpen ? `${sidebarWidth}px` : 0 },
           transition: "all 0.3s ease"
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between", height: 70 }}>
-          
-          {/* Search Bar */}
+        <Toolbar sx={{ justifyContent: "space-between", alignItems: 'center', gap: 2, height: 70 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {onSidebarToggle && (
+              <IconButton
+                onClick={onSidebarToggle}
+                sx={{
+                  border: '1px solid rgba(0,0,0,0.05)',
+                  bgcolor: 'background.paper',
+                }}
+              >
+                {sidebarOpen ? <ChevronLeftIcon /> : <MenuIcon />}
+              </IconButton>
+            )}
+
+            {/* Search Bar */}
           <Box
             sx={{
               display: "flex", 
@@ -108,6 +127,8 @@ export default function FreelancerNavbar({ onNotificationClick }) {
                 fullWidth 
                 sx={{ fontSize: "0.95rem", fontWeight: 500 }} 
             />
+          </Box>
+
           </Box>
 
           {/* Right Section */}

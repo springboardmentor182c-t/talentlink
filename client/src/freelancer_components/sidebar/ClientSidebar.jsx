@@ -12,14 +12,14 @@ import {
   FaQuestionCircle,
   FaSignOutAlt,
   FaFileContract,
-  FaUserFriends 
+  FaUserFriends
 } from 'react-icons/fa';
 
 // 1. IMPORT YOUR CSS TO GET THE .hide-scrollbar CLASS
 // Adjust the path "../../App.css" if your folder structure is different
 import '../../App.css'; 
 
-const ClientSidebar = () => {
+const ClientSidebar = ({ isOpen = true, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -29,13 +29,16 @@ const ClientSidebar = () => {
   };
 
   return (
-    <div style={styles.sidebar}>
+    <div style={{ ...styles.sidebar, width: isOpen ? '100%' : 0 }}>
       {/* --- Logo Area --- */}
       <div style={styles.logoArea}>
-        <div style={styles.logoText}>
-          <span style={styles.logoIcon}>▲</span> Talent Link
+        <div style={styles.logoLogo}>
+          <span style={styles.logoInitials}>TL</span>
         </div>
-        <div style={styles.subText}>Client Portal</div>
+        <div>
+          <div style={styles.logoText}>Talent Link</div>
+          <div style={styles.subText}>CLIENT PORTAL</div>
+        </div>
       </div>
 
       {/* --- Main Menu Section --- */}
@@ -144,25 +147,36 @@ const styles = {
     borderBottom: '1px solid rgba(255,255,255,0.08)',
     marginBottom: '10px',
     flexShrink: 0,
-  },
-  logoText: {
-    fontSize: '20px',
-    fontWeight: 'bold',
     display: 'flex',
     alignItems: 'center',
-    marginBottom: '5px',
-    letterSpacing: '0.5px',
+    gap: '14px',
   },
-  logoIcon: {
+  logoLogo: {
+    width: '44px',
+    height: '44px',
+    borderRadius: '12px',
+    backgroundColor: 'rgba(59,130,246,0.15)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoInitials: {
+    fontSize: '18px',
+    fontWeight: '700',
     color: '#3b82f6',
-    marginRight: '10px',
-    fontSize: '22px'
+    letterSpacing: '0.5px'
+  },
+  logoText: {
+    fontSize: '18px',
+    fontWeight: '700',
+    letterSpacing: '0.3px',
+    marginBottom: '2px',
   },
   subText: {
-    fontSize: '12px',
+    fontSize: '11px',
     color: '#94a3b8',
-    paddingLeft: '32px',
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: '1px',
   },
   scrollableContent: {
     flex: 1,
@@ -216,7 +230,8 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px',
     transition: '0.2s',
-  }
+  },
+  collapseButton: {}
 };
 
 export default ClientSidebar;

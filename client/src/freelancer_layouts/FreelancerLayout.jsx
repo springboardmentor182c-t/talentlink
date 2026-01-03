@@ -1,6 +1,7 @@
 
 
 import React, { useState } from "react";
+import { useUser } from "../context/UserContext";
 import { Box, CssBaseline, ThemeProvider, createTheme, Toolbar } from "@mui/material";
 import FreelancerSidebar from "../freelancer_components/sidebar/FreelancerSidebar";
 import FreelancerNavbar from "../freelancer_components/navbar/FreelancerNavbar";
@@ -59,64 +60,74 @@ const theme = createTheme({
 const drawerWidth = 260;
 
 export default function FreelancerLayout({ children }) {
-  // --- STATE FOR NOTIFICATION SIDEBAR ---
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { loading } = useUser();
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      
-      {/* --- CSS TO HIDE SCROLLBARS --- */}
       <style>{`
         /* Hide scrollbar for Chrome, Safari and Opera */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        
         /* Hide scrollbar for IE, Edge and Firefox */
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
       `}</style>
-
-      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
-        
-        {/* --- 2. Sidebar (Fixed Left) --- */}
-        <FreelancerSidebar width={drawerWidth} />
-
-        {/* --- 3. Main Content Area --- */}
-        <Box
-          component="main"
-          className="hide-scrollbar" // Apply hide class here
-          sx={{
-            flexGrow: 1,
-            width: `calc(100% - ${drawerWidth}px)`,
-            minHeight: "100vh",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {/* Navbar (Pass the click handler) */}
-          <FreelancerNavbar onNotificationClick={() => setIsNotifOpen(true)} />
-
-          {/* Scrollable Dashboard Content */}
-          <Box 
-            component="main" 
-            className="hide-scrollbar" // Apply hide class here too
-            sx={{ flexGrow: 1, p: 3, overflow: "auto" }}
-          >
-            {/* Toolbar fix to prevent content from going under the navbar */}
-            <Toolbar /> 
-            {children}
-          </Box>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
+          <span>Loading...</span>
         </Box>
-
-        {/* --- 4. NOTIFICATION SIDEBAR --- */}
-        <NotificationSidebar 
-          isOpen={isNotifOpen} 
-          onClose={() => setIsNotifOpen(false)} 
-        />
-        
-      </Box>
+      ) : (
+        <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
+          <FreelancerSidebar
+            width={drawerWidth}
+            open={isSidebarOpen}
+            onToggle={toggleSidebar}
+          />
+          <Box
+            component="main"
+            className="hide-scrollbar"
+            sx={{
+              flexGrow: 1,
+              width: { sm: `calc(100% - ${isSidebarOpen ? drawerWidth : 0}px)` },
+              ml: { sm: isSidebarOpen ? `${drawerWidth}px` : 0 },
+              minHeight: "100vh",
+              display: "flex",
+              flexDirection: "column",
+              transition: (theme) => theme.transitions.create(["margin", "width"], {
+                duration: theme.transitions.duration.standard,
+                easing: theme.transitions.easing.sharp,
+              })
+            }}
+          >
+            <FreelancerNavbar
+              onNotificationClick={() => setIsNotifOpen(true)}
+              onSidebarToggle={toggleSidebar}
+              sidebarOpen={isSidebarOpen}
+              sidebarWidth={drawerWidth}
+            />
+            <Box
+              component="main"
+              className="hide-scrollbar"
+              sx={{ flexGrow: 1, p: 3, overflow: "auto" }}
+            >
+              <Toolbar />
+              {children}
+            </Box>
+          </Box>
+          <NotificationSidebar
+            isOpen={isNotifOpen}
+            onClose={() => setIsNotifOpen(false)}
+          />
+        </Box>
+      )}
     </ThemeProvider>
   );
 }

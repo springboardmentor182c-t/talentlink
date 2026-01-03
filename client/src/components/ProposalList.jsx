@@ -5,39 +5,42 @@ export default function ProposalList({ projectId, refresh }) {
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [info, setInfo] = useState("");
+  // Removed unused setInfo
+  const [info] = useState("");
 
-  const fetchProposals = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      console.log("Fetching proposals for projectId:", projectId);
-      const response = await api.get("/proposals/", {
-        params: {
-          project_id: projectId,
-        },
-      });
-      console.log("Full response:", response);
-      console.log("Response data:", response.data);
-      console.log("Response data type:", typeof response.data);
-      console.log("Is array?", Array.isArray(response.data));
-      console.log("Has results?", response.data.results);
-      console.log("Keys in response.data:", Object.keys(response.data));
-      const data = Array.isArray(response.data) ? response.data : (response.data.results || []);
-      console.log("Processed data:", data);
-      console.log("Processed data length:", data.length);
-      setProposals(data);
-    } catch (err) {
-      console.error("Error fetching proposals:", err);
-      setError("Failed to fetch proposals");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
+    const fetchProposals = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        console.log("Fetching proposals for projectId:", projectId);
+        const response = await api.get("/proposals/", {
+          params: {
+            project_id: projectId,
+          },
+        });
+        console.log("Full response:", response);
+        console.log("Response data:", response.data);
+        console.log("Response data type:", typeof response.data);
+        console.log("Is array?", Array.isArray(response.data));
+        console.log("Has results?", response.data.results);
+        console.log("Keys in response.data:", Object.keys(response.data));
+        const data = Array.isArray(response.data) ? response.data : (response.data.results || []);
+        console.log("Processed data:", data);
+        console.log("Processed data length:", data.length);
+        setProposals(data);
+      } catch (err) {
+        console.error("Error fetching proposals:", err);
+        setError("Failed to fetch proposals");
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchProposals();
   }, [projectId, refresh]);
+
+
 
   if (loading) return <p>Loading proposals...</p>;
   if (error) return <p className="text-red-600">{error}</p>;
@@ -48,13 +51,13 @@ export default function ProposalList({ projectId, refresh }) {
       <h3 className="text-2xl font-bold mb-4">Submitted Proposals</h3>
       {info && <div className="mb-2 text-green-700">{info}</div>}
       <table className="w-full border border-gray-300 rounded-md">
-        <thead className="bg-gray-100">
+        <thead className="bg-[#3b82f6]">
           <tr>
-            <th className="border p-2">Freelancer</th>
-            <th className="border p-2">Bid Amount</th>
-            <th className="border p-2">Completion Time</th>
-            <th className="border p-2">Status</th>
-            <th className="border p-2">Submitted</th>
+            <th className="border p-2 text-white">Freelancer</th>
+            <th className="border p-2 text-white">Bid Amount</th>
+            <th className="border p-2 text-white">Completion Time</th>
+            <th className="border p-2 text-white">Status</th>
+            <th className="border p-2 text-white">Submitted</th>
           </tr>
         </thead>
         <tbody>

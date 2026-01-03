@@ -6,9 +6,9 @@ const ProposalSidebar = ({ currentProjectId }) => {
   const writingTips = [
     "Write a compelling cover letter that highlights your experience",
     "Be specific about your completion timeline and deliverables",
-    "Research the market rate for similar projects",
+    "Research the market rate for similar projects (in rupees)",
     "Mention relevant skills and past successful projects",
-    "Keep your bid amount competitive yet reasonable",
+    "Keep your bid amount competitive yet reasonable (₹)",
     "Proofread your proposal before submitting",
     "Ask clarifying questions if project details are unclear",
     "Show enthusiasm for the project and the client",
@@ -53,7 +53,7 @@ const ProposalSidebar = ({ currentProjectId }) => {
             </li>
           ))}
         </ul>
-        <button className="mt-4 text-sm text-indigo-600 font-medium hover:text-indigo-700 transition-colors">
+        <button className="mt-4 text-sm text-[#3b82f6] font-medium hover:text-[#2563eb] transition-colors">
           View all tips →
         </button>
       </div>
@@ -72,7 +72,7 @@ const ProposalSidebar = ({ currentProjectId }) => {
                 key={project.id}
                 className={`p-4 rounded-lg border transition-all cursor-pointer ${
                   expandedProject === project.id
-                    ? "border-indigo-500 bg-indigo-50"
+                    ? "border-[#3b82f6] bg-[#3b82f6]/10"
                     : "border-gray-200 bg-gray-50 hover:border-gray-300"
                 }`}
                 onClick={() =>
@@ -110,7 +110,7 @@ const ProposalSidebar = ({ currentProjectId }) => {
                       }`}>
                         {project.status}
                       </span>
-                      <button className="text-xs text-indigo-600 font-medium hover:text-indigo-700 transition-colors">
+                      <button className="text-xs text-[#3b82f6] font-medium hover:text-[#2563eb] transition-colors">
                         View Project →
                       </button>
                     </div>
