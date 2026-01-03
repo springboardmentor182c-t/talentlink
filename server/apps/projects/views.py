@@ -44,7 +44,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     - Client:
         • sees ONLY projects created by him
     - Freelancer:
-        • sees ALL OPEN projects (freelancer is NULL)
+        • sees marketplace-ready projects
     """
 
     serializer_class = ProjectSerializer
@@ -63,8 +63,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         # ---------- FREELANCER ----------
         if user.role == "freelancer":
+            # Surfacing all client-visible listings keeps filters useful for freelancers
             return Project.objects.filter(
-                status__iexact="Open",
+                status__in=["Open", "Pending", "Active"],
                 freelancer__isnull=True
             ).order_by("-created_at")
 

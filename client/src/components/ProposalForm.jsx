@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { Clock, FileText, Paperclip, Send, Save as SaveIcon } from "lucide-react";
+import { FaIndianRupeeSign } from "react-icons/fa6";
 import api from "../utils/axiosInstance";
 
 export default function ProposalForm({ projectId, onSuccess, client_id, showProjectInfo = true }) {
@@ -125,44 +127,60 @@ export default function ProposalForm({ projectId, onSuccess, client_id, showProj
       )}
 
       <div>
-        <label className="font-semibold">Bid Amount (₹)</label>
+        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-1">
+          <FaIndianRupeeSign className="w-4 h-4 text-indigo-600" />
+          <span>Bid Amount (₹)</span>
+        </label>
         <input
           type="number"
           value={bidAmount}
           onChange={(e) => setBidAmount(e.target.value)}
-          className="p-3 w-full border rounded-md"
+          className={`p-3 w-full border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.bidAmount ? 'border-red-500' : 'border-gray-300'}`}
+          placeholder="Enter your bid in rupees"
         />
         {errors.bidAmount && <p className="text-red-600">{errors.bidAmount}</p>}
       </div>
 
       <div>
-        <label className="font-semibold">Completion Time</label>
+        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-1">
+          <Clock className="w-4 h-4 text-indigo-600" />
+          <span>Completion Time</span>
+        </label>
         <input
           value={completionTime}
           onChange={(e) => setCompletionTime(e.target.value)}
-          className="p-3 w-full border rounded-md"
+          className={`p-3 w-full border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.completionTime ? 'border-red-500' : 'border-gray-300'}`}
           placeholder="e.g. 4 weeks or 20 days"
         />
         {errors.completionTime && <p className="text-red-600">{errors.completionTime}</p>}
       </div>
 
       <div>
-        <label className="font-semibold">Cover Letter</label>
+        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-1">
+          <FileText className="w-4 h-4 text-indigo-600" />
+          <span>Cover Letter</span>
+        </label>
         <textarea
           value={coverLetter}
           onChange={(e) => setCoverLetter(e.target.value)}
-          className="p-3 w-full border rounded-md h-32"
+          className={`p-3 w-full border rounded-md h-32 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.coverLetter ? 'border-red-500' : 'border-gray-300'}`}
         />
         {errors.coverLetter && <p className="text-red-600">{errors.coverLetter}</p>}
       </div>
 
       <div>
-        <label className="font-semibold">Attachments (optional)</label>
+        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-1">
+          <Paperclip className="w-4 h-4 text-indigo-600" />
+          <span>Attachments (optional)</span>
+        </label>
         <input type="file" multiple onChange={handleFilesChange} className="mt-2" />
         {attachments && attachments.length > 0 && (
-          <ul className="mt-2 text-sm text-gray-700 list-disc ml-6">
+          <ul className="mt-2 text-sm text-gray-700 space-y-1">
             {attachments.map((f, i) => (
-              <li key={i}>{f.name} ({Math.round(f.size/1024)} KB)</li>
+              <li key={i} className="flex items-center gap-2">
+                <Paperclip className="w-4 h-4 text-gray-500" />
+                <span>{f.name} ({Math.round(f.size/1024)} KB)</span>
+              </li>
             ))}
           </ul>
         )}
@@ -172,16 +190,24 @@ export default function ProposalForm({ projectId, onSuccess, client_id, showProj
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-emerald-700 text-white rounded"
+          className="px-6 py-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white rounded transition-colors flex items-center gap-2"
         >
-          {loading ? "Submitting..." : "Submit Proposal"}
+          {loading ? (
+            <span>Submitting...</span>
+          ) : (
+            <>
+              <Send className="w-4 h-4" />
+              <span>Submit Proposal</span>
+            </>
+          )}
         </button>
         <button
           type="button"
           onClick={handleSaveDraft}
-          className="px-6 py-2 bg-gray-600 text-white rounded"
+          className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors flex items-center gap-2"
         >
-          Save Draft
+          <SaveIcon className="w-4 h-4" />
+          <span>Save Draft</span>
         </button>
       </div>
     </form>

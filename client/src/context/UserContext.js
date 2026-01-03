@@ -12,11 +12,13 @@ export const UserProvider = ({ children }) => {
     name: storedName || "User",
     email: storedEmail || "",
     role: storedRole || "User",
-    avatar: "https://i.pravatar.cc/150?img=3", // Default image
+    avatar: "https://i.pravatar.cc/150?img=3",
   });
 
-  // Hydrate from stored values and attempt profile fetch
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
+    // Hydrate from localStorage
     setUser((prev) => ({
       ...prev,
       name: storedName || prev.name,
@@ -25,21 +27,27 @@ export const UserProvider = ({ children }) => {
     }));
 
     const token = localStorage.getItem("access_token");
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     axiosInstance
       .get("users/profile/")
       .then((res) => {
         const profile = res.data || {};
+
         const fullName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
+
         const nameFromProfile =
           profile.username ||
           profile.name ||
           fullName ||
           storedName ||
           "User";
-        const roleFromProfile = profile.role || storedRole || "User";
+
         const emailFromProfile = profile.email || storedEmail || "";
+        const roleFromProfile = profile.role || storedRole || "User";
 
         setUser((prev) => ({
           ...prev,
@@ -48,26 +56,31 @@ export const UserProvider = ({ children }) => {
           role: roleFromProfile,
         }));
 
-        if (nameFromProfile) localStorage.setItem("user_name", nameFromProfile);
-        if (emailFromProfile) localStorage.setItem("user_email", emailFromProfile);
-        if (roleFromProfile) localStorage.setItem("role", roleFromProfile);
+        // Persist latest data
+        localStorage.setItem("user_name", nameFromProfile);
+        localStorage.setItem("user_email", emailFromProfile);
+        localStorage.setItem("role", roleFromProfile);
       })
       .catch(() => {
-        // ignore; keep stored values
+        // Keep stored values if API fails
+      })
+      .finally(() => {
+        setLoading(false);
       });
-  }, []);
+  }, [storedName, storedEmail, storedRole]);
 
   const updateProfile = (name, avatarFile) => {
     setUser((prev) => ({
       ...prev,
-      name: name,
+      name: name || prev.name,
       avatar: avatarFile ? URL.createObjectURL(avatarFile) : prev.avatar,
     }));
+
     if (name) localStorage.setItem("user_name", name);
   };
 
   return (
-    <UserContext.Provider value={{ user, updateProfile }}>
+    <UserContext.Provider value={{ user, updateProfile, loading }}>
       {children}
     </UserContext.Provider>
   );

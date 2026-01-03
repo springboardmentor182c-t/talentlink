@@ -1,6 +1,5 @@
-
-
 import React, { useState } from 'react';
+import { useUser } from '../context/UserContext';
 import { Outlet } from 'react-router-dom';
 import ClientSidebar from '../freelancer_components/sidebar/ClientSidebar';
 import ClientNavbar from '../freelancer_components/navbar/ClientNavbar';
@@ -9,6 +8,20 @@ import '../App.css';
 
 const ClientLayout = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const sidebarWidth = 260;
+    const { loading } = useUser(); // Get loading state from UserContext
+    if (loading) {
+      return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <span>Loading...</span>
+        </div>
+      );
+    }
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(prev => !prev);
+  };
 
   return (
     <div style={styles.container}>
@@ -27,13 +40,35 @@ const ClientLayout = () => {
 
       {/* 1. Sidebar Wrapper */}
       {/* We apply the class 'hide-scrollbar' here */}
-      <div style={styles.sidebarWrapper} className="hide-scrollbar">
-        <ClientSidebar />
+      <div
+        style={{
+          ...styles.sidebarWrapper,
+          width: isSidebarOpen ? `${sidebarWidth}px` : '0px',
+          minWidth: isSidebarOpen ? `${sidebarWidth}px` : '0px',
+          transition: 'width 0.3s ease',
+        }}
+        className="hide-scrollbar"
+      >
+        {isSidebarOpen && (
+          <ClientSidebar
+            isOpen={isSidebarOpen}
+            onToggle={toggleSidebar}
+          />
+        )}
       </div>
 
       {/* 2. Main Area */}
-      <div style={styles.mainWrapper}>
-        <ClientNavbar onNotificationClick={() => setIsNotifOpen(true)} />
+      <div
+        style={{
+          ...styles.mainWrapper,
+          transition: 'margin 0.3s ease, width 0.3s ease',
+        }}
+      >
+        <ClientNavbar
+          onNotificationClick={() => setIsNotifOpen(true)}
+          onSidebarToggle={toggleSidebar}
+          sidebarOpen={isSidebarOpen}
+        />
         
         {/* We apply 'hide-scrollbar' here too for the main page */}
         <div style={styles.contentArea} className="hide-scrollbar">

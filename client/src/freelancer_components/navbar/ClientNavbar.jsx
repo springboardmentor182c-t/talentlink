@@ -4,11 +4,13 @@ import React, { useState, useRef } from 'react';
 import { useUser } from '../../context/UserContext';
 import { 
   FaBell, FaChevronDown, FaUser, FaCog, FaSignOutAlt, 
-  FaCloudUploadAlt, FaSearch 
+  FaCloudUploadAlt, FaSearch,
+  FaBars,
+  FaChevronLeft
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
-const ClientNavbar = ({ onNotificationClick }) => {
+const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -58,13 +60,24 @@ const ClientNavbar = ({ onNotificationClick }) => {
       <div style={styles.navbar}>
         
         {/* --- 1. SEARCH BAR (Added on Left) --- */}
-        <div style={styles.searchContainer}>
-          <FaSearch style={styles.searchIcon} />
-          <input 
-            type="text" 
-            placeholder="Search projects, talent..." 
-            style={styles.searchInput} 
-          />
+        <div style={styles.leftSection}>
+          {onSidebarToggle && (
+            <button
+              type="button"
+              style={styles.toggleButton}
+              onClick={onSidebarToggle}
+            >
+              {sidebarOpen ? <FaChevronLeft /> : <FaBars />}
+            </button>
+          )}
+          <div style={styles.searchContainer}>
+            <FaSearch style={styles.searchIcon} />
+            <input 
+              type="text" 
+              placeholder="Search projects, talent..." 
+              style={styles.searchInput} 
+            />
+          </div>
         </div>
 
         {/* --- 2. RIGHT SECTION (Notifications & Profile) --- */}
@@ -170,12 +183,30 @@ const styles = {
     height: '70px',
     backgroundColor: '#ffffff',
     display: 'flex',
-    justifyContent: 'space-between', // Push Search left, Profile right
+    justifyContent: 'space-between',
     alignItems: 'center',
     padding: '0 30px',
     borderBottom: '1px solid #f1f5f9',
     position: 'relative',
     zIndex: 50,
+  },
+  leftSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  toggleButton: {
+    border: 'none',
+    backgroundColor: '#0f172a',
+    color: '#ffffff',
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    transition: '0.2s',
   },
   
   // --- SEARCH BAR STYLES ---

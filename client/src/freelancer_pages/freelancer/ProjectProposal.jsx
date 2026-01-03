@@ -30,7 +30,7 @@ export default function ProjectProposal() {
     <FreelancerLayout>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <main className="lg:col-span-2">
-          <div className="bg-emerald-100 p-8 rounded-[24px]">
+          <div className="bg-[#3b82f6]/10 p-8 rounded-[24px]">
             <h2 className="text-3xl font-bold mb-4">Submit a Proposal</h2>
 
             <div className="bg-white p-6 rounded-md mb-6">
