@@ -3,6 +3,6 @@ from .models import FreelancerProfile
 
 @admin.register(FreelancerProfile)
 class FreelancerProfileAdmin(admin.ModelAdmin):
-    list_display = ('project_title', 'user', 'budget', 'status', 'created_at')
-    search_fields = ('project_title', 'required_skills')
-    list_filter = ('status', 'experience_years')
+    list_display = ('user', 'created_at', 'updated_at')
+    search_fields = ('user__email', 'user__first_name', 'user__last_name', 'skills')
+    list_filter = ('created_at',)

@@ -1,34 +1,48 @@
-
-
-
 from django.db import models
 from django.conf import settings
 
 class FreelancerProfile(models.Model):
-    STATUS_CHOICES = [
-        ('open', 'Open'),
-        ('active', 'Active'),
-        ('closed', 'Closed'),
-    ]
-
-    # --- THE FIX IS HERE ---
-    # Change OneToOneField -> ForeignKey
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
         related_name='freelancer_profile'
     )
-    # -----------------------
-
-    project_title = models.CharField(max_length=255)
-    description = models.TextField(help_text="Project description")
-    budget = models.DecimalField(max_digits=10, decimal_places=2, help_text="Hourly Rate Budget")
-    required_skills = models.TextField(help_text="Comma separated skills")
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='open')
-    experience_years = models.PositiveIntegerField(default=0)
     
+    # New Profile Fields
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
+    skills = models.TextField(help_text="Comma separated skills", blank=True)
+    portfolio = models.TextField(help_text="Link to portfolio or description", blank=True)
+    works = models.TextField(help_text="Previous works description", blank=True)
+    
+    # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.project_title} ({self.status})"
+        return f"Profile of {self.user.email}"
+
+class ClientProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='client_profile'
+    )
+    
+    # Client Specific Fields
+    company_name = models.CharField(max_length=255, blank=True)
+    company_description = models.TextField(blank=True)
+    location = models.CharField(max_length=255, blank=True)
+    
+    # New Fields
+    projects = models.TextField(help_text="Current or past projects", blank=True)
+    skills = models.TextField(help_text="Skills required by freelancer", blank=True)
+    works = models.TextField(help_text="Previous works or portfolio", blank=True)
+    
+    profile_image = models.ImageField(upload_to='client_profiles/', null=True, blank=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Client Profile of {self.user.email}"

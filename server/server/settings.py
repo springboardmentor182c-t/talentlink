@@ -118,14 +118,21 @@ WSGI_APPLICATION = 'server.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'talentlink',      # The name you just gave the DB in pgAdmin
+#         'USER': 'postgres',        # Default is usually 'postgres'
+#         'PASSWORD': 'postgres', # <--- PUT YOUR PGADMIN PASSWORD HERE
+#         'HOST': 'localhost',
+#         'PORT': '5432',            # Default postgres port
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'talentlink',      # The name you just gave the DB in pgAdmin
-        'USER': 'postgres',        # Default is usually 'postgres'
-        'PASSWORD': 'postgres', # <--- PUT YOUR PGADMIN PASSWORD HERE
-        'HOST': 'localhost',
-        'PORT': '5432',            # Default postgres port
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -166,6 +173,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Media files (User uploads)
+import os
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -175,4 +187,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", # Default Vite React port
     "http://localhost:3000", # Default Create-React-App port
+    "http://localhost:3001", # Fallback CRA port
 ]

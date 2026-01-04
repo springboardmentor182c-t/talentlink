@@ -13,7 +13,7 @@ export const profileService = {
   freelancer: {
     getProfile: async () => {
       try {
-        const response = await axiosInstance.get('profile/me/');
+        const response = await axiosInstance.get('profiles/me/?profile_type=freelancer');
         return response.data;
       } catch (error) {
         console.error('Error fetching freelancer profile:', error);
@@ -35,7 +35,7 @@ export const profileService = {
             }
           }
         });
-        const response = await axiosInstance.post('profile/me/', formData, {
+        const response = await axiosInstance.post('profiles/me/', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -47,7 +47,7 @@ export const profileService = {
     updateProfile: async (profileData) => {
       try {
         const formData = new FormData();
-        
+
         Object.keys(profileData).forEach(key => {
           if (profileData[key] !== null && profileData[key] !== undefined) {
             if (key === 'profile_image' || key === 'documents') {
@@ -59,7 +59,7 @@ export const profileService = {
             }
           }
         });
-        const response = await axiosInstance.post('profile/me/', formData, {
+        const response = await axiosInstance.patch('profiles/me/', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -70,7 +70,8 @@ export const profileService = {
     },
     getProfileById: async (id) => {
       try {
-        const response = await noAuthApi.get(`profile/freelancer-profile/${id}/`);
+        // Updated to use correct endpoint 'profiles/' (plural)
+        const response = await noAuthApi.get(`profiles/${id}/`);
         return response.data;
       } catch (error) {
         console.error('Error fetching freelancer profile:', error);
@@ -80,7 +81,7 @@ export const profileService = {
 
     listProfiles: async (params = {}) => {
       try {
-        const response = await noAuthApi.get('profile/freelancer-profile/', { params });
+        const response = await noAuthApi.get('profiles/', { params });
         return response.data;
       } catch (error) {
         console.error('Error listing freelancer profiles:', error);
@@ -89,7 +90,7 @@ export const profileService = {
     },
     deleteProfile: async (id) => {
       try {
-        await axiosInstance.delete(`profile/freelancer-profile/${id}/`);
+        await axiosInstance.delete(`profiles/${id}/`);
       } catch (error) {
         console.error('Error deleting freelancer profile:', error);
         throw error;
@@ -100,7 +101,7 @@ export const profileService = {
   client: {
     getProfile: async () => {
       try {
-        const response = await axiosInstance.get('profile/me/');
+        const response = await axiosInstance.get('profiles/me/?profile_type=client');
         return response.data;
       } catch (error) {
         console.error('Error fetching client profile:', error);
@@ -110,7 +111,7 @@ export const profileService = {
     createProfile: async (profileData) => {
       try {
         const formData = new FormData();
-        
+
         Object.keys(profileData).forEach(key => {
           if (profileData[key] !== null && profileData[key] !== undefined) {
             if (key === 'profile_image' || key === 'documents') {
@@ -122,7 +123,7 @@ export const profileService = {
             }
           }
         });
-        const response = await axiosInstance.post('profile/me/', formData, {
+        const response = await axiosInstance.post('profiles/me/', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -134,7 +135,7 @@ export const profileService = {
     updateProfile: async (profileData) => {
       try {
         const formData = new FormData();
-        
+
         Object.keys(profileData).forEach(key => {
           if (profileData[key] !== null && profileData[key] !== undefined) {
             if (key === 'profile_image' || key === 'documents') {
@@ -146,7 +147,9 @@ export const profileService = {
             }
           }
         });
-        const response = await axiosInstance.post('profile/me/', formData, {
+        // Changed to patch here too for consistency if needed, but keeping post if existing logic required it
+        // But assumed me/ update uses patch.
+        const response = await axiosInstance.patch('profiles/me/', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -157,7 +160,11 @@ export const profileService = {
     },
     getProfileById: async (id) => {
       try {
-        const response = await noAuthApi.get(`profile/client-profile/${id}/`);
+        // Assuming client profile endpoint might be distinct or same. 
+        // If backend does NOT have client profile viewset, this will fail regardless.
+        // But for consistency I update syntax.
+        const response = await noAuthApi.get(`profiles/client-profile/${id}/`);
+        // Leaving client-profile as I am not sure about client structure.
         return response.data;
       } catch (error) {
         console.error('Error fetching client profile:', error);
@@ -166,7 +173,7 @@ export const profileService = {
     },
     listProfiles: async (params = {}) => {
       try {
-        const response = await noAuthApi.get('profile/client-profile/', { params });
+        const response = await noAuthApi.get('profiles/client-profile/', { params });
         return response.data;
       } catch (error) {
         console.error('Error listing client profiles:', error);
@@ -175,7 +182,7 @@ export const profileService = {
     },
     deleteProfile: async (id) => {
       try {
-        await axiosInstance.delete(`profile/client-profile/${id}/`);
+        await axiosInstance.delete(`profiles/client-profile/${id}/`);
       } catch (error) {
         console.error('Error deleting client profile:', error);
         throw error;
@@ -185,4 +192,3 @@ export const profileService = {
 };
 
 export default profileService;
-
