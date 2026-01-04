@@ -1,10 +1,11 @@
 
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '../../context/UserContext';
-import { 
-  FaBell, FaChevronDown, FaUser, FaCog, FaSignOutAlt, 
-  FaCloudUploadAlt, FaSearch,
+import profileService from '../../services/profileService';
+import {
+  FaBell, FaChevronDown, FaUser, FaCog, FaSignOutAlt,
+  FaSearch,
   FaBars,
   FaChevronLeft
 } from 'react-icons/fa';
@@ -12,16 +13,50 @@ import { useNavigate } from 'react-router-dom';
 
 const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true }) => {
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
 
   // --- State Management ---
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  
-  // Use user context for dynamic user info
-  const { user, updateProfile } = useUser();
-  const [tempName, setTempName] = useState(user.name);
-  const [tempAvatar, setTempAvatar] = useState(user.avatar);
+  const [displayUser, setDisplayUser] = useState({
+    name: '',
+    avatar: "https://i.pravatar.cc/150?img=3",
+    role: 'Client'
+  });
+
+  // Use user context mainly for logout/auth check
+  const { user } = useUser();
+
+  // Fetch Client Specific Profile
+  useEffect(() => {
+    const fetchClientProfile = async () => {
+      try {
+        const data = await profileService.client.getProfile();
+        const fullName = `${data.first_name || ""} ${data.last_name || ""}`.trim();
+
+        let avatarUrl = "https://i.pravatar.cc/150?img=3";
+        if (data.profile_image) {
+          avatarUrl = data.profile_image.startsWith('http')
+            ? data.profile_image
+            : `${process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000'}${data.profile_image}`;
+        }
+
+        setDisplayUser({
+          name: data.company_name || fullName || user.name || "Client",
+          avatar: avatarUrl,
+          role: 'Client'
+        });
+      } catch (err) {
+        console.error("Failed to fetch client profile for navbar", err);
+        // Fallback to global user if fetch fails (e.g. 404)
+        setDisplayUser({
+          name: user.name,
+          avatar: user.avatar,
+          role: 'Client'
+        });
+      }
+    };
+
+    fetchClientProfile();
+  }, [user.name, user.avatar]); // Re-run if global user changes (e.g. after edit)
 
   // --- Handlers ---
   const handleLogout = () => {
@@ -36,29 +71,14 @@ const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true
 
   const handleEditClick = (e) => {
     e.stopPropagation();
-    setTempName(user.name);
-    setTempAvatar(user.avatar);
-    setShowEditModal(true);
-    setIsMenuOpen(false); 
-  };
-
-  const handleSaveProfile = () => {
-    updateProfile(tempName, null); // Avatar upload can be handled similarly if needed
-    setShowEditModal(false);
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setTempAvatar(imageUrl);
-    }
+    setIsMenuOpen(false);
+    navigate('/client/profile');
   };
 
   return (
     <>
       <div style={styles.navbar}>
-        
+
         {/* --- 1. SEARCH BAR (Added on Left) --- */}
         <div style={styles.leftSection}>
           {onSidebarToggle && (
@@ -72,21 +92,21 @@ const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true
           )}
           <div style={styles.searchContainer}>
             <FaSearch style={styles.searchIcon} />
-            <input 
-              type="text" 
-              placeholder="Search projects, talent..." 
-              style={styles.searchInput} 
+            <input
+              type="text"
+              placeholder="Search projects, talent..."
+              style={styles.searchInput}
             />
           </div>
         </div>
 
         {/* --- 2. RIGHT SECTION (Notifications & Profile) --- */}
         <div style={styles.rightSection}>
-          
+
           {/* Notification Bell */}
           <div style={styles.iconWrapper} onClick={onNotificationClick}>
             <FaBell style={{ color: '#64748b', fontSize: '18px' }} />
-            <span style={styles.dotBadge}></span> 
+            <span style={styles.dotBadge}></span>
           </div>
 
           <div style={styles.separator}></div>
@@ -94,10 +114,10 @@ const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true
           {/* User Profile */}
           <div style={styles.profileContainer}>
             <div style={styles.profileWrapper} onClick={toggleMenu}>
-              <img src={user.avatar} alt="User" style={styles.avatar} />
+              <img src={displayUser.avatar} alt="User" style={styles.avatar} />
               <div style={styles.userInfo}>
-                <span style={styles.userName}>{user.name}</span>
-                <span style={styles.userRole}>{user.role}</span>
+                <span style={styles.userName}>{displayUser.name}</span>
+                <span style={styles.userRole}>{displayUser.role}</span>
               </div>
               <FaChevronDown style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }} />
             </div>
@@ -107,72 +127,25 @@ const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true
               <div style={styles.dropdown}>
                 <div style={styles.dropdownArrow}></div>
                 <div style={styles.dropdownHeader}>Account</div>
-                
+
                 <button style={styles.menuItem} onClick={handleEditClick}>
-                  <FaUser style={styles.menuIcon} /> Edit Profile
+                  <FaUser style={styles.menuIcon} /> Profile
                 </button>
                 <button style={styles.menuItem} onClick={() => setIsMenuOpen(false)}>
                   <FaCog style={styles.menuIcon} /> Settings
                 </button>
                 <div style={styles.menuDivider}></div>
-                <button 
-                  style={{...styles.menuItem, color: '#ef4444'}}
+                <button
+                  style={{ ...styles.menuItem, color: '#ef4444' }}
                   onClick={handleLogout}
                 >
-                   <FaSignOutAlt style={{...styles.menuIcon, color: '#ef4444'}} /> Logout
+                  <FaSignOutAlt style={{ ...styles.menuIcon, color: '#ef4444' }} /> Logout
                 </button>
               </div>
             )}
           </div>
         </div>
       </div>
-
-      {/* --- EDIT PROFILE MODAL --- */}
-      {showEditModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalContent}>
-            <h2 style={styles.modalTitle}>Update Profile Details</h2>
-            
-            <div style={styles.modalBody}>
-              <div style={styles.avatarUploadWrapper}>
-                <img src={tempAvatar} alt="Profile" style={styles.largeAvatar} />
-                <div 
-                  style={styles.cameraBtn} 
-                  onClick={() => fileInputRef.current.click()}
-                >
-                  <FaCloudUploadAlt color="white" />
-                </div>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  style={{display: 'none'}} 
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label style={styles.inputLabel}>Full Name</label>
-                <input 
-                  type="text" 
-                  value={tempName}
-                  onChange={(e) => setTempName(e.target.value)}
-                  style={styles.textInput}
-                />
-              </div>
-            </div>
-
-            <div style={styles.modalFooter}>
-              <button style={styles.cancelBtn} onClick={() => setShowEditModal(false)}>
-                Cancel
-              </button>
-              <button style={styles.saveBtn} onClick={handleSaveProfile}>
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
@@ -208,7 +181,7 @@ const styles = {
     cursor: 'pointer',
     transition: '0.2s',
   },
-  
+
   // --- SEARCH BAR STYLES ---
   searchContainer: {
     display: 'flex',
@@ -251,7 +224,7 @@ const styles = {
     position: 'absolute',
     top: '6px',
     right: '6px',
-    backgroundColor: '#ef4444', 
+    backgroundColor: '#ef4444',
     height: '8px',
     width: '8px',
     borderRadius: '50%',
@@ -262,33 +235,33 @@ const styles = {
     height: '24px',
     backgroundColor: '#e2e8f0',
   },
-  
+
   // Profile Section
   profileContainer: { position: 'relative' },
-  profileWrapper: { 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '12px', 
+  profileWrapper: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
     cursor: 'pointer',
     padding: '4px 8px',
     borderRadius: '8px',
     transition: '0.2s',
   },
-  avatar: { 
-    width: '40px', 
-    height: '40px', 
-    borderRadius: '50%', 
-    objectFit: 'cover', 
-    border: '2px solid #e2e8f0' 
+  avatar: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '2px solid #e2e8f0'
   },
-  userInfo: { 
-    display: 'flex', 
+  userInfo: {
+    display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
   },
-  userName: { 
-    fontSize: '14px', 
-    fontWeight: '700', 
+  userName: {
+    fontSize: '14px',
+    fontWeight: '700',
     color: '#0f172a',
     lineHeight: '1.2'
   },
@@ -347,7 +320,7 @@ const styles = {
   },
   menuIcon: {
     marginRight: '10px',
-    color: '#1b4332', 
+    color: '#1b4332',
     fontSize: '16px'
   },
   menuDivider: {
@@ -410,7 +383,7 @@ const styles = {
     position: 'absolute',
     bottom: '0',
     right: '0',
-    backgroundColor: '#1b4332', 
+    backgroundColor: '#1b4332',
     width: '32px',
     height: '32px',
     borderRadius: '50%',
@@ -457,7 +430,7 @@ const styles = {
     padding: '10px 20px',
   },
   saveBtn: {
-    backgroundColor: '#1b4332', 
+    backgroundColor: '#1b4332',
     color: 'white',
     border: 'none',
     padding: '10px 32px',

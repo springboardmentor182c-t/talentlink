@@ -2,8 +2,8 @@
 
 
 import { useState } from 'react';
-import axios from 'axios'; 
-// Note: If you have a custom axios instance (e.g., 'import api from "../api/axios"'), use that instead of 'import axios'.
+// import axios from 'axios'; 
+import userService from '../../../services/userService';
 
 export const useSignup = () => {
   const [error, setError] = useState(null);
@@ -27,15 +27,23 @@ export const useSignup = () => {
       };
 
       // 3. Send POST request (Update URL if your backend port is different)
-      const response = await axios.post('http://127.0.0.1:8000/api/register/', payload);
+      // 3. Delegate to userService based on role
+      let response;
+      if (role === 'client') {
+        response = await userService.registerClient(payload);
+      } else {
+        // Default to freelancer
+        response = await userService.registerFreelancer(payload);
+      }
 
-      if (response.status === 201) {
+      // userService returns response.data directly, so we check if response exists
+      if (response) {
         setIsSuccess(true);
         setIsLoading(false);
       }
     } catch (err) {
       setIsLoading(false);
-      
+
       // Handle errors (checks if backend sent a specific error message)
       if (err.response && err.response.data) {
         setError(err.response.data);

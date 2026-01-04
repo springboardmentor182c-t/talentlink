@@ -11,13 +11,15 @@ export const userService = {
 
     // Auth: Register (Client)
     registerClient: async (userData) => {
-        const response = await axiosInstance.post('users/register/client/', userData);
+        // Updated to use the correct generic endpoint
+        const response = await axiosInstance.post('users/register/', { ...userData, role: 'client' });
         return response.data;
     },
 
     // Auth: Register (Freelancer)
     registerFreelancer: async (userData) => {
-        const response = await axiosInstance.post('users/register/freelancer/', userData);
+        // Updated to use the correct generic endpoint
+        const response = await axiosInstance.post('users/register/', { ...userData, role: 'freelancer' });
         return response.data;
     },
 
