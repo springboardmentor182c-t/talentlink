@@ -5,6 +5,8 @@
 from django.urls import path 
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from .views import oauth_success
+
 # Import views safely
 from .views import (
     CustomLoginView, 
@@ -26,4 +28,5 @@ urlpatterns = [
     path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
+    path("oauth/success/", oauth_success)
 ]

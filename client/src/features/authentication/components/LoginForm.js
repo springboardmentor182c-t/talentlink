@@ -1,7 +1,5 @@
-
-
 import React, { useState } from 'react';
-import { useNavigate, Link} from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { loginUser } from '../services/login';
 
 const LoginForm = () => {
@@ -18,51 +16,52 @@ const LoginForm = () => {
 
         try {
             const response = await loginUser(email, password);
-            
-            // --- DEBUG LOGS (Check your Console!) ---
-            console.log("1. Full Backend Response:", response);
-            console.log("2. Role from Backend:", response.role);
-            console.log("3. Role from LocalStorage:", localStorage.getItem('role'));
-            // ----------------------------------------
 
-            const userRole = response.role || localStorage.getItem('role'); 
+            const userRole = response.role || localStorage.getItem('role');
 
             if (userRole && userRole.toLowerCase() === 'freelancer') {
-                console.log("Redirecting to FREELANCER...");
-                navigate('/freelancer'); 
+                navigate('/freelancer');
             } else if (userRole && userRole.toLowerCase() === 'client') {
-                console.log("Redirecting to CLIENT...");
                 navigate('/client');
             } else {
-                console.log("Role not found, Redirecting to HOME...");
-                navigate('/'); 
+                navigate('/');
             }
-
         } catch (err) {
-            console.error("Login Error:", err);
-            setError(err.detail || "Invalid credentials");
+            setError(err.detail || 'Invalid credentials');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div>
+        <div style={{ width: '100%' }}>
             <form onSubmit={handleSubmit}>
                 {error && <p className="error-msg">{error}</p>}
-                
+
                 <div className="form-group">
                     <label>Email</label>
-                    <input type="email" className="form-input" 
-                        value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <input
+                        type="email"
+                        className="form-input"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
                 </div>
 
                 <div className="form-group">
                     <label>Password</label>
-                    <input type="password" className="form-input"
-                        value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <input
+                        type="password"
+                        className="form-input"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
                     <div className="forgot-password-container">
-                        <Link to="/forgot-password" className="forgot-password-text">Forgot Password?</Link>
+                        <Link to="/forgot-password" className="forgot-password-text">
+                            Forgot Password?
+                        </Link>
                     </div>
                 </div>
 
@@ -70,8 +69,68 @@ const LoginForm = () => {
                     {loading ? 'Logging in...' : 'Login'}
                 </button>
             </form>
+
+            {/* ===== OAuth Section ===== */}
+            <div style={{ marginTop: '22px', textAlign: 'center' }}>
+                <p style={{ color: '#aaa', marginBottom: '12px' }}>OR</p>
+
+                {/* Google Button */}
+                <button
+                    onClick={() =>
+                        window.location.href =
+                        'http://127.0.0.1:8000/auth/login/google-oauth2/'
+                    }
+                    style={styles.oauthButton}
+                >
+                    <img
+                        src="https://developers.google.com/identity/images/g-logo.png"
+                        alt="Google"
+                        style={styles.icon}
+                    />
+                    Continue with Google
+                </button>
+
+                {/* GitHub Button */}
+                <button
+                    onClick={() =>
+                        window.location.href =
+                        'http://127.0.0.1:8000/auth/login/github/'
+                    }
+                    style={{ ...styles.oauthButton, marginTop: '10px' }}
+                >
+                    <img
+                        src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                        alt="GitHub"
+                        style={styles.icon}
+                    />
+                    Continue with GitHub
+                </button>
+            </div>
         </div>
     );
+};
+
+/* ===== Inline Styles (Clean & Professional) ===== */
+const styles = {
+    oauthButton: {
+        width: '100%',
+        padding: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
+        backgroundColor: '#ffffff',
+        border: '1px solid #ddd',
+        borderRadius: '8px',
+        fontSize: '15px',
+        fontWeight: '500',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+    },
+    icon: {
+        width: '20px',
+        height: '20px',
+    },
 };
 
 export default LoginForm;

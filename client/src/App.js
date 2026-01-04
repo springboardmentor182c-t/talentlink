@@ -21,14 +21,16 @@ import { UserProvider } from "./context/UserContext";
 import { ProjectProvider } from "./context/ProjectContext";
 import { ThemeProvider } from "./context/ThemeContext";
 
-/* ===== AuthFlow UI Pages ===== */
+/* ===== Auth Pages ===== */
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import VerifyOtp from "./pages/VerifyOtp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import OAuthSuccess from "./pages/OAuthSuccess";
 
+/* ===== Client Pages ===== */
 /* ===== Client Dashboard Pages & Layout ===== */
 import ClientLayout from "./freelancer_layouts/ClientLayout";
 import ClientDashboard from "./freelancer_pages/client/ClientDashboard";
@@ -41,7 +43,7 @@ import ClientMessages from "./freelancer_pages/client/ClientMessages";
 import ClientSettings from "./freelancer_pages/client/ClientSettings";
 import ClientHelp from "./freelancer_pages/client/ClientHelp";
 
-/* ===== Freelancer Dashboard Pages ===== */
+/* ===== Freelancer Pages ===== */
 import FreelancerDashboard from "./freelancer_pages/freelancer/FreelancerDashboard";
 import Projects from "./freelancer_pages/freelancer/Projects";
 import FreelancerProposals from "./freelancer_pages/freelancer/FreelancerProposals";
@@ -59,9 +61,67 @@ import FreelancerMessages from "./freelancer_pages/freelancer/Messages";
 import NotificationHome from "./notifications/features/notifications/pages/NotificationsPage";
 import NotificationItem from "./notifications/features/notifications/components/NotificationItem";
 
-/* ===== Optional 404 Page ===== */
+/* ===== 404 ===== */
 import NotFound from "./freelancer_pages/NotFound";
 
+function App() {
+  return (
+    <UserProvider>
+      <ProjectProvider>
+        <Router>
+          <Routes>
+
+            {/* ===== PUBLIC ROUTES ===== */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/verify-otp" element={<VerifyOtp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* ===== OAUTH CALLBACK ===== */}
+            <Route path="/oauth/success" element={<OAuthSuccess />} />
+
+            {/* ===== CLIENT ROUTES ===== */}
+            <Route path="/client" element={<ClientLayout />}>
+              <Route index element={<ClientDashboard />} />
+              <Route path="dashboard" element={<ClientDashboard />} />
+              <Route path="projects" element={<ClientProjects />} />
+              <Route path="financials" element={<ClientFinancials />} />
+              <Route path="documents" element={<ClientDocuments />} />
+              <Route path="messages" element={<ClientMessages />} />
+              <Route path="settings" element={<ClientSettings />} />
+              <Route path="help" element={<ClientHelp />} />
+            </Route>
+
+            {/* ===== FREELANCER ROUTES ===== */}
+            <Route path="/freelancer" element={<FreelancerDashboard />} />
+            <Route path="/freelancer/projects" element={<Projects />} />
+            <Route path="/freelancer/accounting" element={<Accounting />} />
+            <Route path="/freelancer/expenses" element={<Expenses />} />
+            <Route path="/freelancer/inquiry" element={<Inquiry />} />
+            <Route path="/freelancer/contracts" element={<Contracts />} />
+            <Route path="/freelancer/calendar" element={<CalendarPage />} />
+            <Route path="/freelancer/clients" element={<Clients />} />
+            <Route path="/freelancer/reports" element={<Reports />} />
+            <Route path="/freelancer/settings" element={<Settings />} />
+
+            {/* ===== NOTIFICATIONS ===== */}
+            <Route path="/notifications" element={<NotificationHome />} />
+            <Route path="/notifications/:id" element={<NotificationItem />} />
+
+            {/* ===== 404 ===== */}
+            <Route path="/404" element={<NotFound />} />
+            <Route path="*" element={<Navigate to="/404" />} />
+
+          </Routes>
+        </Router>
+      </ProjectProvider>
+    </UserProvider>
+  );
+}
+
+export default App;
 const phStyle = { padding: "2rem", textAlign: "center", fontSize: "1.5rem" };
 
 export default function App() {

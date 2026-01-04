@@ -1,11 +1,22 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
+
+def home(request):
+    return JsonResponse({
+        "status": "ok",
+        "message": "TalentLink backend running",
+        "auth": "Google OAuth working"
+    })
+
+
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
 
 urlpatterns = [
+    path('', home),  # 👈 Added THIS LINE
     path('admin/', admin.site.urls),
 
     # JWT AUTH (THIS WAS MISSING)
@@ -19,6 +30,9 @@ urlpatterns = [
 
     # path('api/v1/analytics/', include('apps.analytics.urls')),
     path('api/v1/auth/', include('apps.users.urls')),
+    path('auth/', include('social_django.urls', namespace='social')),
+    path("oauth/success/", include("apps.users.urls")),
+    
 
     path('api/projects/', include('apps.projects.urls')),
     # path('api/v1/projects/', include('apps.projects.urls')),
