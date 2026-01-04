@@ -102,14 +102,79 @@
 .dot-read {
   background: #cfcfcf;
 }
+/* ... Keep existing styles ... */
+
 .notif-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
   gap: 4px;
-  min-width: 70px;
+  min-width: 80px; /* Slightly wider to fit actions */
 }
+
+/* New container for Dot + Trash icon */
+/* ... Keep existing styles ... */
+
+.notif-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.action-icon {
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.2s, color 0.2s;
+  color: #94a3b8; /* Default gray */
+}
+
+.action-icon:hover {
+  transform: scale(1.1);
+}
+
+/* Star Specific Styles */
+.star-icon {
+  font-size: 15px; /* Slightly larger */
+}
+
+/* If the parent component renders a filled star, we can target it specifically 
+   or rely on inline React logic. But let's add a helper class for active star if needed. */
+.star-icon svg[fill="currentColor"] { 
+    /* This targets filled icons if you use simple SVG, 
+       but for React Icons, color is controlled via parent color */
+}
+
+/* When the star is active (Gold) */
+.star-active {
+  color: #fbbf24;
+}
+
+/* Delete Icon Hover */
+.delete-icon:hover {
+  color: #ef4444;
+}
+
+/* You might need to add this logical styling in JS or use a class toggle. 
+   See the JS update above where we swap FaStar vs FaRegStar. 
+   We can style FaStar directly: */
+.star-icon .star-filled {
+    color: #f59e0b; /* Gold color */
+}
+
+.delete-icon {
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.delete-icon:hover {
+  color: #ef4444; /* Red on hover */
+}
+
+/* ... Keep other existing styles ... */
 
 .notif-time-right {
   font-size: 13px;

@@ -1,3 +1,8 @@
+
+
+
+
+
 from django.db import models
 from django.conf import settings
 
@@ -23,6 +28,12 @@ class Contract(models.Model):
     title = models.CharField(max_length=200)
     terms = models.TextField()
 
+    total_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
 
@@ -31,6 +42,3 @@ class Contract(models.Model):
 
     def __str__(self):
         return f"Contract {self.id} for Proposal {self.proposal_id}"
-
-
-
