@@ -206,3 +206,23 @@ class ResetPasswordView(views.APIView):
             except User.DoesNotExist:
                 return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def oauth_success(request):
+    """
+    This view is called AFTER Google/GitHub OAuth succeeds.
+    It redirects the user to React with role info.
+    """
+
+    user = request.user
+
+    # Get role safely (fallback to client)
+    role = getattr(user, "role", "client")
+
+    # Redirect to React frontend
+    return redirect(
+        f"http://localhost:3000/oauth/success?role={role}"
+    )

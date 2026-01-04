@@ -51,10 +51,18 @@ INSTALLED_APPS = [
     'apps.projects',
     'apps.contracts.apps.ContractsConfig',
     'apps.proposals.apps.ProposalsConfig',
+    'social_django',
+
 
     
 
 ]
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.google.GoogleOAuth2',
+    'social_core.backends.github.GithubOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -125,7 +133,8 @@ DATABASES = {
         'USER': 'postgres',        # Default is usually 'postgres'
         'PASSWORD': 'Kumar@psql', # <--- PUT YOUR PGADMIN PASSWORD HERE
         'HOST': 'localhost',
-        'PORT': '5432',            # Default postgres port
+        'PORT': '5432',
+                                # Default postgres port
     }
 }
 
@@ -176,3 +185,21 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", # Default Vite React port
     "http://localhost:3000", # Default Create-React-App port
 ]
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = "1032908789772-huusviocfqka9hpevmk4kbnc3b91bph5.apps.googleusercontent.com"
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = "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"
+#LOGIN_REDIRECT_URL = "/"
+#LOGOUT_REDIRECT_URL = "/"
+LOGIN_URL = "/auth/login/google-oauth2/"
+#LOGIN_REDIRECT_URL = "/api/users/"
+#LOGOUT_REDIRECT_URL = "/api/users/"
+#LOGIN_REDIRECT_URL = "/api/users/login/"
+#LOGOUT_REDIRECT_URL = "/api/users/login/"
+SOCIAL_AUTH_GITHUB_KEY = "Ov23li01vfH6jXv2pQ9s"
+SOCIAL_AUTH_GITHUB_SECRET = "f9b68be90ca20418d9cc88a18d4a3b2c07d582c7"
+LOGIN_REDIRECT_URL = "http://localhost:3000/oauth/success"
+LOGOUT_REDIRECT_URL = "http://localhost:3000/login"
+
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = "http://localhost:3000/oauth/success"
+SOCIAL_AUTH_LOGIN_ERROR_URL = "http://localhost:3000/login"
