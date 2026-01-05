@@ -1,12 +1,10 @@
 
-
-
-
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Box, CssBaseline, ThemeProvider, createTheme, Toolbar } from "@mui/material";
 import FreelancerSidebar from "../freelancer_components/sidebar/FreelancerSidebar";
 import FreelancerNavbar from "../freelancer_components/navbar/FreelancerNavbar";
 import NotificationSidebar from "../notifications/features/notifications/components/NotificationSidebar";
+import { getNotifications } from "../notifications/features/notifications/services/notificationService";
 import { useUser } from "../context/UserContext"; 
 import { useTheme } from "../context/ThemeContext";
 
@@ -14,6 +12,7 @@ const drawerWidth = 260;
 
 export default function FreelancerLayout({ children }) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); 
   const { loading } = useUser();
   const { theme: currentMode } = useTheme(); 
@@ -21,6 +20,22 @@ export default function FreelancerLayout({ children }) {
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
   };
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const res = await getNotifications();
+        const payload = res.data?.results || res.data || [];
+        if (!mounted) return;
+        setNotifications(payload);
+      } catch (err) {
+        console.error("Failed to load notifications for navbar", err);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   const muiTheme = useMemo(() => createTheme({
     palette: {
@@ -125,6 +140,7 @@ export default function FreelancerLayout({ children }) {
             onNotificationClick={() => setIsNotifOpen(true)} 
             onSidebarToggle={toggleSidebar}
             sidebarOpen={isSidebarOpen}
+            notifications={notifications}
             sidebarWidth={drawerWidth}
           />
 
@@ -142,7 +158,7 @@ export default function FreelancerLayout({ children }) {
           </Box>
         </Box>
 
-        <NotificationSidebar isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
+        <NotificationSidebar isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} onItemsChange={setNotifications} />
       </Box>
     </ThemeProvider>
   );

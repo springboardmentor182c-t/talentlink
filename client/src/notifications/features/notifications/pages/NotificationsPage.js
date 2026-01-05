@@ -729,6 +729,7 @@
 
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from 'react-router-dom';
 import { useNavigate } from "react-router-dom";
 import NotificationItem from "../components/NotificationItem";
 import { deleteNotification, getNotifications, markAllRead, markRead, toggleStar } from "../services/notificationService";
@@ -755,6 +756,10 @@ export default function NotificationsPage() {
     load();
   }, []);
 
+  // If parent layout provides setNotifications via Outlet context, keep parent in sync
+  const outletCtx = useOutletContext?.() || {};
+  const parentSetNotifications = outletCtx.setNotifications || null;
+
   const visible = useMemo(() => {
     return items.filter((i) => {
       if (tab === "all") return true;
@@ -770,6 +775,9 @@ export default function NotificationsPage() {
       await markRead(id);
     } catch (error) {
       console.error("Failed to mark read", error);
+    }
+    if (parentSetNotifications) {
+      parentSetNotifications((prev) => (prev ? prev.map((p) => (p.id === id ? { ...p, read: true } : p)) : prev));
     }
   }
 
@@ -798,6 +806,9 @@ export default function NotificationsPage() {
           return p;
         })
       );
+      if (parentSetNotifications) {
+        parentSetNotifications((prev) => (prev ? prev.map((p) => (p.id === id ? { ...p, category: nextStar ? "all" : "favourites" } : p)) : prev));
+      }
     }
   }
 
@@ -809,6 +820,9 @@ export default function NotificationsPage() {
     } catch (error) {
       console.error("Failed to delete notification", error);
     }
+    if (parentSetNotifications) {
+      parentSetNotifications((prev) => (prev ? prev.filter((p) => p.id !== id) : prev));
+    }
   }
 
   async function handleMarkAllRead() {
@@ -817,6 +831,9 @@ export default function NotificationsPage() {
       await markAllRead();
     } catch (error) {
       console.error("Failed to mark all read", error);
+    }
+    if (parentSetNotifications) {
+      parentSetNotifications((prev) => (prev ? prev.map((p) => ({ ...p, read: true })) : prev));
     }
   }
 

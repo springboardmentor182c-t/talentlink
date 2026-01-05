@@ -163,13 +163,16 @@ import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
             {(() => {
               const unread = (notifications || []).filter(n => !(n.read === true || n.is_read === true)).length;
               return (
-                <IconButton onClick={onNotificationClick} sx={{ color: muiTheme.palette.text.secondary }}>
+                <IconButton
+                  onClick={onNotificationClick}
+                  sx={{ border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}
+                >
                   {unread > 0 ? (
                     <Badge badgeContent={unread} color="error">
-                      <NotificationsNoneIcon sx={{ fontSize: 18 }} />
+                      <NotificationsNoneIcon sx={{ color: 'text.secondary' }} />
                     </Badge>
                   ) : (
-                    <NotificationsNoneIcon sx={{ fontSize: 18 }} />
+                    <NotificationsNoneIcon sx={{ color: 'text.secondary' }} />
                   )}
                 </IconButton>
               );

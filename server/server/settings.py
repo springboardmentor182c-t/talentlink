@@ -131,16 +131,28 @@ WSGI_APPLICATION = 'server.wsgi.application'
 #     }
 # }
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Talentlinks',      # The name you just gave the DB in pgAdmin
-        'USER': 'postgres',        # Default is usually 'postgres'
-        'PASSWORD': 'Kumar@psql', # <--- PUT YOUR PGADMIN PASSWORD HERE
-        'HOST': 'localhost',
-        'PORT': '5432',            # Default postgres port
+import os
+
+# Use environment variables for Postgres credentials when available.
+# If not provided, fall back to a local SQLite DB for easier local development.
+if os.environ.get('POSTGRES_HOST') or os.environ.get('POSTGRES_DB'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('POSTGRES_DB', 'Talentlinks'),
+            'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+            'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
+            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation

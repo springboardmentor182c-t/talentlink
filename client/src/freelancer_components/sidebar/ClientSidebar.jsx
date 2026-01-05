@@ -41,6 +41,7 @@ const ClientSidebar = ({ isOpen = true, onToggle }) => {
     { to: '/client/dashboard', icon: <FaHome />, label: 'Overview' },
     { to: '/client/projects', icon: <FaBriefcase />, label: 'My Projects' },
     { to: '/client/proposals', icon: <FaUserFriends />, label: 'Review Proposals' },
+    { to: '/client/freelancers', icon: <FaUserFriends />, label: 'Freelancers' },
     { to: '/client/financials', icon: <FaFileInvoice />, label: 'Financials' },
     { to: '/client/contracts', icon: <FaFileContract />, label: 'Contracts' },
     { to: '/client/documents', icon: <FaFileAlt />, label: 'Documents' },

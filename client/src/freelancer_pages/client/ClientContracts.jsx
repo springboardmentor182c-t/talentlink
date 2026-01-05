@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { contractService } from '../../services/contractService';
+import profileService from '../../services/profileService';
 
 const statusOptions = [
     { value: 'active', label: 'Active' },
@@ -35,7 +36,37 @@ const ClientContracts = () => {
         try {
             setLoading(true);
             const data = await contractService.getClientContracts();
-            setContracts(data);
+            // normalize list (API may return pagination or plain array)
+            const items = data?.results || data || [];
+            setContracts(items);
+
+            // For contracts that do not include freelancer name object, fetch detail and merge
+            const needDetail = items.filter((c) => {
+                const name = c.freelancer_name || c.freelancer_full_name || (c.freelancer && typeof c.freelancer === 'object' && (c.freelancer.name || c.freelancer.first_name));
+                return !name;
+            });
+
+            if (needDetail.length > 0) {
+                await Promise.all(needDetail.map(async (c) => {
+                    try {
+                        const d = await contractService.getContract(c.id);
+                        if (d) {
+                            // If freelancer field is still a primitive id, try to resolve profile by user id
+                            if (d.freelancer && (typeof d.freelancer === 'number' || typeof d.freelancer === 'string')) {
+                                try {
+                                    const pf = await profileService.freelancer.getProfileByUserId(d.freelancer);
+                                    if (pf) d.freelancer = pf;
+                                } catch (e) {
+                                    // ignore
+                                }
+                            }
+                            setContracts((prev) => prev.map((p) => p.id === d.id ? { ...p, ...d } : p));
+                        }
+                    } catch (e) {
+                        console.debug('detail fetch failed for', c.id, e?.message||e);
+                    }
+                }));
+            }
         } catch (error) {
             console.error('Error fetching contracts:', error);
             setFeedback({ type: 'error', message: 'Unable to load contracts right now.' });
@@ -48,6 +79,39 @@ const ClientContracts = () => {
         if (!dateString) return 'N/A';
         const d = new Date(dateString);
         return Number.isNaN(d.getTime()) ? dateString : d.toLocaleDateString();
+    };
+    const resolveName = (entity, fallback) => {
+        if (entity == null) return fallback || 'N/A';
+        if (typeof entity === 'string') return entity;
+        if (typeof entity === 'number') return `User #${entity}`;
+        if (typeof entity === 'object') {
+            if (entity.name) return entity.name;
+            const first = entity.first_name || entity.firstName || '';
+            const last = entity.last_name || entity.lastName || '';
+            const full = `${first} ${last}`.trim();
+            if (full) return full;
+            if (entity.username) return entity.username;
+            if (entity.email) return entity.email;
+        }
+        return fallback || 'N/A';
+    };
+
+    const getFreelancerName = (contract) => {
+        if (!contract) return 'N/A';
+        // Common fields
+        if (contract.freelancer_name) return contract.freelancer_name;
+        if (contract.freelancer_full_name) return contract.freelancer_full_name;
+        // Nested object shapes
+        const candidates = [contract.freelancer, contract.freelancer_user, contract.freelancer_profile, contract.freelancer_detail, contract.freelancerInfo, contract.user, contract.freelancer_data];
+        for (const c of candidates) {
+            if (!c) continue;
+            const name = resolveName(c);
+            if (name && name !== `User #${c}`) return name;
+        }
+        // As last resort, try numeric id fallback or email
+        if (contract.freelancer && typeof contract.freelancer === 'number') return `User #${contract.freelancer}`;
+        if (contract.freelancer && typeof contract.freelancer === 'string') return contract.freelancer;
+        return 'N/A';
     };
     const formatCurrency = (amount) => {
         if (amount == null) return '₹0';
@@ -242,7 +306,7 @@ const ClientContracts = () => {
 
                             <h3 className="contract-title">{contract.title}</h3>
                             <p className="contract-meta">
-                                Freelancer: {contract.freelancer_name || `User #${contract.freelancer}`}
+                                Freelancer: {getFreelancerName(contract)}
                             </p>
 
                             <div className="detail-row">
@@ -258,8 +322,8 @@ const ClientContracts = () => {
                             </div>
 
                             <div className="detail-row">
-                                <span className="label">Created:</span>
-                                <span className="value">{formatDate(contract.created_at)}</span>
+                                <span className="label">End Date:</span>
+                                <span className="value">{formatDate(contract.end_date || contract.created_at)}</span>
                             </div>
 
                             <div className="status-toggle">
@@ -277,9 +341,21 @@ const ClientContracts = () => {
                             </div>
 
                             <div className="contract-actions">
-                                <button className="edit-btn" type="button" onClick={() => handleOpenModal(contract)}>
-                                    Edit Contract
-                                </button>
+                                                        <button className="edit-btn" type="button" onClick={() => handleOpenModal(contract)}>
+                                                            Edit Contract
+                                                        </button>
+                                                        {/* Cancel button for client to mark contract cancelled */}
+                                                        {contract.status !== 'cancelled' && (
+                                                            <button
+                                                                className="edit-btn"
+                                                                type="button"
+                                                                onClick={() => handleStatusUpdate(contract, 'cancelled')}
+                                                                disabled={statusUpdating[contract.id] === 'cancelled'}
+                                                                style={{ marginLeft: 8, borderColor: '#ef4444', color: '#b91c1c' }}
+                                                            >
+                                                                {statusUpdating[contract.id] === 'cancelled' ? 'Cancelling...' : 'Cancel Contract'}
+                                                            </button>
+                                                        )}
                             </div>
                         </div>
                     ))}

@@ -31,6 +31,7 @@ import ClientSettings from "./freelancer_pages/client/ClientSettings";
 import ClientHelp from "./freelancer_pages/client/ClientHelp";
 import ClientProfile from "./freelancer_pages/client/ClientProfile";
 import EditClientProfile from "./freelancer_pages/client/EditClientProfile";
+import Freelancers from "./freelancer_pages/client/Freelancers";
 
 /* ===== Freelancer Dashboard Pages ===== */
 import FreelancerDashboard from "./freelancer_pages/freelancer/FreelancerDashboard";
@@ -87,6 +88,7 @@ function App() {
                 <Route path="financials" element={<ClientFinancials />} />
                 <Route path="contracts" element={<ClientContracts />} />
                 <Route path="proposals" element={<JobProposals />} />
+                <Route path="freelancers" element={<Freelancers />} />
                 <Route path="documents" element={<ClientDocuments />} />
                 <Route path="messages" element={<ClientMessages />} />
                 <Route path="settings" element={<ClientSettings />} />

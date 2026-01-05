@@ -91,11 +91,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NotificationItem from "./NotificationItem";
-import { getNotifications, markRead } from "../services/notificationService";
+import { getNotifications, markRead, deleteNotification } from "../services/notificationService";
 import "./NotificationSidebar.css";
 import "./NotificationItem.css"; 
 
-export default function NotificationSidebar({ isOpen, onClose }) {
+export default function NotificationSidebar({ isOpen, onClose, onItemsChange }) {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -120,13 +120,72 @@ export default function NotificationSidebar({ isOpen, onClose }) {
   }, [isOpen]);
 
   const handleToggleRead = async (id) => {
-    setItems((prev) => prev.map((p) => (p.id === id ? { ...p, read: true } : p)));
+    let nextItems = [];
+    setItems((prev) => {
+      nextItems = prev.map((p) => (p.id === id ? { ...p, read: true } : p));
+      return nextItems;
+    });
+    if (onItemsChange) onItemsChange(nextItems);
     try {
       await markRead(id);
     } catch (error) {
       console.error("Failed to mark read", error);
     }
   };
+
+  // Toggle favourite (star) for a notification
+  const handleToggleFavourite = async (id) => {
+    let nextStar = false;
+    let nextItems = [];
+    setItems((prev) => {
+      nextItems = prev.map((p) => {
+        if (p.id === id) {
+          nextStar = p.category !== "favourites";
+          return { ...p, category: nextStar ? "favourites" : "all" };
+        }
+        return p;
+      });
+      return nextItems;
+    });
+    if (onItemsChange) onItemsChange(nextItems);
+    try {
+      // lazy import the service to avoid circular deps
+      const { toggleStar } = await import("../services/notificationService");
+      await toggleStar(id, nextStar);
+    } catch (error) {
+      console.error("Failed to toggle favourite", error);
+      // revert on failure
+      setItems((prev) =>
+        prev.map((p) => {
+          if (p.id === id) {
+            return { ...p, category: nextStar ? "all" : "favourites" };
+          }
+          return p;
+        })
+      );
+      if (onItemsChange) {
+        setItems((prev) => {
+          if (Array.isArray(prev)) onItemsChange(prev);
+          return prev;
+        });
+      }
+    }
+  };
+
+  async function handleDelete(id) {
+    if (!window.confirm("Delete this notification?")) return;
+    let nextItems = [];
+    setItems((prev) => {
+      nextItems = prev.filter((p) => p.id !== id);
+      return nextItems;
+    });
+    if (onItemsChange) onItemsChange(nextItems);
+    try {
+      await deleteNotification(id);
+    } catch (error) {
+      console.error("Failed to delete notification", error);
+    }
+  }
 
   const handleViewAll = () => {
     onClose(); 
@@ -164,9 +223,11 @@ export default function NotificationSidebar({ isOpen, onClose }) {
                    onClose();
                    navigate(`/messages/${item.id}`);
                 }}
+                onToggleFavourite={handleToggleFavourite}
+                onDelete={handleDelete}
               />
             ))
-          ) : (
+            ) : (
             <p className="empty-text">No new notifications</p>
           )}
         </div>
