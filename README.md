@@ -1,3 +1,12 @@
-# talentlink
-https://www.figma.com/design/igEBpcwJWElZ4dbrDCm8Y1/TalentLink?node-id=2-4&t=qgIzL2oDt9sXxorH-1
-theme
+# Review Rating System
+
+## Tech Stack
+- Frontend: React
+- Backend: FastAPI
+- Database: SQLite
+
+## Backend Setup
+```bash
+cd backend
+pip install -r requirements.txt
+python -m uvicorn main:app --reload
