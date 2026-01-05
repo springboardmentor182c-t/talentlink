@@ -33,14 +33,14 @@ export const UserProvider = ({ children }) => {
     }
 
     axiosInstance
-      .get("users/profile/")
+      .get("profiles/me/")
       .then((res) => {
         const profile = res.data || {};
 
         const fullName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
 
         const nameFromProfile =
-          profile.username ||
+          profile.first_name ||
           profile.name ||
           fullName ||
           storedName ||
@@ -49,11 +49,20 @@ export const UserProvider = ({ children }) => {
         const emailFromProfile = profile.email || storedEmail || "";
         const roleFromProfile = profile.role || storedRole || "User";
 
+        // Handle Avatar
+        let avatarUrl = "https://i.pravatar.cc/150?img=3";
+        if (profile.profile_image) {
+          avatarUrl = profile.profile_image.startsWith('http')
+            ? profile.profile_image
+            : `${process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000'}${profile.profile_image}`;
+        }
+
         setUser((prev) => ({
           ...prev,
           name: nameFromProfile,
           email: emailFromProfile,
           role: roleFromProfile,
+          avatar: avatarUrl,
         }));
 
         // Persist latest data
