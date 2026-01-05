@@ -121,9 +121,9 @@ WSGI_APPLICATION = 'server.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'talentlink',      # The name you just gave the DB in pgAdmin
+        'NAME': 'Talentlinks',      # The name you just gave the DB in pgAdmin
         'USER': 'postgres',        # Default is usually 'postgres'
-        'PASSWORD': 'postgres', # <--- PUT YOUR PGADMIN PASSWORD HERE
+        'PASSWORD': 'Kumar@psql', # <--- PUT YOUR PGADMIN PASSWORD HERE
         'HOST': 'localhost',
         'PORT': '5432',            # Default postgres port
     }
