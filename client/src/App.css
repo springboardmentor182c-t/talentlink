@@ -1135,3 +1135,57 @@ a {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+
+/* =========================================
+   MOBILE RESPONSIVENESS (Max Width: 768px)
+   ========================================= */
+@media (max-width: 768px) {
+
+  /* 1. FIX "UNCLICKABLE" SCREEN & LAYOUT OVERLAP */
+  /* This pushes the content down so the header doesn't cover it */
+  .main-content, .dashboard-container {
+      margin-top: 80px !important; /* Adjust this if you need more/less space */
+      padding: 15px !important;
+      position: relative;
+      z-index: 1; /* Ensures you can click buttons */
+  }
+
+  /* 2. FIX HEADER (Keep Buttons Side-by-Side) */
+  /* This ensures the Search, Bell, and Profile stay in a row */
+  .header-right, .actions, .user-profile-section {
+      display: flex !important;
+      flex-direction: row !important; /* Forces horizontal layout */
+      align-items: center !important;
+      justify-content: flex-end !important;
+      gap: 15px !important;
+  }
+
+  /* 3. FIX DASHBOARD CARDS (Stack Them Vertically) */
+  /* This targets the grid holding your cards and forces them one-on-top-of-another */
+  .dashboard-content > div, 
+  div[class*="grid"], 
+  .stats-container {
+      display: flex !important;
+      flex-direction: column !important; /* Stack Top-to-Bottom */
+      gap: 20px !important;
+  }
+
+  /* 4. FIX CARD WIDTH */
+  div[class*="card"], .stats-card {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+  }
+
+  /* 5. FIX SIDEBAR OVERLAY (Safety Check) */
+  /* Ensures the hidden sidebar doesn't block your clicks */
+  .sidebar-overlay {
+      pointer-events: none;
+      opacity: 0;
+  }
+  .sidebar-overlay.active {
+      pointer-events: auto;
+      opacity: 1;
+  }
+}

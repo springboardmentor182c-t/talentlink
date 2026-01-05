@@ -1,68 +1,49 @@
 
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../../context/UserContext';
 import profileService from '../../services/profileService';
 import { performLogout } from '../../utils/logout';
 import {
-  FaBell, FaChevronDown, FaUser, FaCog, FaSignOutAlt,
-  FaSearch,
+  FaChevronDown, FaUser, FaCog, FaSignOutAlt,
+  FaCloudUploadAlt, FaSearch,
   FaBars,
   FaChevronLeft
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
-const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true }) => {
+// 1. Import Theme Hooks & Icons
+import { useTheme as useAppTheme } from '../../context/ThemeContext'; // Renamed to avoid conflict with MUI
+import { useTheme as useMuiTheme, IconButton, Badge, Avatar } from '@mui/material'; // Use MUI for dynamic colors
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import Brightness4Icon from '@mui/icons-material/Brightness4'; // Moon
+import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
+
+  const ClientNavbar = ({ onNotificationClick, onSidebarToggle, onDelete, onToggleFavourite, notifications = [], sidebarOpen = true }) => {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
-  // --- State Management ---
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [displayUser, setDisplayUser] = useState({
-    name: '',
-    avatar: "https://i.pravatar.cc/150?img=3",
-    role: 'Client'
-  });
+  const [showEditModal, setShowEditModal] = useState(false);
+  
+  const { user, updateProfile, logout } = useUser();
+  
+  // 2. Theme Logic
+  const { theme, toggleTheme } = useAppTheme(); // From your Context
+  const muiTheme = useMuiTheme(); // From Material UI (for colors)
 
-  // Use user context mainly for logout/auth check
-  const { user } = useUser();
+  const [tempName, setTempName] = useState(user?.name || "");
+  const [tempAvatar, setTempAvatar] = useState(user?.avatar || "");
 
-  // Fetch Client Specific Profile
   useEffect(() => {
-    const fetchClientProfile = async () => {
-      try {
-        const data = await profileService.client.getProfile();
-        const fullName = `${data.first_name || ""} ${data.last_name || ""}`.trim();
+    if (user) {
+        setTempName(user.name);
+        setTempAvatar(user.avatar);
+    }
+  }, [user]);
 
-        let avatarUrl = "https://i.pravatar.cc/150?img=3";
-        if (data.profile_image) {
-          avatarUrl = data.profile_image.startsWith('http')
-            ? data.profile_image
-            : `${process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000'}${data.profile_image}`;
-        }
-
-        setDisplayUser({
-          name: data.company_name || fullName || user.name || "Client",
-          avatar: avatarUrl,
-          role: 'Client'
-        });
-      } catch (err) {
-        console.error("Failed to fetch client profile for navbar", err);
-        // Fallback to global user if fetch fails (e.g. 404)
-        setDisplayUser({
-          name: user.name,
-          avatar: user.avatar,
-          role: 'Client'
-        });
-      }
-    };
-
-    fetchClientProfile();
-  }, [user.name, user.avatar]); // Re-run if global user changes (e.g. after edit)
-
-  // --- Handlers ---
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setIsMenuOpen(false);
-    await performLogout();
+    if (logout) logout();
     navigate('/login');
   };
 
@@ -73,95 +54,232 @@ const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true
 
   const handleEditClick = (e) => {
     e.stopPropagation();
-    setIsMenuOpen(false);
-    navigate('/client/profile');
+    setTempName(user.name);
+    setTempAvatar(user.avatar);
+    setShowEditModal(true);
+    setIsMenuOpen(false); 
   };
+
+  const handleSaveProfile = () => {
+    updateProfile(tempName, null);
+    setShowEditModal(false);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setTempAvatar(imageUrl);
+    }
+  };
+
+  // Dynamic Styles based on Theme
+  const dynamicStyles = {
+    navbar: {
+      ...styles.navbar,
+      backgroundColor: muiTheme.palette.background.paper,
+      borderBottom: `1px solid ${muiTheme.palette.divider}`,
+      color: muiTheme.palette.text.primary,
+    },
+    searchContainer: {
+      ...styles.searchContainer,
+      backgroundColor: theme === 'dark' ? "rgba(255,255,255,0.05)" : "#f8fafc",
+      border: `1px solid ${muiTheme.palette.divider}`,
+    },
+    searchInput: {
+      ...styles.searchInput,
+      color: muiTheme.palette.text.primary,
+    },
+    dropdown: {
+      ...styles.dropdown,
+      backgroundColor: muiTheme.palette.background.paper,
+      color: muiTheme.palette.text.primary,
+      border: `1px solid ${muiTheme.palette.divider}`,
+    },
+    menuItem: {
+      ...styles.menuItem,
+      color: muiTheme.palette.text.primary,
+    },
+    menuDivider: {
+      ...styles.menuDivider,
+      backgroundColor: muiTheme.palette.divider,
+    },
+    modalContent: {
+      ...styles.modalContent,
+      backgroundColor: muiTheme.palette.background.paper,
+    },
+    textInput: {
+      ...styles.textInput,
+      backgroundColor: muiTheme.palette.background.default,
+      color: muiTheme.palette.text.primary,
+      borderColor: muiTheme.palette.divider,
+    },
+    modalTitle: {
+      ...styles.modalTitle,
+      color: muiTheme.palette.text.primary,
+    }
+  };
+
+  if (!user) return null; 
 
   return (
     <>
-      <div style={styles.navbar}>
-
-        {/* --- 1. SEARCH BAR (Added on Left) --- */}
+      {/* Apply Dynamic Navbar Styles */}
+      <div style={dynamicStyles.navbar}>
+        
+        {/* --- 1. SEARCH BAR --- */}
         <div style={styles.leftSection}>
           {onSidebarToggle && (
             <button
               type="button"
-              style={styles.toggleButton}
+              style={{
+                ...styles.toggleButton,
+                backgroundColor: muiTheme.palette.primary.main
+              }}
               onClick={onSidebarToggle}
             >
               {sidebarOpen ? <FaChevronLeft /> : <FaBars />}
             </button>
           )}
-          <div style={styles.searchContainer}>
+          <div style={dynamicStyles.searchContainer}>
             <FaSearch style={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Search projects, talent..."
-              style={styles.searchInput}
+            <input 
+              type="text" 
+              placeholder="Search projects, talent..." 
+              style={dynamicStyles.searchInput} 
             />
           </div>
         </div>
 
-        {/* --- 2. RIGHT SECTION (Notifications & Profile) --- */}
+        {/* --- 2. RIGHT SECTION --- */}
         <div style={styles.rightSection}>
+          
+          {/* THEME TOGGLE BUTTON */}
+          <IconButton onClick={toggleTheme} sx={{ color: 'text.secondary' }}>
+            {theme === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+          </IconButton>
 
-          {/* Notification Bell */}
-          <div style={styles.iconWrapper} onClick={onNotificationClick}>
-            <FaBell style={{ color: '#64748b', fontSize: '18px' }} />
-            <span style={styles.dotBadge}></span>
+          <div style={styles.iconWrapper}>
+            {(() => {
+              const unread = (notifications || []).filter(n => !(n.read === true || n.is_read === true)).length;
+              return (
+                <IconButton onClick={onNotificationClick} sx={{ color: muiTheme.palette.text.secondary }}>
+                  {unread > 0 ? (
+                    <Badge badgeContent={unread} color="error">
+                      <NotificationsNoneIcon sx={{ fontSize: 18 }} />
+                    </Badge>
+                  ) : (
+                    <NotificationsNoneIcon sx={{ fontSize: 18 }} />
+                  )}
+                </IconButton>
+              );
+            })()}
           </div>
 
-          <div style={styles.separator}></div>
+          <div style={{ ...styles.separator, backgroundColor: muiTheme.palette.divider }}></div>
 
-          {/* User Profile */}
           <div style={styles.profileContainer}>
             <div style={styles.profileWrapper} onClick={toggleMenu}>
-              <img src={displayUser.avatar} alt="User" style={styles.avatar} />
+              {(() => {
+                const avatarUploaded = !!localStorage.getItem('avatar_uploaded');
+                const saved = localStorage.getItem('freelancer_avatar');
+                const src = avatarUploaded ? (saved || user.avatar) : null;
+                const initials = (user && user.name) ? user.name.split(/\s+/).map(p => p[0]).slice(0,2).join('').toUpperCase() : 'U';
+                return (
+                  <Avatar src={src || undefined} style={styles.avatar}>
+                    {!src && initials}
+                  </Avatar>
+                );
+              })()}
               <div style={styles.userInfo}>
-                <span style={styles.userName}>{displayUser.name}</span>
-                <span style={styles.userRole}>{displayUser.role}</span>
+                <span style={{ ...styles.userName, color: muiTheme.palette.text.primary }}>{user.name}</span>
+                <span style={styles.userRole}>{user.role}</span>
               </div>
-              <FaChevronDown style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }} />
+              <FaChevronDown style={{ fontSize: '12px', color: muiTheme.palette.text.secondary, marginLeft: '8px' }} />
             </div>
 
             {/* Dropdown Menu */}
             {isMenuOpen && (
-              <div style={styles.dropdown}>
-                <div style={styles.dropdownArrow}></div>
-                <div style={styles.dropdownHeader}>Account</div>
-
-                <button style={styles.menuItem} onClick={handleEditClick}>
-                  <FaUser style={styles.menuIcon} /> Profile
+              <div style={dynamicStyles.dropdown}>
+                <div style={{...styles.dropdownHeader, color: muiTheme.palette.text.secondary }}>Account</div>
+                
+                <button style={dynamicStyles.menuItem} onClick={handleEditClick}>
+                  <FaUser style={styles.menuIcon} /> Edit Profile
                 </button>
-                <button style={styles.menuItem} onClick={() => setIsMenuOpen(false)}>
+                <button style={dynamicStyles.menuItem} onClick={() => setIsMenuOpen(false)}>
                   <FaCog style={styles.menuIcon} /> Settings
                 </button>
-                <div style={styles.menuDivider}></div>
-                <button
-                  style={{ ...styles.menuItem, color: '#ef4444' }}
+                <div style={dynamicStyles.menuDivider}></div>
+                <button 
+                  style={{...dynamicStyles.menuItem, color: '#ef4444'}}
                   onClick={handleLogout}
                 >
-                  <FaSignOutAlt style={{ ...styles.menuIcon, color: '#ef4444' }} /> Logout
+                <FaSignOutAlt style={{...styles.menuIcon, color: '#ef4444'}} /> Logout
                 </button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* --- EDIT PROFILE MODAL --- */}
+      {showEditModal && (
+        <div style={styles.modalOverlay}>
+          <div style={dynamicStyles.modalContent}>
+            <h2 style={dynamicStyles.modalTitle}>Update Profile Details</h2>
+            
+            <div style={styles.modalBody}>
+              <div style={styles.avatarUploadWrapper}>
+                <img src={tempAvatar || "https://via.placeholder.com/100"} alt="Profile" style={styles.largeAvatar} />
+                <div 
+                  style={styles.cameraBtn} 
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  <FaCloudUploadAlt color="white" />
+                </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  style={{display: 'none'}} 
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.inputLabel}>Full Name</label>
+                <input 
+                  type="text" 
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  style={dynamicStyles.textInput}
+                />
+              </div>
+            </div>
+
+            <div style={styles.modalFooter}>
+              <button style={styles.cancelBtn} onClick={() => setShowEditModal(false)}>
+                Cancel
+              </button>
+              <button style={styles.saveBtn} onClick={handleSaveProfile}>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
 
-// --- STYLES ---
+// --- BASE STYLES (Colors are overridden in component) ---
 const styles = {
   navbar: {
     height: '70px',
-    backgroundColor: '#ffffff',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '0 30px',
-    borderBottom: '1px solid #f1f5f9',
     position: 'relative',
     zIndex: 50,
   },
@@ -172,7 +290,6 @@ const styles = {
   },
   toggleButton: {
     border: 'none',
-    backgroundColor: '#0f172a',
     color: '#ffffff',
     width: '36px',
     height: '36px',
@@ -183,16 +300,12 @@ const styles = {
     cursor: 'pointer',
     transition: '0.2s',
   },
-
-  // --- SEARCH BAR STYLES ---
   searchContainer: {
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: '#f8fafc', // Light grey background
     padding: '10px 16px',
-    borderRadius: '50px',       // Pill shape
+    borderRadius: '50px',
     width: '320px',
-    border: '1px solid #e2e8f0',
     transition: '0.2s',
   },
   searchIcon: {
@@ -205,12 +318,9 @@ const styles = {
     backgroundColor: 'transparent',
     outline: 'none',
     width: '100%',
-    color: '#334155',
     fontSize: '14px',
     fontWeight: '500',
   },
-
-  // --- RIGHT SECTION ---
   rightSection: {
     display: 'flex',
     alignItems: 'center',
@@ -226,7 +336,7 @@ const styles = {
     position: 'absolute',
     top: '6px',
     right: '6px',
-    backgroundColor: '#ef4444',
+    backgroundColor: '#ef4444', 
     height: '8px',
     width: '8px',
     borderRadius: '50%',
@@ -235,36 +345,32 @@ const styles = {
   separator: {
     width: '1px',
     height: '24px',
-    backgroundColor: '#e2e8f0',
   },
-
-  // Profile Section
   profileContainer: { position: 'relative' },
-  profileWrapper: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
+  profileWrapper: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '12px', 
     cursor: 'pointer',
     padding: '4px 8px',
     borderRadius: '8px',
     transition: '0.2s',
   },
-  avatar: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    border: '2px solid #e2e8f0'
+  avatar: { 
+    width: '40px', 
+    height: '40px', 
+    borderRadius: '50%', 
+    objectFit: 'cover', 
+    border: '2px solid #e2e8f0' 
   },
-  userInfo: {
-    display: 'flex',
+  userInfo: { 
+    display: 'flex', 
     flexDirection: 'column',
     alignItems: 'flex-start',
   },
-  userName: {
-    fontSize: '14px',
-    fontWeight: '700',
-    color: '#0f172a',
+  userName: { 
+    fontSize: '14px', 
+    fontWeight: '700', 
     lineHeight: '1.2'
   },
   userRole: {
@@ -273,37 +379,21 @@ const styles = {
     fontWeight: '500',
     textTransform: 'uppercase'
   },
-
-  // Dropdown Menu
   dropdown: {
     position: 'absolute',
     top: '55px',
     right: '0',
     width: '220px',
-    backgroundColor: 'white',
     borderRadius: '12px',
     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-    border: '1px solid #f1f5f9',
     padding: '8px',
     zIndex: 100,
     animation: 'fadeIn 0.2s ease-out',
-  },
-  dropdownArrow: {
-    position: 'absolute',
-    top: '-6px',
-    right: '20px',
-    width: '12px',
-    height: '12px',
-    backgroundColor: 'white',
-    borderLeft: '1px solid #f1f5f9',
-    borderTop: '1px solid #f1f5f9',
-    transform: 'rotate(45deg)',
   },
   dropdownHeader: {
     padding: '8px 12px',
     fontSize: '12px',
     fontWeight: '600',
-    color: '#94a3b8',
     textTransform: 'uppercase',
   },
   menuItem: {
@@ -312,7 +402,6 @@ const styles = {
     alignItems: 'center',
     padding: '10px 12px',
     fontSize: '14px',
-    color: '#1e293b',
     backgroundColor: 'transparent',
     border: 'none',
     borderRadius: '8px',
@@ -322,16 +411,13 @@ const styles = {
   },
   menuIcon: {
     marginRight: '10px',
-    color: '#1b4332',
+    color: '#1b4332', 
     fontSize: '16px'
   },
   menuDivider: {
     height: '1px',
-    backgroundColor: '#e2e8f0',
     margin: '6px 0',
   },
-
-  // Modal Styles
   modalOverlay: {
     position: 'fixed',
     top: 0,
@@ -346,7 +432,6 @@ const styles = {
     backdropFilter: 'blur(4px)',
   },
   modalContent: {
-    backgroundColor: 'white',
     borderRadius: '16px',
     width: '500px',
     padding: '30px',
@@ -360,7 +445,6 @@ const styles = {
     margin: 0,
     fontSize: '20px',
     fontWeight: '700',
-    color: '#1e293b',
     textAlign: 'center',
   },
   modalBody: {
@@ -385,7 +469,7 @@ const styles = {
     position: 'absolute',
     bottom: '0',
     right: '0',
-    backgroundColor: '#1b4332',
+    backgroundColor: '#1b4332', 
     width: '32px',
     height: '32px',
     borderRadius: '50%',
@@ -409,9 +493,8 @@ const styles = {
   textInput: {
     padding: '12px',
     borderRadius: '8px',
-    border: '1px solid #cbd5e1',
+    border: '1px solid',
     fontSize: '15px',
-    color: '#1e293b',
     outline: 'none',
     width: '100%',
     boxSizing: 'border-box',
@@ -432,7 +515,7 @@ const styles = {
     padding: '10px 20px',
   },
   saveBtn: {
-    backgroundColor: '#1b4332',
+    backgroundColor: '#1b4332', 
     color: 'white',
     border: 'none',
     padding: '10px 32px',

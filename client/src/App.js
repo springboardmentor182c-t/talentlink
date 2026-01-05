@@ -56,6 +56,8 @@ import NotificationItem from "./notifications/features/notifications/components/
 /* ===== Optional 404 Page ===== */
 import NotFound from "./freelancer_pages/NotFound";
 
+import './App.css';
+
 function App() {
   return (
     <ThemeProvider>

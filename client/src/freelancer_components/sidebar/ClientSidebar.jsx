@@ -1,6 +1,4 @@
-
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaHome, 
@@ -12,7 +10,9 @@ import {
   FaQuestionCircle,
   FaSignOutAlt,
   FaFileContract,
-  FaUserFriends
+  FaUserFriends,
+  FaBars,   // Hamburger Icon
+  FaTimes   // Close Icon
 } from 'react-icons/fa';
 
 // 1. IMPORT YOUR CSS TO GET THE .hide-scrollbar CLASS
@@ -23,106 +23,190 @@ import { performLogout } from '../../utils/logout';
 const ClientSidebar = ({ isOpen = true, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // --- STATE FOR MOBILE MENU ---
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const toggleMobileMenu = () => {
+    setIsMobileOpen(!isMobileOpen);
+  };
 
   const handleLogout = async () => {
     await performLogout();
     navigate('/login');
   };
 
+  // Shared menu configuration to avoid duplicated markup
+  const menuItems = [
+    { to: '/client/dashboard', icon: <FaHome />, label: 'Overview' },
+    { to: '/client/projects', icon: <FaBriefcase />, label: 'My Projects' },
+    { to: '/client/proposals', icon: <FaUserFriends />, label: 'Review Proposals' },
+    { to: '/client/financials', icon: <FaFileInvoice />, label: 'Financials' },
+    { to: '/client/contracts', icon: <FaFileContract />, label: 'Contracts' },
+    { to: '/client/documents', icon: <FaFileAlt />, label: 'Documents' },
+    { to: '/client/messages', icon: <FaEnvelope />, label: 'Messages' },
+  ];
+
   return (
-    <div style={{ ...styles.sidebar, width: isOpen ? '100%' : 0 }}>
-      {/* --- Logo Area --- */}
-      <div style={styles.logoArea}>
-        <div style={styles.logoLogo}>
-          <span style={styles.logoInitials}>TL</span>
+    <div>
+      {/* --- EMBEDDED CSS FOR RESPONSIVENESS --- */}
+      <style>{`
+        /* Default: Hide mobile elements on Desktop */
+        .mobile-menu-btn, .mobile-close-btn, .sidebar-overlay {
+          display: none;
+        }
+        
+        /* Scrollbar hiding utility */
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
+        /* --- MOBILE MEDIA QUERY --- */
+        @media (max-width: 768px) {
+          /* Show Hamburger Button */
+          .mobile-menu-btn {
+            display: block;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1100;
+            background: #0a1f44;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+          }
+
+          /* Show Overlay */
+          .sidebar-overlay {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 998;
+            backdrop-filter: blur(2px);
+            pointer-events: auto; /* Ensure clicks are caught */
+          }
+
+          /* Force Sidebar specific styles for Mobile */
+          .client-sidebar {
+            position: fixed !important;
+            top: 0;
+            left: -280px; /* Hidden by default */
+            width: 280px !important;
+            height: 100vh !important;
+            z-index: 1101;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+            transition: left 0.3s ease-in-out !important;
+          }
+
+          /* Open State */
+          .client-sidebar.mobile-open {
+            left: 0 !important;
+          }
+
+          /* Show Close Button inside Sidebar */
+          .mobile-close-btn {
+            display: block;
+            position: absolute;
+            right: 15px;
+            top: 30px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 20px;
+            cursor: pointer;
+          }
+        }
+      `}</style>
+
+      {/* --- HAMBURGER BUTTON (Mobile Only) --- */}
+      <button className="mobile-menu-btn" onClick={toggleMobileMenu}>
+        <FaBars />
+      </button>
+
+      {/* --- OVERLAY (Mobile Only) --- */}
+      {isMobileOpen && (
+        <div className="sidebar-overlay" onClick={() => setIsMobileOpen(false)} />
+      )}
+
+      {/* --- SIDEBAR CONTAINER --- */}
+      <div 
+        className={`client-sidebar ${isMobileOpen ? 'mobile-open' : ''}`}
+        style={{ 
+            ...styles.sidebar, 
+            // On desktop, we respect the 'isOpen' prop. 
+            // On mobile, the CSS '!important' overrides this width.
+            width: isOpen ? '100%' : 0,
+            overflow: 'hidden' // Prevents content spill when closed
+        }}
+      >
+        
+        {/* --- LOGO AREA --- */}
+        <div style={styles.logoArea}>
+          <div style={styles.logoLogo}>
+            <span style={styles.logoInitials}>TL</span>
+          </div>
+          <div>
+            <div style={styles.logoText}>Talent Link</div>
+            <div style={styles.subText}>CLIENT PORTAL</div>
+          </div>
+          {/* Close Button (Mobile Only) */}
+          <button className="mobile-close-btn" onClick={() => setIsMobileOpen(false)}>
+            <FaTimes />
+          </button>
         </div>
-        <div>
-          <div style={styles.logoText}>Talent Link</div>
-          <div style={styles.subText}>CLIENT PORTAL</div>
+
+        {/* --- SCROLLABLE MENU --- */}
+        <div style={styles.scrollableContent} className="hide-scrollbar">
+          <div style={styles.sectionLabel}>MENU</div>
+          
+          {/* Menu Items (Clicking one closes menu on mobile) */}
+          <div onClick={() => setIsMobileOpen(false)}>
+            {menuItems.map((item) => (
+              <NavItem
+                key={item.to}
+                to={item.to}
+                icon={item.icon}
+                label={item.label}
+                isActive={location.pathname === item.to}
+              />
+            ))}
+          </div>
+
+          {/* --- SETTINGS SECTION --- */}
+          <div style={{ ...styles.sectionLabel, marginTop: '20px' }}>PREFERENCES</div>
+          
+          <div onClick={() => setIsMobileOpen(false)}>
+              <NavItem to="/client/settings" icon={<FaCog />} label="Settings" isActive={location.pathname === '/client/settings'} />
+              <NavItem to="/client/help" icon={<FaQuestionCircle />} label="Help Center" isActive={location.pathname === '/client/help'} />
+          </div>
+        </div>
+
+        {/* --- LOGOUT SECTION --- */}
+        <div style={styles.logoutSection}>
+          <button style={styles.logoutBtn} onClick={handleLogout}>
+            <FaSignOutAlt style={{ marginRight: '10px' }} /> Log Out
+          </button>
         </div>
       </div>
 
-      {/* --- Main Menu Section --- */}
-      {/* 2. ADD className="hide-scrollbar" HERE */}
-      {/* This is the div that actually scrolls, so it needs the class to hide the bar */}
-      <div style={styles.scrollableContent} className="hide-scrollbar">
-        <div style={styles.sectionLabel}>MENU</div>
-        
-        <NavItem 
-          to="/client/dashboard" 
-          icon={<FaHome />} 
-          label="Overview" 
-          isActive={location.pathname === '/client/dashboard'} 
-        />
-        <NavItem 
-          to="/client/projects" 
-          icon={<FaBriefcase />} 
-          label="My Projects" 
-          isActive={location.pathname === '/client/projects'} 
-        />
-        
-        <NavItem 
-          to="/client/proposals" 
-          icon={<FaUserFriends />} 
-          label="Review Proposals" 
-          isActive={location.pathname === '/client/proposals'} 
-        />
-
-        <NavItem 
-          to="/client/financials" 
-          icon={<FaFileInvoice />} 
-          label="Financials" 
-          isActive={location.pathname === '/client/financials'} 
-        />
-        
-        <NavItem 
-          to="/client/contracts" 
-          icon={<FaFileContract />} 
-          label="Contracts" 
-          isActive={location.pathname === '/client/contracts'} 
-        />
-
-        <NavItem 
-          to="/client/documents" 
-          icon={<FaFileAlt />} 
-          label="Documents" 
-          isActive={location.pathname === '/client/documents'} 
-        />
-        <NavItem 
-          to="/client/messages" 
-          icon={<FaEnvelope />} 
-          label="Messages" 
-          isActive={location.pathname === '/client/messages'} 
-        />
-
-        {/* --- Settings Section --- */}
-        <div style={{ ...styles.sectionLabel, marginTop: '20px' }}>PREFERENCES</div>
-        
-        <NavItem 
-          to="/client/settings" 
-          icon={<FaCog />} 
-          label="Settings" 
-          isActive={location.pathname === '/client/settings'} 
-        />
-        <NavItem 
-          to="/client/help" 
-          icon={<FaQuestionCircle />} 
-          label="Help Center" 
-          isActive={location.pathname === '/client/help'} 
-        />
-      </div>
-
-      {/* --- Bottom Logout --- */}
-      <div style={styles.logoutSection}>
-        <button style={styles.logoutBtn} onClick={handleLogout}>
-          <FaSignOutAlt style={{ marginRight: '10px' }} /> Log Out
-        </button>
-      </div>
+      
     </div>
   );
 };
 
-// Helper Component for Links
+// --- HELPER COMPONENT (Unchanged) ---
 const NavItem = ({ to, icon, label, isActive }) => {
   const finalStyle = isActive ? { ...styles.link, ...styles.activeLink } : styles.link;
   
@@ -134,14 +218,17 @@ const NavItem = ({ to, icon, label, isActive }) => {
   );
 };
 
+// --- INLINE STYLES (Unchanged) ---
 const styles = {
   sidebar: {
     width: '100%',
-    height: '100%',
+    minHeight: '100vh',
     backgroundColor: '#0a1f44', 
     color: 'white',
     display: 'flex',
     flexDirection: 'column',
+    transition: 'width 0.3s ease',
+    whiteSpace: 'nowrap',
   },
   logoArea: {
     padding: '30px 25px',
@@ -151,6 +238,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '14px',
+    position: 'relative'
   },
   logoLogo: {
     width: '44px',
@@ -232,7 +320,6 @@ const styles = {
     fontSize: '14px',
     transition: '0.2s',
   },
-  collapseButton: {}
 };
 
 export default ClientSidebar;

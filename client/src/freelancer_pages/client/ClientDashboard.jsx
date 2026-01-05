@@ -1,9 +1,11 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
+import { useNavigate } from 'react-router-dom'; 
 import { useUser } from '../../context/UserContext';
+// 1. Import useTheme to access dynamic colors
+import { useTheme } from '@mui/material/styles';
 
-// --- SVG ICONS (Self-contained to avoid import errors) ---
+// --- SVG ICONS ---
 const Icons = {
   Plus: () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -28,7 +30,7 @@ const Icons = {
   )
 };
 
-// --- MOCK DATA (Client Specific) ---
+// --- MOCK DATA ---
 const spendingData = [
   { name: 'Jan', value: 1200 }, { name: 'Feb', value: 2100 },
   { name: 'Mar', value: 1800 }, { name: 'Apr', value: 3500 },
@@ -55,11 +57,34 @@ const activeJobs = [
 ];
 
 const ClientDashboard = () => {
-  const navigate = useNavigate(); // 2. Initialize hook
+  const navigate = useNavigate(); 
   const { user } = useUser();
+  
+  // 2. Get the current theme
+  const theme = useTheme();
 
   const handlePostJob = () => {
-    navigate('/client/projects'); // 3. Navigation logic
+    navigate('/client/projects'); 
+  };
+
+  // 3. Create Dynamic Styles based on theme
+  const themeStyles = {
+    card: {
+        ...styles.card,
+        backgroundColor: theme.palette.background.paper,
+        borderColor: theme.palette.divider,
+        color: theme.palette.text.primary,
+    },
+    textPrimary: { color: theme.palette.text.primary },
+    textSecondary: { color: theme.palette.text.secondary },
+    chartGrid: theme.palette.mode === 'dark' ? "#334155" : "#f1f5f9",
+    chartText: theme.palette.mode === 'dark' ? "#94a3b8" : "#94a3b8",
+    select: {
+        ...styles.select,
+        backgroundColor: theme.palette.background.default,
+        color: theme.palette.text.primary,
+        borderColor: theme.palette.divider
+    }
   };
 
   return (
@@ -68,11 +93,11 @@ const ClientDashboard = () => {
       {/* --- Header --- */}
       <div style={styles.header}>
         <div>
-          <p style={styles.greeting}>Welcome back, {user?.name || user?.email || 'User'}</p>
-          <h1 style={styles.title}>Client Overview</h1>
-          <p style={styles.subtitle}>Manage your job postings, proposals, and hired talent.</p>
+          <p style={{...styles.greeting, color: theme.palette.text.secondary }}>Welcome back, {user?.name || user?.email || 'User'}</p>
+          <h1 style={{...styles.title, color: theme.palette.text.primary }}>Client Overview</h1>
+          <p style={{...styles.subtitle, color: theme.palette.text.secondary }}>Manage your job postings, proposals, and hired talent.</p>
         </div>
-        <button style={styles.btn} onClick={handlePostJob}> {/* 4. Add onClick */}
+        <button style={styles.btn} onClick={handlePostJob}> 
           <span style={{ marginRight: '8px', display: 'flex' }}><Icons.Plus /></span> Post a Job
         </button>
       </div>
@@ -85,6 +110,7 @@ const ClientDashboard = () => {
           value="₹12,450" 
           change="+15% vs last mo" 
           color="#3b82f6"
+          theme={theme} // Pass theme down
         />
         <StatCard 
           icon={<Icons.Briefcase />} 
@@ -92,6 +118,7 @@ const ClientDashboard = () => {
           value="3" 
           change="1 Draft" 
           color="#8b5cf6"
+          theme={theme}
         />
         <StatCard 
           icon={<Icons.FileText />} 
@@ -99,6 +126,7 @@ const ClientDashboard = () => {
           value="18" 
           change="5 to review" 
           color="#10b981"
+          theme={theme}
         />
         <StatCard 
           icon={<Icons.Users />} 
@@ -106,6 +134,7 @@ const ClientDashboard = () => {
           value="4" 
           change="Active Contracts" 
           color="#ec4899"
+          theme={theme}
         />
       </div>
 
@@ -113,13 +142,13 @@ const ClientDashboard = () => {
       <div style={styles.grid}>
         
         {/* Main Chart */}
-        <div style={{...styles.card, flex: 2}}>
+        <div style={{...themeStyles.card, flex: 2}}>
           <div style={styles.cardHeader}>
             <div>
-              <h2 style={styles.cardTitle}>Spending History</h2>
-              <div style={styles.subTitle}>Payments to freelancers over last 6 months</div>
+              <h2 style={{...styles.cardTitle, ...themeStyles.textPrimary}}>Spending History</h2>
+              <div style={{...styles.subTitle, ...themeStyles.textSecondary}}>Payments to freelancers over last 6 months</div>
             </div>
-            <select style={styles.select}><option>This Year</option></select>
+            <select style={themeStyles.select}><option>This Year</option></select>
           </div>
           <div style={{ width: '100%', height: 280 }}>
             <ResponsiveContainer>
@@ -147,16 +176,16 @@ const ClientDashboard = () => {
         <div style={{...styles.column, flex: 1}}>
           
           {/* Deadlines Widget */}
-          <div style={{...styles.card, marginBottom: '20px'}}>
-            <h2 style={styles.cardTitle}>Actions Required</h2>
+          <div style={{...themeStyles.card, marginBottom: '20px'}}>
+            <h2 style={{...styles.cardTitle, ...themeStyles.textPrimary}}>Actions Required</h2>
             <div style={styles.list}>
               {deadlines.map(d => (
-                <div key={d.id} style={styles.deadlineItem}>
+                <div key={d.id} style={{...styles.deadlineItem, borderBottom: `1px solid ${theme.palette.divider}`}}>
                   <div style={styles.deadlineInfo}>
                     <span style={{color: d.color, marginRight:'10px', display:'flex'}}><Icons.Clock /></span>
                     <div>
-                      <div style={styles.itemTitle}>{d.title}</div>
-                      <div style={styles.itemSub}>{d.date}</div>
+                      <div style={{...styles.itemTitle, ...themeStyles.textPrimary}}>{d.title}</div>
+                      <div style={{...styles.itemSub, ...themeStyles.textSecondary}}>{d.date}</div>
                     </div>
                   </div>
                   <span style={{...styles.tag, color: d.color, backgroundColor: `${d.color}20`}}>
@@ -168,21 +197,21 @@ const ClientDashboard = () => {
           </div>
 
           {/* Job Postings Status */}
-          <div style={styles.card}>
-            <h2 style={styles.cardTitle}>Job Postings</h2>
+          <div style={themeStyles.card}>
+            <h2 style={{...styles.cardTitle, ...themeStyles.textPrimary}}>Job Postings</h2>
             <div style={styles.list}>
               {activeJobs.map(job => (
                 <div key={job.id} style={{marginBottom: '15px'}}>
                    <div style={styles.flexBetween}>
-                      <span style={styles.itemTitle}>{job.title}</span>
+                      <span style={{...styles.itemTitle, ...themeStyles.textPrimary}}>{job.title}</span>
                       <span style={{...styles.itemSub, fontWeight: '600', color: '#3b82f6'}}>
                         {job.status}
                       </span>
                    </div>
-                   <div style={styles.itemSub}>
+                   <div style={{...styles.itemSub, ...themeStyles.textSecondary}}>
                      {job.applicants} Applicants
                    </div>
-                   <div style={styles.progressBarBg}>
+                   <div style={{...styles.progressBarBg, backgroundColor: theme.palette.mode === 'dark' ? '#334155' : '#f1f5f9'}}>
                       <div style={{
                         ...styles.progressBarFill, 
                         width: job.status === 'Interviewing' ? '70%' : job.status === 'Reviewing' ? '40%' : '10%',
@@ -198,8 +227,8 @@ const ClientDashboard = () => {
       </div>
 
       {/* --- Bottom Section: Recent Activity --- */}
-      <div style={styles.card}>
-        <h2 style={styles.cardTitle}>Hiring & Payment Activity</h2>
+      <div style={themeStyles.card}>
+        <h2 style={{...styles.cardTitle, ...themeStyles.textPrimary}}>Hiring & Payment Activity</h2>
         <div style={styles.activityList}>
           {activityFeed.map((item, index) => (
             <div key={item.id} style={styles.activityItem}>
@@ -207,11 +236,11 @@ const ClientDashboard = () => {
                 {item.icon}
               </div>
               <div style={styles.activityContent}>
-                <div style={styles.activityText}>{item.text}</div>
-                <div style={styles.activityTime}>{item.time}</div>
+                <div style={{...styles.activityText, ...themeStyles.textPrimary}}>{item.text}</div>
+                <div style={{...styles.activityTime, ...themeStyles.textSecondary}}>{item.time}</div>
               </div>
               {/* Connector Line */}
-              {index !== activityFeed.length - 1 && <div style={styles.connectorLine}></div>}
+              {index !== activityFeed.length - 1 && <div style={{...styles.connectorLine, backgroundColor: theme.palette.divider}}></div>}
             </div>
           ))}
         </div>
@@ -222,22 +251,27 @@ const ClientDashboard = () => {
 };
 
 // --- Helper Component: Stat Card ---
-const StatCard = ({ icon, title, value, change, color }) => (
-  <div style={styles.statCard}>
+const StatCard = ({ icon, title, value, change, color, theme }) => (
+  <div style={{
+      ...styles.statCard, 
+      backgroundColor: theme.palette.background.paper,
+      borderColor: theme.palette.divider,
+      boxShadow: theme.shadows[1]
+  }}>
     <div style={styles.statHeader}>
       <div style={{...styles.statIcon, backgroundColor: `${color}20`, color: color}}>
         {icon}
       </div>
-      <span style={{...styles.statChange, color: '#64748b'}}>
+      <span style={{...styles.statChange, color: theme.palette.text.secondary}}>
         {change}
       </span>
     </div>
-    <div style={styles.statValue}>{value}</div>
-    <div style={styles.statTitle}>{title}</div>
+    <div style={{...styles.statValue, color: theme.palette.text.primary}}>{value}</div>
+    <div style={{...styles.statTitle, color: theme.palette.text.secondary}}>{title}</div>
   </div>
 );
 
-// --- STYLES ---
+// --- STYLES (Kept as base, colors overridden dynamically) ---
 const styles = {
   header: {
     display: 'flex',
@@ -247,7 +281,6 @@ const styles = {
   },
   greeting: {
     fontSize: '14px',
-    color: '#334155',
     margin: 0,
     marginBottom: '4px',
     fontWeight: '600',
@@ -255,12 +288,10 @@ const styles = {
   title: {
     fontSize: '26px',
     fontWeight: 'bold',
-    color: '#1e293b',
     margin: 0,
   },
   subtitle: {
     fontSize: '14px',
-    color: '#64748b',
     marginTop: '5px',
   },
   btn: {
@@ -283,11 +314,9 @@ const styles = {
     marginBottom: '25px',
   },
   statCard: {
-    backgroundColor: 'white',
     padding: '20px',
     borderRadius: '12px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-    border: '1px solid #f1f5f9',
+    border: '1px solid', // Color handled dynamically
   },
   statHeader: {
     display: 'flex',
@@ -310,11 +339,9 @@ const styles = {
   statValue: {
     fontSize: '24px',
     fontWeight: 'bold',
-    color: '#1e293b',
   },
   statTitle: {
     fontSize: '13px',
-    color: '#64748b',
     marginTop: '4px',
   },
   grid: {
@@ -328,11 +355,9 @@ const styles = {
     flexDirection: 'column',
   },
   card: {
-    backgroundColor: 'white',
     padding: '25px',
     borderRadius: '16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-    border: '1px solid #f1f5f9',
+    border: '1px solid', // Color handled dynamically
   },
   cardHeader: {
     display: 'flex',
@@ -343,20 +368,17 @@ const styles = {
   cardTitle: {
     fontSize: '16px',
     fontWeight: '700',
-    color: '#334155',
     margin: 0,
   },
   subTitle: {
     fontSize: '12px',
-    color: '#94a3b8',
     marginTop: '4px',
   },
   select: {
-    border: '1px solid #e2e8f0',
+    border: '1px solid',
     borderRadius: '6px',
     padding: '6px 10px',
     fontSize: '12px',
-    color: '#475569',
     outline: 'none',
   },
   list: {
@@ -370,7 +392,6 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '10px 0',
-    borderBottom: '1px solid #f8fafc',
   },
   deadlineInfo: {
     display: 'flex',
@@ -379,11 +400,9 @@ const styles = {
   itemTitle: {
     fontSize: '14px',
     fontWeight: '600',
-    color: '#1e293b',
   },
   itemSub: {
     fontSize: '12px',
-    color: '#94a3b8',
   },
   tag: {
     fontSize: '10px',
@@ -399,7 +418,6 @@ const styles = {
   progressBarBg: {
     height: '6px',
     width: '100%',
-    backgroundColor: '#f1f5f9',
     borderRadius: '3px',
     overflow: 'hidden',
     marginTop: '8px',
@@ -434,12 +452,10 @@ const styles = {
   },
   activityText: {
     fontSize: '14px',
-    color: '#334155',
     fontWeight: '500',
   },
   activityTime: {
     fontSize: '12px',
-    color: '#94a3b8',
     marginTop: '2px',
   },
   connectorLine: {
@@ -448,14 +464,8 @@ const styles = {
     top: '36px',
     bottom: '-25px',
     width: '2px',
-    backgroundColor: '#f1f5f9',
     zIndex: 1,
   }
 };
 
 export default ClientDashboard;
-
-
-
-
-
