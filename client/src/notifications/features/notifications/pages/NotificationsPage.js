@@ -1,6 +1,5 @@
 // import React, { useEffect, useMemo, useState } from "react";
 // import NotificationItem from "../components/NotificationItem";
-// import { getNotificationsMock } from "../services/notificationService";
 // import { useNavigate } from "react-router-dom";
 // import "../components/NotificationItem.css";
 
@@ -15,7 +14,6 @@
 
 //   useEffect(() => {
 //     async function load() {
-//       const data = await getNotificationsMock();
 //       setItems(data);
 //       setLoading(false);
 //     }
@@ -192,7 +190,6 @@
 
 // import React, { useEffect, useMemo, useState } from "react";
 // import NotificationItem from "../components/NotificationItem";
-// import { getNotificationsMock } from "../services/notificationService";
 // import { useNavigate } from "react-router-dom";
 // import "../components/NotificationItem.css";
 
@@ -208,7 +205,6 @@
 //   useEffect(() => {
 //     async function load() {
 //       // Simulate fetch
-//       const data = await getNotificationsMock();
 //       setItems(data);
 //       setLoading(false);
 //     }
@@ -459,7 +455,6 @@
 
 // import React, { useEffect, useMemo, useState } from "react";
 // import NotificationItem from "../components/NotificationItem";
-// import { getNotificationsMock } from "../services/notificationService";
 // import { useNavigate } from "react-router-dom";
 // import "../components/NotificationItem.css";
 
@@ -471,7 +466,6 @@
 
 //   useEffect(() => {
 //     async function load() {
-//       const data = await getNotificationsMock();
 //       setItems(data);
 //       setLoading(false);
 //     }
@@ -606,7 +600,6 @@
 
 // import React, { useEffect, useMemo, useState } from "react";
 // import NotificationItem from "../components/NotificationItem";
-// import { getNotificationsMock } from "../services/notificationService";
 // import { useNavigate } from "react-router-dom";
 // import "../components/NotificationItem.css";
 
@@ -618,7 +611,6 @@
 
 //   useEffect(() => {
 //     async function load() {
-//       const data = await getNotificationsMock();
 //       setItems(data);
 //       setLoading(false);
 //     }
@@ -737,9 +729,9 @@
 
 
 import React, { useEffect, useMemo, useState } from "react";
-import NotificationItem from "../components/NotificationItem";
-import { getNotificationsMock } from "../services/notificationService";
 import { useNavigate } from "react-router-dom";
+import NotificationItem from "../components/NotificationItem";
+import { deleteNotification, getNotifications, markAllRead, markRead, toggleStar } from "../services/notificationService";
 import "../components/NotificationItem.css";
 
 export default function NotificationsPage() {
@@ -750,9 +742,15 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     async function load() {
-      const data = await getNotificationsMock();
-      setItems(data);
-      setLoading(false);
+      try {
+        const response = await getNotifications();
+        const payload = response.data?.results || response.data || [];
+        setItems(payload.map(mapFromApi));
+      } catch (error) {
+        console.error("Notifications fetch failed", error);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -766,33 +764,60 @@ export default function NotificationsPage() {
     });
   }, [items, tab]);
 
-  function toggleRead(id) {
-    setItems((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, read: !p.read } : p))
-    );
+  async function toggleRead(id) {
+    setItems((prev) => prev.map((p) => (p.id === id ? { ...p, read: true } : p)));
+    try {
+      await markRead(id);
+    } catch (error) {
+      console.error("Failed to mark read", error);
+    }
   }
 
   // Toggle Favourite
-  function toggleFavourite(id) {
+  async function toggleFavourite(id) {
+    let nextStar = false;
     setItems((prev) =>
       prev.map((p) => {
         if (p.id === id) {
-          const newCategory = p.category === 'favourites' ? 'all' : 'favourites';
-          return { ...p, category: newCategory };
+          nextStar = p.category !== "favourites";
+          return { ...p, category: nextStar ? "favourites" : "all" };
         }
         return p;
       })
     );
-  }
-
-  function deleteNotification(id) {
-    if(window.confirm("Delete this notification?")) {
-        setItems((prev) => prev.filter((p) => p.id !== id));
+    try {
+      await toggleStar(id, nextStar);
+    } catch (error) {
+      console.error("Failed to toggle favourite", error);
+      // Revert on failure
+      setItems((prev) =>
+        prev.map((p) => {
+          if (p.id === id) {
+            return { ...p, category: nextStar ? "all" : "favourites" };
+          }
+          return p;
+        })
+      );
     }
   }
 
-  function markAllRead() {
+  async function handleDelete(id) {
+    if (!window.confirm("Delete this notification?")) return;
+    setItems((prev) => prev.filter((p) => p.id !== id));
+    try {
+      await deleteNotification(id);
+    } catch (error) {
+      console.error("Failed to delete notification", error);
+    }
+  }
+
+  async function handleMarkAllRead() {
     setItems((prev) => prev.map((p) => ({ ...p, read: true })));
+    try {
+      await markAllRead();
+    } catch (error) {
+      console.error("Failed to mark all read", error);
+    }
   }
 
   if (loading) return <div style={styles.loading}>Loading...</div>;
@@ -824,7 +849,7 @@ export default function NotificationsPage() {
             <button onClick={() => setTab("unread")} style={{ ...styles.tabBtn, ...(tab === "unread" ? styles.activeTab : {}) }}>Unread</button>
             <button onClick={() => setTab("favourites")} style={{ ...styles.tabBtn, ...(tab === "favourites" ? styles.activeTab : {}) }}>Favourites</button>
           </div>
-          <button onClick={markAllRead} style={styles.linkBtn}>Mark all as read</button>
+          <button onClick={handleMarkAllRead} style={styles.linkBtn}>Mark all as read</button>
         </div>
 
         {/* LIST */}
@@ -835,10 +860,9 @@ export default function NotificationsPage() {
                 key={n.id}
                 item={n}
                 onToggleRead={toggleRead}
-                onDelete={deleteNotification}
+                onDelete={handleDelete}
                 onToggleFavourite={toggleFavourite}
-                // --- FIX 2: Navigate to Chatbox on avatar click ---
-                onAvatarClick={() => navigate("/client/messages")}
+                onAvatarClick={() => navigate(resolveTargetRoute(n))}
               />
             ))
           ) : (
@@ -869,3 +893,41 @@ const styles = {
   listContainer: { display: "flex", flexDirection: "column", gap: "0px" },
   emptyState: { textAlign: "center", padding: "40px", color: "#94a3b8", fontSize: "16px" }
 };
+
+function mapFromApi(item) {
+  const created = item.created_at ? new Date(item.created_at) : null;
+  const safeTitle = item.title || "Notification";
+  return {
+    id: item.id,
+    title: safeTitle,
+    message: item.body || "",
+    read: !!item.is_read,
+    category: item.is_starred ? "favourites" : "all",
+    time: created ? created.toLocaleTimeString() : "",
+    relative: created ? formatRelative(created) : "",
+    avatar: `https://ui-avatars.com/api/?background=3b82f6&color=fff&name=${encodeURIComponent(item.actor_name || safeTitle)}`,
+    raw: item,
+  };
+}
+
+function formatRelative(dateObj) {
+  const diffMs = Date.now() - dateObj.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
+function resolveTargetRoute(item) {
+  const targetType = item.raw?.target_type;
+  const targetId = item.raw?.target_id;
+
+  if (targetType === "project" && targetId) return `/projects/${targetId}`;
+  if (targetType === "contract") return "/contracts";
+  if (targetType === "conversation") return "/client/messages";
+  if (targetType === "message") return "/client/messages";
+  return "/client/messages";
+}

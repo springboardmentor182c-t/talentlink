@@ -1,0 +1,455 @@
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import axiosInstance from "../../utils/axiosInstance";
+import profileService from "../../services/profileService";
+import { profileImageOrFallback } from "../../utils/profileImage";
+import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
+import messagingStyles from "../shared/messagingStyles";
+
+const icons = {
+  send: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
+  ),
+  search: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  ),
+};
+
+const STATUS_LABELS = {
+  submitted: "Submitted",
+  considering: "Considering",
+  accepted: "Hired",
+  rejected: "Rejected",
+};
+
+const FreelancerMessages = () => {
+  const [clients, setClients] = useState([]);
+  const [selectedKey, setSelectedKey] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [draftMessage, setDraftMessage] = useState("");
+  const [conversationMap, setConversationMap] = useState({});
+  const [messageLoadingKey, setMessageLoadingKey] = useState(null);
+  const [messageError, setMessageError] = useState("");
+  const [sendingKey, setSendingKey] = useState(null);
+
+  const fetchClients = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await axiosInstance.get("proposals/");
+      const proposals = Array.isArray(response.data) ? response.data : [];
+      const grouped = groupByClient(proposals);
+      const enriched = await attachClientProfiles(grouped);
+      setClients(enriched);
+    } catch (err) {
+      console.error("Error loading client conversations", err);
+      const message = err?.response?.data?.detail || "Unable to load client messages.";
+      setError(message);
+      setClients([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
+
+  useEffect(() => {
+    if (clients.length && !clients.some((client) => client.clientKey === selectedKey)) {
+      setSelectedKey(clients[0].clientKey);
+    }
+  }, [clients, selectedKey]);
+
+  useEffect(() => {
+    setMessageError("");
+  }, [selectedKey]);
+
+  const groupByClient = (proposals) => {
+    const map = new Map();
+    proposals.forEach((proposal) => {
+      const clientId = proposal.client || proposal.client_id;
+      const key = clientId ? `client-${clientId}` : `proposal-${proposal.id}`;
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, {
+          clientKey: key,
+          clientId: clientId || null,
+          name: proposal.client_name || "Client",
+          email: proposal.client_email || "",
+          lastProject: proposal.project_title || proposal.job_title || (proposal.project_id ? `Project #${proposal.project_id}` : "Project"),
+          status: proposal.status,
+          createdAt: proposal.created_at,
+          proposals: [proposal],
+        });
+        return;
+      }
+      existing.proposals.push(proposal);
+      if (new Date(proposal.created_at) > new Date(existing.createdAt)) {
+        existing.createdAt = proposal.created_at;
+        existing.status = proposal.status;
+        existing.lastProject = proposal.project_title || proposal.job_title || existing.lastProject;
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  };
+
+  const attachClientProfiles = async (items) => {
+    const ids = [...new Set(items.map((item) => item.clientId).filter(Boolean))];
+    if (!ids.length) return items;
+    const profileMap = new Map();
+    await Promise.all(
+      ids.map(async (userId) => {
+        try {
+          const profile = await profileService.client.getProfileByUserId(userId);
+          profileMap.set(userId, profile || null);
+        } catch (err) {
+          console.error(`Unable to fetch client profile ${userId}`, err);
+          profileMap.set(userId, null);
+        }
+      })
+    );
+    return items.map((item) => ({
+      ...item,
+      profile: item.clientId ? profileMap.get(item.clientId) : null,
+    }));
+  };
+
+  const getLatestProposal = useCallback((client) => {
+    if (!client?.proposals?.length) return null;
+    return [...client.proposals].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+  }, []);
+
+  const loadConversation = useCallback(
+    async (client, proposal) => {
+      if (!client || !proposal) return null;
+      const key = client.clientKey;
+      const isActive = key === selectedKey;
+      setMessageLoadingKey(key);
+      if (isActive) {
+        setMessageError("");
+      }
+      try {
+        const ensureResponse = await axiosInstance.post("messaging/conversations/ensure/", {
+          proposal_id: proposal.id,
+        });
+        const conversationId = ensureResponse?.data?.id;
+        if (!conversationId) {
+          throw new Error("Conversation ID missing");
+        }
+        const messagesResponse = await axiosInstance.get(`messaging/conversations/${conversationId}/messages/`);
+        const messages = Array.isArray(messagesResponse.data) ? messagesResponse.data : [];
+        setConversationMap((prev) => ({
+          ...prev,
+          [key]: {
+            conversationId,
+            proposalId: proposal.id,
+            messages,
+          },
+        }));
+        return conversationId;
+      } catch (err) {
+        console.error("Error loading conversation", err);
+        if (isActive) {
+          const detail = err?.response?.data?.detail || "Unable to load messages.";
+          setMessageError(detail);
+        }
+        throw err;
+      } finally {
+        setMessageLoadingKey((prev) => (prev === key ? null : prev));
+      }
+    },
+    [selectedKey]
+  );
+
+  const filteredClients = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return clients;
+    return clients.filter((client) => `${client.name} ${client.email}`.toLowerCase().includes(query));
+  }, [clients, searchTerm]);
+
+  const selectedClient = useMemo(() => {
+    if (!selectedKey) return null;
+    return clients.find((client) => client.clientKey === selectedKey) || null;
+  }, [clients, selectedKey]);
+
+  const proposalMessages = useMemo(() => {
+    if (!selectedClient) return [];
+    return [...selectedClient.proposals]
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      .filter((proposal) => proposal.cover_letter)
+      .map((proposal) => ({
+        id: `proposal-${proposal.id}`,
+        sender: "freelancer",
+        text: proposal.cover_letter,
+        timestamp: proposal.created_at,
+      }));
+  }, [selectedClient]);
+
+  const latestProposal = useMemo(() => getLatestProposal(selectedClient), [selectedClient, getLatestProposal]);
+
+  const projectTags = useMemo(() => {
+    if (!selectedClient) return [];
+    const labels = selectedClient.proposals.map((proposal) => proposal.project_title || proposal.job_title || (proposal.project_id ? `Project #${proposal.project_id}` : "Project"));
+    return Array.from(new Set(labels)).slice(0, 6);
+  }, [selectedClient]);
+
+  const activeConversation = selectedClient ? conversationMap[selectedClient.clientKey] : null;
+  const serverMessages = useMemo(() => activeConversation?.messages || [], [activeConversation]);
+
+  useEffect(() => {
+    if (!selectedClient) return;
+    if (!latestProposal) return;
+    if (activeConversation && activeConversation.proposalId === latestProposal.id) return;
+    loadConversation(selectedClient, latestProposal).catch(() => {});
+  }, [selectedClient, latestProposal, activeConversation, loadConversation]);
+
+  const visibleMessages = useMemo(() => {
+    if (!selectedClient) return [];
+    return [...proposalMessages, ...serverMessages];
+  }, [proposalMessages, selectedClient, serverMessages]);
+
+  const handleSendMessage = async () => {
+    if (!selectedClient) return;
+    const messageText = draftMessage.trim();
+    if (!messageText) return;
+    const key = selectedClient.clientKey;
+    if (sendingKey === key || messageLoadingKey === key) return;
+
+    if (!latestProposal) {
+      setMessageError("No proposal found for this client.");
+      return;
+    }
+
+    let conversationId = activeConversation?.conversationId;
+
+    try {
+      setSendingKey(key);
+      if (!conversationId) {
+        conversationId = await loadConversation(selectedClient, latestProposal);
+      }
+      if (!conversationId) {
+        throw new Error("Conversation missing");
+      }
+
+      const response = await axiosInstance.post(`messaging/conversations/${conversationId}/messages/`, {
+        text: messageText,
+      });
+
+      setConversationMap((prev) => {
+        const existing = prev[key] || { conversationId, proposalId: latestProposal.id, messages: [] };
+        return {
+          ...prev,
+          [key]: {
+            ...existing,
+            conversationId,
+            proposalId: latestProposal.id,
+            messages: [...(existing.messages || []), response.data],
+          },
+        };
+      });
+      setDraftMessage("");
+    } catch (err) {
+      console.error("Error sending message", err);
+      const detail = err?.response?.data?.detail || "Unable to send message.";
+      setMessageError(detail);
+    } finally {
+      setSendingKey((prev) => (prev === key ? null : prev));
+    }
+  };
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${date.toLocaleDateString()} • ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  };
+
+  const avatarFor = (client) =>
+    profileImageOrFallback(client?.profile?.profile_image, client?.name || client?.email || "Client", {
+      background: "0f172a",
+      color: "ffffff",
+    });
+
+  const isThreadLoading = selectedClient ? messageLoadingKey === selectedClient.clientKey : false;
+  const isSending = selectedClient ? sendingKey === selectedClient.clientKey : false;
+
+  return (
+    <FreelancerLayout>
+      <div style={styles.page}>
+        <div style={styles.layout}>
+        <aside style={styles.sidebar}>
+          <div style={styles.sidebarHeader}>Clients you contacted</div>
+          <div style={styles.searchBar}>
+            <span style={styles.icon}>{icons.search}</span>
+            <input
+              style={styles.searchInput}
+              type="text"
+              placeholder="Search clients"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+          </div>
+          {loading ? (
+            <div style={styles.feedback}>Loading message threads...</div>
+          ) : error ? (
+            <div style={{ ...styles.feedback, color: "#b91c1c" }}>{error}</div>
+          ) : !filteredClients.length ? (
+            <div style={styles.feedback}>No messages yet. Apply to projects to start conversations.</div>
+          ) : null}
+          <div style={styles.list}>
+            {filteredClients.map((client) => {
+              const isActive = client.clientKey === selectedKey;
+              return (
+                <button
+                  key={client.clientKey}
+                  type="button"
+                  style={{
+                    ...styles.row,
+                    backgroundColor: isActive ? "#eff6ff" : "transparent",
+                    borderLeft: isActive ? "3px solid #0f172a" : "3px solid transparent",
+                  }}
+                  onClick={() => setSelectedKey(client.clientKey)}
+                >
+                  <img src={avatarFor(client)} alt={client.name} style={styles.avatar} />
+                  <div style={styles.meta}>
+                    <div style={styles.primaryText}>{client.name}</div>
+                    <div style={styles.secondaryText}>{client.email || "Email not shared"}</div>
+                    <div style={styles.secondaryText}>{client.lastProject}</div>
+                  </div>
+                  <span style={styles.statusPill}>{STATUS_LABELS[client.status] || "Pending"}</span>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        <section style={styles.detailPanel}>
+          {selectedClient ? (
+            <>
+              <header style={styles.detailHeader}>
+                <div style={styles.detailHeaderLeft}>
+                  <img src={avatarFor(selectedClient)} alt={selectedClient.name} style={styles.largeAvatar} />
+                  <div>
+                    <div style={styles.detailName}>{selectedClient.name}</div>
+                    <div style={styles.detailSub}>{selectedClient.email || "Contact not shared"}</div>
+                    <div style={styles.detailSub}>{selectedClient.lastProject}</div>
+                  </div>
+                </div>
+                <div style={styles.detailChips}>
+                  <div style={styles.detailChip}><span>Status</span><strong>{STATUS_LABELS[selectedClient.status] || "Pending"}</strong></div>
+                  <div style={styles.detailChip}><span>Opportunities</span><strong>{selectedClient.proposals.length}</strong></div>
+                  <div style={styles.detailChip}><span>Last activity</span><strong>{formatTime(selectedClient.createdAt)}</strong></div>
+                </div>
+              </header>
+
+              <div style={styles.detailBody}>
+                <div style={styles.profileGrid}>
+                  <div style={styles.card}>
+                    <h4 style={styles.cardTitle}>About this client</h4>
+                    <p style={styles.cardText}>
+                      {latestProposal?.client_notes || `You last reached out about ${selectedClient.lastProject}. Keep the client updated on milestones and next steps.`}
+                    </p>
+                    <p style={{ ...styles.cardText, marginTop: "12px" }}>
+                      {selectedClient.email ? `Preferred contact: ${selectedClient.email}` : "Contact details pending."}
+                    </p>
+                  </div>
+                  <div style={styles.card}>
+                    <h4 style={styles.cardTitle}>Projects discussed</h4>
+                    <div style={styles.skillsWrap}>
+                      {projectTags.map((tag) => (
+                        <span key={tag} style={styles.skillChip}>{tag}</span>
+                      ))}
+                      {!projectTags.length && (
+                        <span style={styles.cardText}>No project history yet.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={styles.chatSection}>
+                  <div style={styles.messages}>
+                    {isThreadLoading && (
+                      <div style={styles.feedback}>Loading conversation...</div>
+                    )}
+                    {visibleMessages.map((message) => {
+                      const derivedSender = message.sender
+                        ? message.sender
+                        : selectedClient?.clientId && message.sender_id === selectedClient.clientId
+                          ? "client"
+                          : selectedClient?.email && message.sender_email === selectedClient.email
+                            ? "client"
+                            : "freelancer";
+                      const bubbleWrapper = derivedSender === "freelancer" ? styles.msgSent : styles.msgReceived;
+                      const bubbleStyle = derivedSender === "freelancer" ? styles.bubbleSent : styles.bubbleReceived;
+                      const timestamp = message.timestamp || message.created_at;
+                      return (
+                        <div
+                          key={message.id || `${selectedClient.clientKey}-${timestamp}`}
+                          style={bubbleWrapper}
+                        >
+                          <div style={bubbleStyle}>
+                            {message.text}
+                          </div>
+                          <div style={styles.msgTime}>{formatTime(timestamp)}</div>
+                        </div>
+                      );
+                    })}
+                    {!visibleMessages.length && !isThreadLoading && (
+                      <div style={styles.emptyState}>Send a quick update to keep the conversation going.</div>
+                    )}
+                    {messageError && (
+                      <div style={{ ...styles.feedback, color: "#b91c1c" }}>{messageError}</div>
+                    )}
+                  </div>
+
+                  <div style={styles.inputArea}>
+                    <input
+                      type="text"
+                      placeholder={`Message ${selectedClient.name}`}
+                      style={styles.messageInput}
+                      value={draftMessage}
+                      onChange={(event) => setDraftMessage(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      style={{
+                        ...styles.sendBtn,
+                        opacity: isSending || isThreadLoading ? 0.6 : 1,
+                        cursor: isSending || isThreadLoading ? "not-allowed" : "pointer",
+                      }}
+                      onClick={handleSendMessage}
+                      disabled={isSending || isThreadLoading}
+                    >
+                      {icons.send}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div style={styles.feedback}>Select a client to view messages.</div>
+          )}
+        </section>
+      </div>
+      </div>
+    </FreelancerLayout>
+  );
+};
+const styles = messagingStyles;
+
+export default FreelancerMessages;

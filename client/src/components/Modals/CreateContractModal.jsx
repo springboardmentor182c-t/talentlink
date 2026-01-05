@@ -69,7 +69,7 @@ export default function CreateContractModal({ open, onClose, proposal, onSuccess
         </Typography>
 
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Agreed Amount: <strong>${proposal?.bid_amount}</strong>
+          Agreed Amount: <strong>₹{proposal?.bid_amount}</strong>
         </Typography>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>

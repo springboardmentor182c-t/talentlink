@@ -1,7 +1,7 @@
 
 
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -13,6 +13,7 @@ import {
   TableHead,
   TableRow,
   Button,
+  ButtonBase,
   Avatar,
   Stack,
   Link,
@@ -23,37 +24,98 @@ import {
   MenuItem
 } from "@mui/material";
 import CreateContractModal from "../../components/Modals/CreateContractModal"; 
+import FreelancerProfileModal from "../../components/Modals/FreelancerProfileModal";
 import axiosInstance from "../../utils/axiosInstance";
+import profileService from "../../services/profileService";
+import { profileImageOrFallback } from "../../utils/profileImage";
 import "../../App.css";
+
+const PROPOSAL_STATUS_FILTERS = [
+  { value: "hired", label: "Hired" },
+  { value: "considering", label: "Considering" },
+];
+
+const normalizeProposalStatus = (status) => (status || "").toLowerCase();
+
+const formatProposalStatusLabel = (status) => {
+  const normalized = normalizeProposalStatus(status);
+  if (normalized === "accepted") return "Hired";
+  if (normalized === "considering") return "Considering";
+  if (normalized === "submitted") return "Submitted";
+  if (normalized === "rejected") return "Rejected";
+  return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : "Pending";
+};
 
 export default function JobProposals() {
   const [proposals, setProposals] = useState([]);
   const [contractProposal, setContractProposal] = useState(null);
   const [detailProposal, setDetailProposal] = useState(null);
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [profileModalLoading, setProfileModalLoading] = useState(false);
+  const [profileModalError, setProfileModalError] = useState("");
+  const [selectedFreelancerProfile, setSelectedFreelancerProfile] = useState(null);
+  const [profileFallback, setProfileFallback] = useState({ name: "", email: "" });
+  const [statusUpdateId, setStatusUpdateId] = useState(null);
+  const [statusUpdateError, setStatusUpdateError] = useState("");
   const [filters, setFilters] = useState({
     projectId: "all",
     freelancer: "all",
     status: "all",
   });
+  const profileCacheRef = useRef(new Map());
+
+  const fetchProposals = useCallback(async () => {
+    try {
+      const res = await axiosInstance.get("proposals/received/");
+      const data = Array.isArray(res.data) ? res.data : [];
+      const enriched = await attachFreelancerProfiles(data);
+      setProposals(enriched);
+      setDetailProposal(enriched.length ? enriched[0] : null);
+    } catch (err) {
+      console.error("Error fetching proposals", err);
+      setProposals([]);
+      setDetailProposal(null);
+    }
+  }, []);
 
   useEffect(() => {
     fetchProposals();
-  }, []);
+  }, [fetchProposals]);
 
-  // ✅ FIX #1: correct API for CLIENT
-  const fetchProposals = () => {
-    axiosInstance
-      .get("proposals/received/")
-      .then((res) => {
-        setProposals(res.data);
-        setDetailProposal(res.data.length ? res.data[0] : null);
+  const updateProposalStatus = (proposalId, nextStatus) => {
+    setProposals((prev) =>
+      prev.map((proposal) =>
+        proposal.id === proposalId ? { ...proposal, status: nextStatus } : proposal
+      )
+    );
+    setDetailProposal((prev) =>
+      prev && prev.id === proposalId ? { ...prev, status: nextStatus } : prev
+    );
+  };
+
+
+  const attachFreelancerProfiles = async (items) => {
+    const ids = [...new Set(items.map((proposal) => proposal?.freelancer?.id).filter(Boolean))];
+    if (!ids.length) return items;
+
+    await Promise.all(
+      ids.map(async (userId) => {
+        if (profileCacheRef.current.has(userId)) return;
+        try {
+          const profile = await profileService.freelancer.getProfileByUserId(userId);
+          profileCacheRef.current.set(userId, profile || null);
+        } catch (error) {
+          console.error(`Unable to load freelancer profile ${userId}`, error);
+          profileCacheRef.current.set(userId, null);
+        }
       })
-      .catch((err) => {
-        console.error("Error fetching proposals", err);
-        setProposals([]);
-        setDetailProposal(null);
-      });
+    );
+
+    return items.map((proposal) => ({
+      ...proposal,
+      freelancer_profile: proposal?.freelancer?.id ? profileCacheRef.current.get(proposal.freelancer.id) : null,
+    }));
   };
 
   const handleHireClick = (proposal) => {
@@ -64,21 +126,78 @@ export default function JobProposals() {
   // ✅ KEEP your step-2 (local update)
   const handleContractSuccess = () => {
     if (contractProposal) {
-      setProposals((prev) =>
-        prev.map((p) =>
-          p.id === contractProposal.id
-            ? { ...p, status: "accepted" }   // 🔥 IMPORTANT
-            : p
-        )
-      );
-      setDetailProposal((prev) =>
-        prev && prev.id === contractProposal.id ? { ...prev, status: "accepted" } : prev
-      );
+      updateProposalStatus(contractProposal.id, "accepted");
     }
   };
 
   const handleViewDetails = (proposal) => {
     setDetailProposal(proposal);
+  };
+
+  const handleCloseProfileModal = () => {
+    setIsProfileModalOpen(false);
+    setProfileModalLoading(false);
+    setProfileModalError("");
+    setSelectedFreelancerProfile(null);
+  };
+
+  const handleFreelancerClick = async (proposal) => {
+    if (!proposal) return;
+    setProfileFallback({
+      name: proposal.freelancer_name || "Freelancer",
+      email: proposal.freelancer_email || "",
+    });
+    setSelectedFreelancerProfile(null);
+    setProfileModalError("");
+    setIsProfileModalOpen(true);
+
+    const userId = proposal.freelancer?.id;
+    if (!userId) {
+      setProfileModalError("Freelancer account is unavailable.");
+      return;
+    }
+
+    if (proposal.freelancer_profile) {
+      setSelectedFreelancerProfile(proposal.freelancer_profile);
+      return;
+    }
+
+    if (profileCacheRef.current.has(userId)) {
+      setSelectedFreelancerProfile(profileCacheRef.current.get(userId));
+      return;
+    }
+
+    setProfileModalLoading(true);
+    try {
+      const profile = await profileService.freelancer.getProfileByUserId(userId);
+      if (profile) {
+        profileCacheRef.current.set(userId, profile);
+        setSelectedFreelancerProfile(profile);
+      } else {
+        setSelectedFreelancerProfile(null);
+      }
+    } catch (error) {
+      console.error("Unable to load freelancer profile", error);
+      setSelectedFreelancerProfile(null);
+      setProfileModalError(error.response?.data?.detail || "Unable to load this profile.");
+    } finally {
+      setProfileModalLoading(false);
+    }
+  };
+
+  const handleConsiderClick = async (proposal) => {
+    if (!proposal) return;
+    setStatusUpdateError("");
+    setStatusUpdateId(proposal.id);
+    try {
+      await axiosInstance.post(`proposals/${proposal.id}/consider/`);
+      updateProposalStatus(proposal.id, "considering");
+    } catch (error) {
+      console.error("Unable to update proposal status", error);
+      setStatusUpdateError(error.response?.data?.detail || "Unable to update proposal status.");
+    } finally {
+      setStatusUpdateId(null);
+    }
   };
 
   const formatINR = (value) => {
@@ -126,24 +245,19 @@ export default function JobProposals() {
     return Array.from(map.values());
   }, [proposals]);
 
-  const availableStatuses = useMemo(() => {
-    const set = new Set();
-    proposals.forEach((prop) => {
-      if (prop.status) {
-        set.add(prop.status.toLowerCase());
-      }
-    });
-    return Array.from(set);
-  }, [proposals]);
-
   const filteredProposals = useMemo(() => (
     proposals.filter((prop) => {
       const projectMatch =
         filters.projectId === "all" || String(prop.project_id) === filters.projectId;
       const freelancerMatch =
         filters.freelancer === "all" || buildFreelancerKey(prop) === filters.freelancer;
-      const statusMatch =
-        filters.status === "all" || (prop.status || "").toLowerCase() === filters.status;
+      const normalizedStatus = normalizeProposalStatus(prop.status);
+      const statusMatch = (() => {
+        if (filters.status === "all") return true;
+        if (filters.status === "hired") return normalizedStatus === "accepted";
+        if (filters.status === "considering") return normalizedStatus === "considering";
+        return false;
+      })();
       return projectMatch && freelancerMatch && statusMatch;
     })
   ), [proposals, filters]);
@@ -163,11 +277,6 @@ export default function JobProposals() {
   const handleFilterChange = (key) => (event) => {
     const { value } = event.target;
     setFilters((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const formatStatusLabel = (status) => {
-    if (!status) return "Pending";
-    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   return (
@@ -211,7 +320,6 @@ export default function JobProposals() {
               ))}
             </Select>
           </FormControl>
-
           <FormControl fullWidth size="small">
             <InputLabel id="status-filter-label">Status</InputLabel>
             <Select
@@ -221,9 +329,9 @@ export default function JobProposals() {
               onChange={handleFilterChange("status")}
             >
               <MenuItem value="all">All Statuses</MenuItem>
-              {availableStatuses.map((status) => (
-                <MenuItem key={status} value={status}>
-                  {formatStatusLabel(status)}
+              {PROPOSAL_STATUS_FILTERS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
                 </MenuItem>
               ))}
             </Select>
@@ -246,25 +354,42 @@ export default function JobProposals() {
 
           <TableBody>
             {filteredProposals.map((prop) => {
-              // ✅ FIX #2: backend sends "accepted"
-              const isHired = prop.status?.toLowerCase() === "accepted";
+              const normalizedStatus = normalizeProposalStatus(prop.status);
+              const isHired = normalizedStatus === "accepted";
+              const isConsidering = normalizedStatus === "considering";
               const isSelected = detailProposal?.id === prop.id;
-              const statusLabel = isHired ? "Hired" : formatStatusLabel(prop.status);
+              const statusLabel = formatProposalStatusLabel(prop.status);
+              const avatarSrc = profileImageOrFallback(
+                prop?.freelancer_profile?.profile_image,
+                prop.freelancer_name || prop.freelancer_email || "Freelancer"
+              );
 
               return (
                 <TableRow key={prop.id} selected={isSelected} hover>
                   <TableCell>
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Avatar>{prop.freelancer_name?.[0]}</Avatar>
-                      <Box>
-                        <Typography fontWeight={600}>{prop.freelancer_name}</Typography>
-                        {prop.freelancer_email && (
-                          <Typography variant="caption" color="text.secondary">
-                            {prop.freelancer_email}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Stack>
+                    <ButtonBase
+                      onClick={() => handleFreelancerClick(prop)}
+                      sx={{
+                        textAlign: "left",
+                        borderRadius: 1,
+                        px: 0,
+                        py: 0.5,
+                        display: "block",
+                        width: "100%",
+                      }}
+                    >
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Avatar src={avatarSrc}>{prop.freelancer_name?.[0] || "F"}</Avatar>
+                        <Box>
+                          <Typography fontWeight={600}>{prop.freelancer_name}</Typography>
+                          {prop.freelancer_email && (
+                            <Typography variant="caption" color="text.secondary">
+                              {prop.freelancer_email}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Stack>
+                    </ButtonBase>
                   </TableCell>
 
                   <TableCell>{prop.project_title || prop.job_title || `Project #${prop.project_id}`}</TableCell>
@@ -286,14 +411,29 @@ export default function JobProposals() {
                   </TableCell>
 
                   <TableCell>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      disabled={isHired}
-                      onClick={() => handleHireClick(prop)}
-                    >
-                      {isHired ? "Contract Created" : "Hire Freelancer"}
-                    </Button>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                      <Button
+                        variant={isConsidering ? "contained" : "outlined"}
+                        color="secondary"
+                        size="small"
+                        disabled={isHired || isConsidering || statusUpdateId === prop.id}
+                        onClick={() => handleConsiderClick(prop)}
+                      >
+                        {isConsidering
+                          ? "Considering"
+                          : statusUpdateId === prop.id
+                            ? "Updating..."
+                            : "Mark Considering"}
+                      </Button>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        disabled={isHired}
+                        onClick={() => handleHireClick(prop)}
+                      >
+                        {isHired ? "Contract Created" : "Hire Freelancer"}
+                      </Button>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               );
@@ -310,6 +450,12 @@ export default function JobProposals() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {statusUpdateError && (
+        <Typography color="error" sx={{ mt: 2 }}>
+          {statusUpdateError}
+        </Typography>
+      )}
 
       <Paper sx={{ mt: 4, p: 3 }}>
         <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
@@ -339,6 +485,13 @@ export default function JobProposals() {
                   Proposed Timeline
                 </Typography>
                 <Typography>{detailProposal.completion_time || "Not specified"}</Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Status
+                </Typography>
+                <Typography>{formatProposalStatusLabel(detailProposal.status)}</Typography>
               </Box>
 
               <Box>
@@ -395,6 +548,16 @@ export default function JobProposals() {
         onClose={() => setIsContractModalOpen(false)}
         proposal={contractProposal}
         onSuccess={handleContractSuccess}
+      />
+
+      <FreelancerProfileModal
+        open={isProfileModalOpen}
+        onClose={handleCloseProfileModal}
+        profile={selectedFreelancerProfile}
+        loading={profileModalLoading}
+        error={profileModalError}
+        fallbackName={profileFallback.name}
+        fallbackEmail={profileFallback.email}
       />
     </Box>
   );

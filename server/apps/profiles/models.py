@@ -12,7 +12,7 @@ class FreelancerProfile(models.Model):
     profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
     skills = models.TextField(help_text="Comma separated skills", blank=True)
     portfolio = models.TextField(help_text="Link to portfolio or description", blank=True)
-    works = models.TextField(help_text="Previous works description", blank=True)
+    works = models.TextField(help_text="Work Experience description", blank=True)
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -36,7 +36,7 @@ class ClientProfile(models.Model):
     # New Fields
     projects = models.TextField(help_text="Current or past projects", blank=True)
     skills = models.TextField(help_text="Skills required by freelancer", blank=True)
-    works = models.TextField(help_text="Previous works or portfolio", blank=True)
+    works = models.TextField(help_text="Work Experience or portfolio", blank=True)
     
     profile_image = models.ImageField(upload_to='client_profiles/', null=True, blank=True)
     

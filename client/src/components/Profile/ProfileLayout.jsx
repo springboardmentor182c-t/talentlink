@@ -33,10 +33,10 @@ export default function ProfileLayout({ children, title = 'Profile', basePath = 
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <aside className="lg:col-span-1 bg-white rounded-lg p-6 shadow">
+    <div className="min-h-screen bg-gray-50 py-3">
+      <div className="w-full px-3 sm:px-4 lg:px-5">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <aside className="w-full lg:w-64 bg-white rounded-lg p-5 shadow">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
                 {profile?.first_name?.[0] || 'U'}{profile?.last_name?.[0] || ''}
@@ -70,8 +70,8 @@ export default function ProfileLayout({ children, title = 'Profile', basePath = 
             </div>
           </aside>
 
-          <main className="lg:col-span-3">
-            <div className="bg-white rounded-lg p-6 shadow">
+          <main className="flex-1 min-w-0">
+            <div className="bg-white rounded-lg p-5 shadow">
               <h2 className="text-2xl font-bold">{title}</h2>
               <div className="mt-4">{children}</div>
             </div>

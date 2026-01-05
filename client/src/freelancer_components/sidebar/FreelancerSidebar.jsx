@@ -10,13 +10,12 @@ import {
   ListItemText,
   Box,
   Typography,
-  Avatar,
   Badge,
   Button
 } from "@mui/material";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useNavigate, useLocation } from "react-router-dom"; 
+import { performLogout } from "../../utils/logout";
 
 // Icons
 import DashboardIcon from "@mui/icons-material/DashboardRounded";
@@ -30,6 +29,7 @@ import PeopleIcon from "@mui/icons-material/PeopleRounded";
 import AssessmentIcon from "@mui/icons-material/AssessmentRounded";
 import SettingsIcon from "@mui/icons-material/SettingsRounded";
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline'; 
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 
 const menuItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/freelancer" },
@@ -38,6 +38,7 @@ const menuItems = [
   { text: "Projects", icon: <WorkIcon />, path: "/freelancer/projects" }, 
   { text: "Proposals", icon: <DriveFileRenameOutlineIcon />, path: "/freelancer/proposals" }, 
   { text: "Work Inquiry", icon: <MailIcon />, path: "/freelancer/inquiry" },
+  { text: "Messages", icon: <ChatBubbleOutlineIcon />, path: "/freelancer/messages" },
   { text: "Contracts", icon: <DescriptionIcon />, path: "/freelancer/contracts" },
   { text: "Calendar", icon: <CalendarMonthIcon />, path: "/freelancer/calendar" },
   { text: "Clients", icon: <PeopleIcon />, path: "/freelancer/clients" },
@@ -54,7 +55,8 @@ export default function FreelancerSidebar({ width = 260, open = true }) {
   const activeText = "#ffffff"; 
   const inactiveText = "#94a3b8"; 
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await performLogout();
     navigate('/login');
   };
 

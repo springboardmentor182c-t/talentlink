@@ -4,9 +4,9 @@ import AddIcon from "@mui/icons-material/Add";
 import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
 
 const expenses = [
-  { id: 1, item: "Adobe Creative Cloud", date: "Nov 28, 2025", category: "Software", amount: "$54.99" },
-  { id: 2, item: "Hosting Renewal", date: "Nov 15, 2025", category: "Infrastructure", amount: "$120.00" },
-  { id: 3, item: "Upwork Fees", date: "Nov 10, 2025", category: "Platform Fee", amount: "$45.00" },
+  { id: 1, item: "Adobe Creative Cloud", date: "Nov 28, 2025", category: "Software", amount: "₹54.99" },
+  { id: 2, item: "Hosting Renewal", date: "Nov 15, 2025", category: "Infrastructure", amount: "₹120.00" },
+  { id: 3, item: "Upwork Fees", date: "Nov 10, 2025", category: "Platform Fee", amount: "₹45.00" },
 ];
 
 export default function Expenses() {

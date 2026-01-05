@@ -3,8 +3,6 @@ import axiosInstance from "../../utils/axiosInstance";
 import "../../App.css";
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
-// Add DollarSign, Clock, MapPin for posted projects cards
-// Removed duplicate import of DollarSign, Clock, MapPin
 import {
   Briefcase,
   Clock,

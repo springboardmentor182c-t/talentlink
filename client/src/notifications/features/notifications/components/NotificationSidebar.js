@@ -91,7 +91,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NotificationItem from "./NotificationItem";
-import { getNotificationsMock } from "../services/notificationService"; 
+import { getNotifications, markRead } from "../services/notificationService";
 import "./NotificationSidebar.css";
 import "./NotificationItem.css"; 
 
@@ -105,9 +105,10 @@ export default function NotificationSidebar({ isOpen, onClose }) {
     if (isOpen) {
       async function load() {
         try {
-          const data = await getNotificationsMock();
-          // Show only first 6 items in the sidebar
-          setItems(data.slice(0, 6)); 
+          const response = await getNotifications();
+          const payload = response.data?.results || response.data || [];
+          const mapped = payload.map(mapFromApi).slice(0, 6);
+          setItems(mapped);
         } catch (error) {
           console.error("Failed to load notifications", error);
         } finally {
@@ -118,10 +119,13 @@ export default function NotificationSidebar({ isOpen, onClose }) {
     }
   }, [isOpen]);
 
-  const handleToggleRead = (id) => {
-    setItems((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, read: !p.read } : p))
-    );
+  const handleToggleRead = async (id) => {
+    setItems((prev) => prev.map((p) => (p.id === id ? { ...p, read: true } : p)));
+    try {
+      await markRead(id);
+    } catch (error) {
+      console.error("Failed to mark read", error);
+    }
   };
 
   const handleViewAll = () => {
@@ -176,4 +180,31 @@ export default function NotificationSidebar({ isOpen, onClose }) {
       </div>
     </>
   );
+}
+
+function mapFromApi(item) {
+  const created = item.created_at ? new Date(item.created_at) : null;
+  const safeTitle = item.title || "Notification";
+  return {
+    id: item.id,
+    title: safeTitle,
+    message: item.body || "",
+    read: !!item.is_read,
+    category: item.is_starred ? "favourites" : "all",
+    time: created ? created.toLocaleTimeString() : "",
+    relative: created ? formatRelative(created) : "",
+    avatar: `https://ui-avatars.com/api/?background=3b82f6&color=fff&name=${encodeURIComponent(item.actor_name || safeTitle)}`,
+    raw: item,
+  };
+}
+
+function formatRelative(dateObj) {
+  const diffMs = Date.now() - dateObj.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
 }

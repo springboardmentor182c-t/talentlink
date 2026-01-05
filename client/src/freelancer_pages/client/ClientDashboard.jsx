@@ -82,7 +82,7 @@ const ClientDashboard = () => {
         <StatCard 
           icon={<Icons.Wallet />} 
           title="Total Spent" 
-          value="$12,450" 
+          value="₹12,450" 
           change="+15% vs last mo" 
           color="#3b82f6"
         />
@@ -132,10 +132,10 @@ const ClientDashboard = () => {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#94a3b8', fontSize:12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill:'#94a3b8', fontSize:12}} prefix="$" />
+                <YAxis axisLine={false} tickLine={false} tick={{fill:'#94a3b8', fontSize:12}} prefix="₹" />
                 <Tooltip 
                   contentStyle={{borderRadius:'8px', border:'none', boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}} 
-                  formatter={(value) => [`$${value}`, 'Spent']}
+                  formatter={(value) => [`₹${value}`, 'Spent']}
                 />
                 <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} fill="url(#colorVal)" />
               </AreaChart>

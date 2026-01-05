@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaHome, 
   FaBriefcase, 
-  FaFileInvoiceDollar, 
+  FaFileInvoice, 
   FaFileAlt, 
   FaEnvelope, 
   FaCog, 
@@ -18,13 +18,14 @@ import {
 // 1. IMPORT YOUR CSS TO GET THE .hide-scrollbar CLASS
 // Adjust the path "../../App.css" if your folder structure is different
 import '../../App.css'; 
+import { performLogout } from '../../utils/logout';
 
 const ClientSidebar = ({ isOpen = true, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    console.log("Logging out from sidebar...");
+  const handleLogout = async () => {
+    await performLogout();
     navigate('/login');
   };
 
@@ -69,7 +70,7 @@ const ClientSidebar = ({ isOpen = true, onToggle }) => {
 
         <NavItem 
           to="/client/financials" 
-          icon={<FaFileInvoiceDollar />} 
+          icon={<FaFileInvoice />} 
           label="Financials" 
           isActive={location.pathname === '/client/financials'} 
         />

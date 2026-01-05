@@ -53,12 +53,12 @@ export default function ApplyJobModal({ open, onClose, project }) {
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         
-        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-           Client Budget: ${project?.budget}
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            Client Budget: ₹{project?.budget}
         </Typography>
 
         <TextField
-          label="Bid Amount ($)"
+          label="Bid Amount (₹)"
           type="number"
           fullWidth
           value={bidAmount}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../../context/UserContext';
 import profileService from '../../services/profileService';
+import { performLogout } from '../../utils/logout';
 import {
   FaBell, FaChevronDown, FaUser, FaCog, FaSignOutAlt,
   FaSearch,
@@ -59,8 +60,9 @@ const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true
   }, [user.name, user.avatar]); // Re-run if global user changes (e.g. after edit)
 
   // --- Handlers ---
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsMenuOpen(false);
+    await performLogout();
     navigate('/login');
   };
 

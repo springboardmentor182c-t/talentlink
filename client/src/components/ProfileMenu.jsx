@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ChevronDown, User, Settings, LogOut, Briefcase } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import profileService from '../services/profileService.js';
+import { resolveProfileImage } from '../utils/profileImage';
 
 const ProfileMenu = ({ isOpen, setIsOpen, menuRef, buttonRef }) => {
   const [profile, setProfile] = useState(null);
@@ -42,6 +43,8 @@ const ProfileMenu = ({ isOpen, setIsOpen, menuRef, buttonRef }) => {
 
   const role = user?.role;
 
+  const avatarSrc = resolveProfileImage(profile?.profile_image);
+
   return (
     <div className="relative">
       <button
@@ -49,9 +52,9 @@ const ProfileMenu = ({ isOpen, setIsOpen, menuRef, buttonRef }) => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors"
       >
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${profile?.profile_image ? '' : 'bg-indigo-600'}`}>
-          {profile?.profile_image ? (
-            <img src={profile.profile_image.startsWith('http') ? profile.profile_image : `${process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000'}${profile.profile_image}`} alt={name} className="w-8 h-8 rounded-full object-cover" />
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${avatarSrc ? '' : 'bg-indigo-600'}`}>
+          {avatarSrc ? (
+            <img src={avatarSrc} alt={name} className="w-8 h-8 rounded-full object-cover" />
           ) : (
             <span className="text-white text-sm font-medium">{initials}</span>
           )}

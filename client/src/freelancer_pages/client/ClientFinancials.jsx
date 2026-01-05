@@ -9,10 +9,10 @@ const Icons = {
 };
 
 const transactions = [
-  { id: 'INV-001', date: 'Nov 29, 2025', description: 'Milestone 1: UI Design', freelancer: 'Sarah Smith', amount: '$1,200.00', status: 'Paid' },
-  { id: 'INV-002', date: 'Nov 25, 2025', description: 'Server Setup Fee', freelancer: 'Mike Johnson', amount: '$450.00', status: 'Pending' },
-  { id: 'INV-003', date: 'Nov 15, 2025', description: 'Logo Design Bundle', freelancer: 'DesignCo', amount: '$800.00', status: 'Paid' },
-  { id: 'INV-004', date: 'Nov 01, 2025', description: 'Consultation Hour', freelancer: 'Alex Brown', amount: '$150.00', status: 'Paid' },
+  { id: 'INV-001', date: 'Nov 29, 2025', description: 'Milestone 1: UI Design', freelancer: 'Sarah Smith', amount: '₹1,200.00', status: 'Paid' },
+  { id: 'INV-002', date: 'Nov 25, 2025', description: 'Server Setup Fee', freelancer: 'Mike Johnson', amount: '₹450.00', status: 'Pending' },
+  { id: 'INV-003', date: 'Nov 15, 2025', description: 'Logo Design Bundle', freelancer: 'DesignCo', amount: '₹800.00', status: 'Paid' },
+  { id: 'INV-004', date: 'Nov 01, 2025', description: 'Consultation Hour', freelancer: 'Alex Brown', amount: '₹150.00', status: 'Paid' },
 ];
 
 const ClientFinancials = () => {
@@ -22,9 +22,9 @@ const ClientFinancials = () => {
       
       {/* Summary Cards */}
       <div style={styles.statsGrid}>
-        <StatCard title="Total Spent" amount="$12,450.00" icon={<Icons.Wallet />} color="#3b82f6" />
-        <StatCard title="Pending Invoices" amount="$450.00" icon={<Icons.Invoice />} color="#f59e0b" />
-        <StatCard title="Last Payment" amount="$1,200.00" sub="Paid to Sarah Smith" icon={<Icons.ArrowUp />} color="#10b981" />
+        <StatCard title="Total Spent" amount="₹12,450.00" icon={<Icons.Wallet />} color="#3b82f6" />
+        <StatCard title="Pending Invoices" amount="₹450.00" icon={<Icons.Invoice />} color="#f59e0b" />
+        <StatCard title="Last Payment" amount="₹1,200.00" sub="Paid to Sarah Smith" icon={<Icons.ArrowUp />} color="#10b981" />
       </div>
 
       {/* Transactions Table */}

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import {
   AppBar, Toolbar, Box, Avatar, IconButton, Typography, InputBase, Badge,
-  Menu, MenuItem, ListItemIcon, Divider, Stack, Fade
+  Menu, MenuItem, ListItemIcon, Divider, Fade
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
@@ -16,6 +16,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import profileService from "../../services/profileService";
+import { performLogout } from "../../utils/logout";
 
 export default function FreelancerNavbar({
   onNotificationClick,
@@ -72,8 +73,9 @@ export default function FreelancerNavbar({
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleMenuClose();
+    await performLogout();
     navigate("/signup");
   };
 

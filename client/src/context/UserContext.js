@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axiosInstance from "../utils/axiosInstance";
+import { resolveProfileImage } from "../utils/profileImage";
 
 const UserContext = createContext();
 
@@ -50,12 +51,8 @@ export const UserProvider = ({ children }) => {
         const roleFromProfile = profile.role || storedRole || "User";
 
         // Handle Avatar
-        let avatarUrl = "https://i.pravatar.cc/150?img=3";
-        if (profile.profile_image) {
-          avatarUrl = profile.profile_image.startsWith('http')
-            ? profile.profile_image
-            : `${process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000'}${profile.profile_image}`;
-        }
+        const resolvedAvatar = resolveProfileImage(profile.profile_image);
+        const avatarUrl = resolvedAvatar || "https://i.pravatar.cc/150?img=3";
 
         setUser((prev) => ({
           ...prev,

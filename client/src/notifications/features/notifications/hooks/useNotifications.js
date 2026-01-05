@@ -11,7 +11,8 @@ export default function useNotifications() {
     async function fetchData() {
       try {
         const response = await getNotifications();
-        setNotifications(response.data);
+        const payload = response.data?.results || response.data || [];
+        setNotifications(payload);
       } catch (error) {
         console.error("Error fetching notifications:", error);
       } finally {

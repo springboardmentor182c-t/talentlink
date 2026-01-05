@@ -16,6 +16,11 @@ export const contractService = {
         const response = await axiosInstance.get('/contracts/');
         return response.data;
     },
+
+    updateContract: async (contractId, data) => {
+        const response = await axiosInstance.patch(`/contracts/${contractId}/update/`, data);
+        return response.data;
+    },
     
     // If you have updateMilestone, fix that too:
     updateMilestone: async (contractId, milestoneId, status) => {

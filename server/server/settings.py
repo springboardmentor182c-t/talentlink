@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # ... django apps
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
 
     'apps.users.apps.UsersConfig',
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     'apps.projects',
     'apps.contracts.apps.ContractsConfig',
     'apps.proposals.apps.ProposalsConfig',
+    'apps.notifications',
 
     
 

@@ -79,6 +79,20 @@ export const profileService = {
       }
     },
 
+    getProfileByUserId: async (userId) => {
+      if (!userId) return null;
+      try {
+        const response = await axiosInstance.get('profiles/', {
+          params: { user_id: userId }
+        });
+        const data = response.data;
+        return Array.isArray(data) ? data[0] || null : data;
+      } catch (error) {
+        console.error('Error fetching freelancer profile by user:', error);
+        throw error;
+      }
+    },
+
     listProfiles: async (params = {}) => {
       try {
         const response = await noAuthApi.get('profiles/', { params });
@@ -168,6 +182,19 @@ export const profileService = {
         return response.data;
       } catch (error) {
         console.error('Error fetching client profile:', error);
+        throw error;
+      }
+    },
+    getProfileByUserId: async (userId) => {
+      if (!userId) return null;
+      try {
+        const response = await axiosInstance.get('profiles/client-profile/', {
+          params: { user_id: userId }
+        });
+        const data = response.data;
+        return Array.isArray(data) ? data[0] || null : data;
+      } catch (error) {
+        console.error('Error fetching client profile by user:', error);
         throw error;
       }
     },
