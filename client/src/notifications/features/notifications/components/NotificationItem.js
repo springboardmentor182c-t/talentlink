@@ -103,10 +103,10 @@ import "./NotificationItem.css";
 
 export default function NotificationItem({
   item,
-  onToggleRead,
-  onAvatarClick,
-  onDelete,
-  onToggleFavourite, // New prop
+  onToggleRead = () => {},
+  onAvatarClick = () => {},
+  onDelete = () => {},
+  onToggleFavourite = () => {}, // New prop with safe default
 }) {
   return (
     <div className={`notif-row ${item.read ? "read" : "unread"}`}>

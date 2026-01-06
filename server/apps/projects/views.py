@@ -8,6 +8,7 @@ from django.db.models import Q
 from .models import Project, Skill
 from apps.proposals.models import ProjectProposal
 from .serializers import ProjectSerializer, SkillSerializer, ProposalSerializer
+from django.contrib.auth import get_user_model
 
 
 # =========================
@@ -77,11 +78,31 @@ class ProjectViewSet(viewsets.ModelViewSet):
         - freelancer MUST be NULL
         - status MUST be Open
         """
-        serializer.save(
+        project = serializer.save(
             client=self.request.user,
             freelancer=None,
             status="Open"
         )
+
+        # Notify all freelancers when a project is posted
+        try:
+            from apps.notifications.models import create_notification_bulk
+
+            freelancers = get_user_model().objects.filter(role="freelancer")
+            if freelancers.exists():
+                create_notification_bulk(
+                    users=freelancers,
+                    verb="project_posted",
+                    title="New project posted",
+                    body=project.title,
+                    actor=self.request.user,
+                    target_type="project",
+                    target_id=project.id,
+                    metadata={"project_id": project.id},
+                )
+        except Exception:
+            # Keep project creation resilient even if notifications fail
+            pass
 
 
 # =========================

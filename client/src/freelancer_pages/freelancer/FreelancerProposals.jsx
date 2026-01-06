@@ -78,7 +78,7 @@ export default function FreelancerProposals() {
                       <TableCell>{formatDate(row.created_at)}</TableCell>
                       
                       <TableCell sx={{ color: "green", fontWeight: "bold" }}>
-                        ${row.bid_amount}
+                        ₹{row.bid_amount}
                       </TableCell>
                       
                       <TableCell>

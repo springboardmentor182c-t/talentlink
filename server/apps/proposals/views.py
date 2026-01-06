@@ -33,13 +33,8 @@ class ProposalViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(project_id=pid)
         # If user is authenticated, filter by freelancer or client
         if user and user.is_authenticated:
-            # Safely resolve related profiles (avoid RelatedObjectDoesNotExist)
-            try:
-                freelancer_profile = getattr(user, "freelancer_profile", None)
-            except Exception:
-                freelancer_profile = None
-
-            if freelancer_profile is not None:
+            role = (getattr(user, "role", "") or "").lower()
+            if role == "freelancer":
                 queryset = queryset.filter(freelancer=user)
             else:
                 # Treat as client: show proposals for projects posted by this user
@@ -167,6 +162,24 @@ class ProposalCreateView(generics.CreateAPIView):
                 "freelancer_email": freelancer.email,
             })
             self.response_data = response_data
+
+            # Notify the client when a proposal is submitted
+            try:
+                if client:
+                    from apps.notifications.models import create_notification
+
+                    create_notification(
+                        user=client,
+                        actor=freelancer,
+                        verb="proposal_submitted",
+                        title="New proposal received",
+                        body=f"{project.title if project else 'A project'} has a new proposal.",
+                        target_type="project",
+                        target_id=project.id if project else project_id,
+                        metadata={"project_id": project.id if project else project_id},
+                    )
+            except Exception:
+                pass
 
         except Exception as e:
             print("Error creating proposal:", e)

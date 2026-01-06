@@ -24,7 +24,7 @@ export default function CreateContractModal({ open, onClose, proposal, onSuccess
   useEffect(() => {
     if (proposal) {
       setForm({
-        title: `Contract for ${proposal.job_title}`,
+        title: `${proposal.job_title || 'Project'} - Contract ${proposal.id ?? ''}`,
         start_date: new Date().toISOString().split("T")[0],
         terms: proposal.cover_letter || "",
       });
@@ -69,7 +69,7 @@ export default function CreateContractModal({ open, onClose, proposal, onSuccess
         </Typography>
 
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Agreed Amount: <strong>${proposal?.bid_amount}</strong>
+          Agreed Amount: <strong>₹{proposal?.bid_amount}</strong>
         </Typography>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>

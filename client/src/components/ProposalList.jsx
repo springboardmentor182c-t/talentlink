@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../utils/axiosInstance";
+import profileService from "../services/profileService";
+import { profileImageOrFallback } from "../utils/profileImage";
 
 export default function ProposalList({ projectId, refresh }) {
   const [proposals, setProposals] = useState([]);
@@ -14,31 +16,45 @@ export default function ProposalList({ projectId, refresh }) {
       setLoading(true);
       setError(null);
       try {
-        console.log("Fetching proposals for projectId:", projectId);
         const response = await api.get("/proposals/", {
           params: {
             project_id: projectId,
           },
         });
-        console.log("Full response:", response);
-        console.log("Response data:", response.data);
-        console.log("Response data type:", typeof response.data);
-        console.log("Is array?", Array.isArray(response.data));
-        console.log("Has results?", response.data.results);
-        console.log("Keys in response.data:", Object.keys(response.data));
         const data = Array.isArray(response.data) ? response.data : (response.data.results || []);
-        console.log("Processed data:", data);
-        console.log("Processed data length:", data.length);
-        setProposals(data);
+        const enriched = await attachFreelancerProfiles(data);
+        setProposals(enriched);
       } catch (err) {
         console.error("Error fetching proposals:", err);
         setError("Failed to fetch proposals");
+        setProposals([]);
       } finally {
         setLoading(false);
       }
     };
     fetchProposals();
   }, [projectId, refresh]);
+
+  const attachFreelancerProfiles = async (items) => {
+    const ids = [...new Set(items.map((proposal) => proposal?.freelancer?.id).filter(Boolean))];
+    if (!ids.length) return items;
+    const profileMap = new Map();
+    await Promise.all(
+      ids.map(async (userId) => {
+        try {
+          const profile = await profileService.freelancer.getProfileByUserId(userId);
+          profileMap.set(userId, profile || null);
+        } catch (err) {
+          console.error(`Unable to load freelancer profile ${userId}`, err);
+          profileMap.set(userId, null);
+        }
+      })
+    );
+    return items.map((proposal) => ({
+      ...proposal,
+      freelancer_profile: proposal?.freelancer?.id ? profileMap.get(proposal.freelancer.id) : null,
+    }));
+  };
 
 
 
@@ -75,9 +91,26 @@ export default function ProposalList({ projectId, refresh }) {
               return "N/A";
             })();
 
+            const avatarSrc = profileImageOrFallback(
+              p?.freelancer_profile?.profile_image,
+              freelancerLabel
+            );
+
             return (
               <tr key={p.id}>
-                <td className="border p-2">{freelancerLabel}</td>
+                <td className="border p-2">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={avatarSrc}
+                      alt={freelancerLabel}
+                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">{freelancerLabel}</div>
+                      <div className="text-xs text-gray-500">{p.freelancer_email || p?.freelancer?.email || "Email not shared"}</div>
+                    </div>
+                  </div>
+                </td>
                 <td className="border p-2">₹{p.bid_amount}</td>
                 <td className="border p-2">{p.completion_time || "N/A"}</td>
                 <td className="border p-2">{p.status}</td>

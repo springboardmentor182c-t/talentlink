@@ -36,6 +36,8 @@ urlpatterns = [
 
     path('api/proposals/', include('apps.proposals.urls')),
 
+    path('api/notifications/', include('apps.notifications.urls')),
+
 
 ]
 

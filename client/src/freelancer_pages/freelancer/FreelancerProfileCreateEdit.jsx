@@ -126,7 +126,7 @@ const FreelancerProfileCreateEdit = () => {
       title={form.id ? 'Edit Profile' : 'Create Profile'}
       basePath="/freelancer/profile"
     >
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full">
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
             {error}
@@ -263,7 +263,7 @@ const FreelancerProfileCreateEdit = () => {
             </div>
 
             <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700">Hourly Rate ($)</label>
+              <label className="block text-sm font-medium text-gray-700">Hourly Rate (₹)</label>
               <input
                 type="number"
                 value={form.hourly_rate}

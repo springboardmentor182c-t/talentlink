@@ -4,6 +4,7 @@ import ProfileLayout from '../../components/Profile/ProfileLayout.jsx';
 import ProfileCompletenessBar from '../../components/ProfileCompletenessBar.jsx';
 import profileService from '../../services/profileService.js';
 import { MessageCircle, Briefcase, Edit, Trash2, Download } from 'lucide-react';
+import { resolveProfileImage } from '../../utils/profileImage';
 
 const FreelancerProfileView = () => {
   const navigate = useNavigate();
@@ -72,17 +73,17 @@ const FreelancerProfileView = () => {
     );
   }
 
-  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
+  const avatarSrc = resolveProfileImage(profile?.profile_image);
 
   return (
     <ProfileLayout title="Profile" basePath="/freelancer/profile">
-      <div className="space-y-6 max-w-6xl mx-auto py-8">
+      <div className="space-y-6 w-full py-6">
         {/* Profile Header */}
         <div className="flex flex-col md:flex-row items-start gap-6 bg-gradient-to-r from-indigo-100 to-blue-100 rounded-xl p-6 md:p-8">
           <div className="flex-shrink-0">
-            {profile.profile_image ? (
+            {avatarSrc ? (
               <img
-                src={profile.profile_image.startsWith('http') ? profile.profile_image : `${apiBaseUrl}${profile.profile_image}`}
+                src={avatarSrc}
                 alt={`${profile.first_name} ${profile.last_name}`}
                 className="w-32 h-32 rounded-full object-cover border-4 border-white"
               />
@@ -102,7 +103,7 @@ const FreelancerProfileView = () => {
             )}
             <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-600">
               {profile.location && <span>📍 {profile.location}</span>}
-              {profile.hourly_rate && <span>💰 ${profile.hourly_rate}/hr</span>}
+              {profile.hourly_rate && <span>💰 ₹{profile.hourly_rate}/hr</span>}
               {profile.availability && <span className="text-green-600">✓ Available</span>}
             </div>
 

@@ -70,6 +70,22 @@ class ContractCreate(APIView):
             status="active"
         )
 
+        try:
+            from apps.notifications.models import create_notification
+
+            create_notification(
+                user=proposal.freelancer,
+                actor=request.user,
+                verb="contract_created",
+                title="New contract created",
+                body=contract.title,
+                target_type="contract",
+                target_id=contract.id,
+                metadata={"contract_id": contract.id, "proposal_id": proposal.id},
+            )
+        except Exception:
+            pass
+
         return Response(
             ContractSerializer(contract).data,
             status=status.HTTP_201_CREATED
@@ -106,3 +122,21 @@ class ContractUpdate(generics.UpdateAPIView):
     serializer_class = ContractSerializer
     permission_classes = [IsAuthenticated, IsContractParty]
     http_method_names = ["patch"]
+
+    def perform_update(self, serializer):
+        contract = serializer.save()
+        try:
+            from apps.notifications.models import create_notification
+
+            create_notification(
+                user=contract.freelancer,
+                actor=self.request.user,
+                verb="contract_updated",
+                title="Contract updated",
+                body=contract.title,
+                target_type="contract",
+                target_id=contract.id,
+                metadata={"contract_id": contract.id},
+            )
+        except Exception:
+            pass

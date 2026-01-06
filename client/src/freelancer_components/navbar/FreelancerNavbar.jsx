@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from "react";
 import { 
   AppBar, Toolbar, Box, Avatar, IconButton, Typography, InputBase, Badge, 
@@ -21,12 +18,19 @@ import Brightness4Icon from '@mui/icons-material/Brightness4'; // Moon
 import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
 
 import { useNavigate } from "react-router-dom";
-import { useUser } from "../../context/UserContext"; 
+import { useUser } from "../../context/UserContext";
+import profileService from "../../services/profileService";
+import { performLogout } from "../../utils/logout";
 import { useTheme } from "../../context/ThemeContext";
 
 export default function FreelancerNavbar({
   onNotificationClick,
   onSidebarToggle,
+  // Notification action handlers (may be passed from parent)
+  onDelete,
+  onToggleFavourite,
+  // Notifications list
+  notifications = [],
   sidebarOpen = true,
   sidebarWidth = 240, // Match Layout width
 }) {
@@ -46,7 +50,13 @@ export default function FreelancerNavbar({
   
   // --- SEPARATE PROFILE STATE (Presentation Hack) ---
   const [freelancerName, setFreelancerName] = useState(user?.name || "Freelancer Name");
-  const [freelancerAvatar, setFreelancerAvatar] = useState(user?.avatar || "");
+  const [freelancerAvatar, setFreelancerAvatar] = useState(() => {
+    try {
+      return localStorage.getItem("freelancer_avatar") || "";
+    } catch (e) {
+      return "";
+    }
+  });
   const [tempName, setTempName] = useState("");
   const [tempFile, setTempFile] = useState(null);
   const [preview, setPreview] = useState("");
@@ -64,10 +74,10 @@ export default function FreelancerNavbar({
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleMenuClose();
-    if (logout) logout();
-    navigate("/signup"); 
+    await performLogout();
+    navigate("/signup");
   };
 
   const handleEditProfile = () => {
@@ -94,9 +104,18 @@ export default function FreelancerNavbar({
     // 2. Save to separate LocalStorage keys
     localStorage.setItem("freelancer_name", tempName);
     localStorage.setItem("freelancer_avatar", preview);
+    // Mark that a user-uploaded avatar exists. Navbars will use initials until this flag is set.
+    localStorage.setItem("avatar_uploaded", "1");
 
     setOpenModal(false);
   };
+
+  function getInitials(name) {
+    if (!name) return "U";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
 
   if (!user) return null; 
 
@@ -172,18 +191,23 @@ export default function FreelancerNavbar({
             </IconButton>
 
             {/* Notifications Trigger */}
-            <IconButton 
-              onClick={onNotificationClick} 
-              sx={{ 
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: 'background.paper'
-              }}
-            >
-              <Badge badgeContent={2} color="error" variant="dot">
-                <NotificationsNoneIcon sx={{ color: 'text.secondary' }} />
-              </Badge>
-            </IconButton>
+            {(() => {
+              const unread = (notifications || []).filter(n => !(n.read === true || n.is_read === true)).length;
+              return (
+                <IconButton
+                  onClick={onNotificationClick}
+                  sx={{ border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}
+                >
+                  {unread > 0 ? (
+                    <Badge badgeContent={unread} color="error">
+                      <NotificationsNoneIcon sx={{ color: 'text.secondary' }} />
+                    </Badge>
+                  ) : (
+                    <NotificationsNoneIcon sx={{ color: 'text.secondary' }} />
+                  )}
+                </IconButton>
+              );
+            })()}
 
             {/* Profile Dropdown Trigger */}
             <Box 
@@ -196,14 +220,18 @@ export default function FreelancerNavbar({
               }}
             >
               {/* USE SEPARATE STATE HERE */}
-              <Avatar 
-                src={freelancerAvatar} 
-                sx={{ 
-                    width: 40, height: 40, 
-                    border: '2px solid white', 
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)' 
-                }} 
-              />
+              {(() => {
+                const avatarUploaded = !!localStorage.getItem("avatar_uploaded");
+                const src = avatarUploaded ? freelancerAvatar : null;
+                return (
+                  <Avatar
+                    src={src || undefined}
+                    sx={{ width: 40, height: 40, border: '2px solid white', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
+                  >
+                    {!src && getInitials(freelancerName)}
+                  </Avatar>
+                );
+              })()}
               <Box sx={{ display: { xs: "none", md: "block" } }}>
                 <Typography variant="subtitle2" sx={{ lineHeight: 1.2, fontWeight: 700 }}>
                   {freelancerName}

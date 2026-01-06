@@ -5,6 +5,9 @@ import { FaIndianRupeeSign } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
 import jobService from '../../services/jobService';
 import FreelancerLayout from '../../freelancer_layouts/FreelancerLayout';
+import profileService from '../../services/profileService';
+import ClientProfileModal from '../../components/Modals/ClientProfileModal';
+import { resolveProfileImage } from '../../utils/profileImage';
 
 const getLocationType = (location = '') => {
   const normalized = location.toLowerCase();
@@ -46,6 +49,12 @@ export default function FreelancerProjects() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
   const [jobs, setJobs] = useState([]);
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [clientModalLoading, setClientModalLoading] = useState(false);
+  const [clientModalError, setClientModalError] = useState('');
+  const [selectedClientProfile, setSelectedClientProfile] = useState(null);
+  const [clientProfileFallback, setClientProfileFallback] = useState({ name: '', email: '' });
+  const [clientProfiles, setClientProfiles] = useState({});
   // Removed unused loading and error states
 
   const fetchJobs = useCallback(async () => {
@@ -84,6 +93,52 @@ export default function FreelancerProjects() {
 
     return matchesSearch && matchesLocation && matchesStatus;
   });
+
+  const handleCloseClientModal = () => {
+    setIsClientModalOpen(false);
+    setClientModalLoading(false);
+    setClientModalError('');
+    setSelectedClientProfile(null);
+  };
+
+  const handleClientClick = async (job) => {
+    if (!job) return;
+
+    const fallbackName = job.client_name || 'Client';
+    setClientProfileFallback({ name: fallbackName, email: job.client_email || '' });
+    setSelectedClientProfile(null);
+    setClientModalError('');
+    setIsClientModalOpen(true);
+
+    const userId = job.client || job.client_id || job.client_user_id;
+    if (!userId) {
+      setClientModalError('Client account is unavailable.');
+      return;
+    }
+
+    const cacheKey = String(userId);
+    if (clientProfiles[cacheKey]) {
+      setSelectedClientProfile(clientProfiles[cacheKey]);
+      return;
+    }
+
+    setClientModalLoading(true);
+    try {
+      const profile = await profileService.client.getProfileByUserId(userId);
+      if (profile) {
+        setClientProfiles((prev) => ({ ...prev, [cacheKey]: profile }));
+        setSelectedClientProfile(profile);
+      } else {
+        setSelectedClientProfile(null);
+      }
+    } catch (error) {
+      console.error('Unable to load client profile', error);
+      setSelectedClientProfile(null);
+      setClientModalError(error.response?.data?.detail || 'Unable to load this profile.');
+    } finally {
+      setClientModalLoading(false);
+    }
+  };
 
   return (
     <FreelancerLayout>
@@ -147,6 +202,39 @@ export default function FreelancerProjects() {
             const maxBudget = job.max_budget ?? job.budget;
             const budgetLabel = formatBudgetLabel(minBudget, maxBudget);
             const badgeClass = STATUS_COLORS[job.status] || 'bg-gray-100 text-gray-700';
+            const cacheKey = job.client ? String(job.client) : null;
+            const cachedProfile = cacheKey ? clientProfiles[cacheKey] : null;
+            const clientDisplayName = (cachedProfile ? `${cachedProfile.first_name || ''} ${cachedProfile.last_name || ''}`.trim() : '')
+              || job.client_name
+              || 'Unknown';
+            const clientAvatarSrc = cachedProfile?.profile_image ? resolveProfileImage(cachedProfile.profile_image) : null;
+            const clientAvatarLetter = (clientDisplayName || 'C').charAt(0).toUpperCase();
+            const renderClientPreview = (className = '') => (
+              <button
+                type="button"
+                onClick={() => handleClientClick(job)}
+                className={`flex items-center gap-3 text-left focus:outline-none hover:opacity-90 ${className}`}
+              >
+                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold overflow-hidden">
+                  {clientAvatarSrc ? (
+                    <img src={clientAvatarSrc} alt={`${clientDisplayName} avatar`} className="w-full h-full object-cover" />
+                  ) : (
+                    clientAvatarLetter
+                  )}
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="font-semibold text-gray-800 truncate">{clientDisplayName}</span>
+                  {(cachedProfile?.company_name || cachedProfile?.location) && (
+                    <span className="text-xs text-gray-500">
+                      {cachedProfile?.company_name || cachedProfile?.location}
+                    </span>
+                  )}
+                  {!cachedProfile && (
+                    <span className="text-xs text-[#3b82f6]">View profile</span>
+                  )}
+                </div>
+              </button>
+            );
 
             return (
               <div key={job.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
@@ -169,14 +257,22 @@ export default function FreelancerProjects() {
                         <span>{job.duration || job.deadline || 'N/A'}</span>
                       </div>
                       <div className="flex items-center"><MapPin className="w-4 h-4 mr-1" /><span>{job.location || 'N/A'}</span></div>
-                      <div className="flex items-center"><User className="w-4 h-4 mr-1" /><span>Client: {job.client_name || 'Unknown'}</span></div>
+                      <div className="flex items-center gap-2 w-full">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600 font-medium">Client:</span>
+                        <div className="flex-1 min-w-0">
+                          {renderClientPreview('w-full justify-start')}
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="flex flex-col justify-between mt-4 lg:mt-0 lg:ml-6">
                     <div className="text-right mb-4">
                       <p className="text-sm text-gray-500">Posted by</p>
-                      <p className="font-semibold text-gray-800">{job.client_name || 'Unknown'}</p>
-                      <p className="text-xs text-gray-500 mt-1">{job.posted || ''}</p>
+                      <div className="flex justify-end mt-2">
+                        {renderClientPreview('justify-end')}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">{job.posted || ''}</p>
                     </div>
                     <button
                       onClick={() => setSelectedJob(job)}
@@ -289,6 +385,15 @@ export default function FreelancerProjects() {
           })()
         )}
       </div>
+      <ClientProfileModal
+        open={isClientModalOpen}
+        onClose={handleCloseClientModal}
+        profile={selectedClientProfile}
+        loading={clientModalLoading}
+        error={clientModalError}
+        fallbackName={clientProfileFallback.name}
+        fallbackEmail={clientProfileFallback.email}
+      />
     </FreelancerLayout>
   );
 }

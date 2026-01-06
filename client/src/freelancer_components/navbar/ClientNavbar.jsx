@@ -1,8 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../../context/UserContext';
-import { 
-  FaBell, FaChevronDown, FaUser, FaCog, FaSignOutAlt, 
+import profileService from '../../services/profileService';
+import { performLogout } from '../../utils/logout';
+import {
+  FaChevronDown, FaUser, FaCog, FaSignOutAlt,
   FaCloudUploadAlt, FaSearch,
   FaBars,
   FaChevronLeft
@@ -11,11 +13,12 @@ import { useNavigate } from 'react-router-dom';
 
 // 1. Import Theme Hooks & Icons
 import { useTheme as useAppTheme } from '../../context/ThemeContext'; // Renamed to avoid conflict with MUI
-import { useTheme as useMuiTheme, IconButton } from '@mui/material'; // Use MUI for dynamic colors
+import { useTheme as useMuiTheme, IconButton, Badge, Avatar } from '@mui/material'; // Use MUI for dynamic colors
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import Brightness4Icon from '@mui/icons-material/Brightness4'; // Moon
 import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
 
-const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true }) => {
+  const ClientNavbar = ({ onNotificationClick, onSidebarToggle, onDelete, onToggleFavourite, notifications = [], sidebarOpen = true }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -156,16 +159,41 @@ const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true
             {theme === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
           </IconButton>
 
-          <div style={styles.iconWrapper} onClick={onNotificationClick}>
-            <FaBell style={{ color: muiTheme.palette.text.secondary, fontSize: '18px' }} />
-            <span style={styles.dotBadge}></span> 
+          <div style={styles.iconWrapper}>
+            {(() => {
+              const unread = (notifications || []).filter(n => !(n.read === true || n.is_read === true)).length;
+              return (
+                <IconButton
+                  onClick={onNotificationClick}
+                  sx={{ border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}
+                >
+                  {unread > 0 ? (
+                    <Badge badgeContent={unread} color="error">
+                      <NotificationsNoneIcon sx={{ color: 'text.secondary' }} />
+                    </Badge>
+                  ) : (
+                    <NotificationsNoneIcon sx={{ color: 'text.secondary' }} />
+                  )}
+                </IconButton>
+              );
+            })()}
           </div>
 
           <div style={{ ...styles.separator, backgroundColor: muiTheme.palette.divider }}></div>
 
           <div style={styles.profileContainer}>
             <div style={styles.profileWrapper} onClick={toggleMenu}>
-              <img src={user.avatar || "https://via.placeholder.com/40"} alt="User" style={styles.avatar} />
+              {(() => {
+                const avatarUploaded = !!localStorage.getItem('avatar_uploaded');
+                const saved = localStorage.getItem('freelancer_avatar');
+                const src = avatarUploaded ? (saved || user.avatar) : null;
+                const initials = (user && user.name) ? user.name.split(/\s+/).map(p => p[0]).slice(0,2).join('').toUpperCase() : 'U';
+                return (
+                  <Avatar src={src || undefined} style={styles.avatar}>
+                    {!src && initials}
+                  </Avatar>
+                );
+              })()}
               <div style={styles.userInfo}>
                 <span style={{ ...styles.userName, color: muiTheme.palette.text.primary }}>{user.name}</span>
                 <span style={styles.userRole}>{user.role}</span>
@@ -189,7 +217,7 @@ const ClientNavbar = ({ onNotificationClick, onSidebarToggle, sidebarOpen = true
                   style={{...dynamicStyles.menuItem, color: '#ef4444'}}
                   onClick={handleLogout}
                 >
-                   <FaSignOutAlt style={{...styles.menuIcon, color: '#ef4444'}} /> Logout
+                <FaSignOutAlt style={{...styles.menuIcon, color: '#ef4444'}} /> Logout
                 </button>
               </div>
             )}

@@ -123,7 +123,7 @@ const ClientProfileCreateEdit = () => {
       title={form.id ? 'Edit Profile' : 'Create Profile'}
       basePath="/client/profile"
     >
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full">
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
             {error}

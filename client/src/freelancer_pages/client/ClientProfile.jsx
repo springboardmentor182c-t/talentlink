@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import profileService from '../../services/profileService';
-import { User, MapPin, Edit2, Mail, Building, Loader } from 'lucide-react';
+import { profileImageOrFallback } from '../../utils/profileImage';
+import { MapPin, Edit2, Mail, Building, Loader } from 'lucide-react';
 const ClientProfile = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -60,14 +61,14 @@ const ClientProfile = () => {
         );
     }
 
-    // Image Fallback
-    const profileImage = profile.profile_image
-        ? (profile.profile_image.startsWith('http') ? profile.profile_image : `${process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000'}${profile.profile_image}`)
-        : null;
+    const profileImage = profileImageOrFallback(
+        profile?.profile_image,
+        profile?.first_name || profile?.email || 'Client'
+    );
 
     return (
-        <div className="py-8 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto space-y-6">
+        <div className="min-h-screen bg-gray-50 py-4 px-3 sm:px-4 lg:px-6">
+            <div className="w-full space-y-6">
 
                 {/* Header / Basic Info */}
                 <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8 relative">
@@ -82,17 +83,11 @@ const ClientProfile = () => {
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                         <div className="relative">
                             <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100">
-                                {profileImage ? (
-                                    <img
-                                        src={profileImage}
-                                        alt="Profile"
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                        <User className="w-16 h-16" />
-                                    </div>
-                                )}
+                                <img
+                                    src={profileImage}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover"
+                                />
                             </div>
                         </div>
 
@@ -143,7 +138,7 @@ const ClientProfile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Projects */}
                     <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-3 text-indigo-600">Current/Past Projects</h2>
+                        <h2 className="text-lg font-semibold text-gray-900 mb-3 text-indigo-600">Top Projects</h2>
                         <div className="prose text-gray-600 text-sm">
                             {profile.projects ? (
                                 <p className="whitespace-pre-wrap">{profile.projects}</p>

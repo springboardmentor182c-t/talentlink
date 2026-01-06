@@ -1,4 +1,5 @@
 import axiosInstance from '../../../utils/axiosInstance';
+import { performLogout } from '../../../utils/logout';
 
 export const loginUser = async (email, password) => {
     try {
@@ -33,8 +34,4 @@ export const loginUser = async (email, password) => {
     }
 };
 
-export const logoutUser = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_email');
-};
+export const logoutUser = () => performLogout();

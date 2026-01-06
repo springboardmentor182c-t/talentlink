@@ -91,11 +91,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NotificationItem from "./NotificationItem";
-import { getNotificationsMock } from "../services/notificationService"; 
+import { getNotifications, markRead, deleteNotification } from "../services/notificationService";
 import "./NotificationSidebar.css";
 import "./NotificationItem.css"; 
 
-export default function NotificationSidebar({ isOpen, onClose }) {
+export default function NotificationSidebar({ isOpen, onClose, onItemsChange }) {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,9 +105,10 @@ export default function NotificationSidebar({ isOpen, onClose }) {
     if (isOpen) {
       async function load() {
         try {
-          const data = await getNotificationsMock();
-          // Show only first 6 items in the sidebar
-          setItems(data.slice(0, 6)); 
+          const response = await getNotifications();
+          const payload = response.data?.results || response.data || [];
+          const mapped = payload.map(mapFromApi).slice(0, 6);
+          setItems(mapped);
         } catch (error) {
           console.error("Failed to load notifications", error);
         } finally {
@@ -118,11 +119,73 @@ export default function NotificationSidebar({ isOpen, onClose }) {
     }
   }, [isOpen]);
 
-  const handleToggleRead = (id) => {
-    setItems((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, read: !p.read } : p))
-    );
+  const handleToggleRead = async (id) => {
+    let nextItems = [];
+    setItems((prev) => {
+      nextItems = prev.map((p) => (p.id === id ? { ...p, read: true } : p));
+      return nextItems;
+    });
+    if (onItemsChange) onItemsChange(nextItems);
+    try {
+      await markRead(id);
+    } catch (error) {
+      console.error("Failed to mark read", error);
+    }
   };
+
+  // Toggle favourite (star) for a notification
+  const handleToggleFavourite = async (id) => {
+    let nextStar = false;
+    let nextItems = [];
+    setItems((prev) => {
+      nextItems = prev.map((p) => {
+        if (p.id === id) {
+          nextStar = p.category !== "favourites";
+          return { ...p, category: nextStar ? "favourites" : "all" };
+        }
+        return p;
+      });
+      return nextItems;
+    });
+    if (onItemsChange) onItemsChange(nextItems);
+    try {
+      // lazy import the service to avoid circular deps
+      const { toggleStar } = await import("../services/notificationService");
+      await toggleStar(id, nextStar);
+    } catch (error) {
+      console.error("Failed to toggle favourite", error);
+      // revert on failure
+      setItems((prev) =>
+        prev.map((p) => {
+          if (p.id === id) {
+            return { ...p, category: nextStar ? "all" : "favourites" };
+          }
+          return p;
+        })
+      );
+      if (onItemsChange) {
+        setItems((prev) => {
+          if (Array.isArray(prev)) onItemsChange(prev);
+          return prev;
+        });
+      }
+    }
+  };
+
+  async function handleDelete(id) {
+    if (!window.confirm("Delete this notification?")) return;
+    let nextItems = [];
+    setItems((prev) => {
+      nextItems = prev.filter((p) => p.id !== id);
+      return nextItems;
+    });
+    if (onItemsChange) onItemsChange(nextItems);
+    try {
+      await deleteNotification(id);
+    } catch (error) {
+      console.error("Failed to delete notification", error);
+    }
+  }
 
   const handleViewAll = () => {
     onClose(); 
@@ -160,9 +223,11 @@ export default function NotificationSidebar({ isOpen, onClose }) {
                    onClose();
                    navigate(`/messages/${item.id}`);
                 }}
+                onToggleFavourite={handleToggleFavourite}
+                onDelete={handleDelete}
               />
             ))
-          ) : (
+            ) : (
             <p className="empty-text">No new notifications</p>
           )}
         </div>
@@ -176,4 +241,31 @@ export default function NotificationSidebar({ isOpen, onClose }) {
       </div>
     </>
   );
+}
+
+function mapFromApi(item) {
+  const created = item.created_at ? new Date(item.created_at) : null;
+  const safeTitle = item.title || "Notification";
+  return {
+    id: item.id,
+    title: safeTitle,
+    message: item.body || "",
+    read: !!item.is_read,
+    category: item.is_starred ? "favourites" : "all",
+    time: created ? created.toLocaleTimeString() : "",
+    relative: created ? formatRelative(created) : "",
+    avatar: `https://ui-avatars.com/api/?background=3b82f6&color=fff&name=${encodeURIComponent(item.actor_name || safeTitle)}`,
+    raw: item,
+  };
+}
+
+function formatRelative(dateObj) {
+  const diffMs = Date.now() - dateObj.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
 }

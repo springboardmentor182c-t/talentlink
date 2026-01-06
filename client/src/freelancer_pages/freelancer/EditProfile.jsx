@@ -79,8 +79,8 @@ const EditProfile = () => {
 
     return (
         <FreelancerLayout>
-            <div className="py-8 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6 sm:p-8">
+            <div className="min-h-screen bg-slate-50 py-3 px-3 sm:px-4 lg:px-5">
+                <div className="w-full bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-9">
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
                         <button
@@ -96,88 +96,95 @@ const EditProfile = () => {
                             {error}
                         </div>
                     )}
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        <div className="grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
+                            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center">
+                                <div className="relative w-36 h-36 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-100">
+                                    {previewImage ? (
+                                        <img src={previewImage} alt="Profile Preview" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                            <Upload className="w-10 h-10" />
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="mt-4 text-sm text-gray-500">
+                                    Upload a crisp headshot so clients can recognize you instantly in proposals and chats.
+                                </p>
+                                <label className="mt-4 w-full cursor-pointer bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Change Photo
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleImageChange}
+                                    />
+                                </label>
+                            </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Profile Image */}
-                        <div className="flex flex-col items-center space-y-4">
-                            <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-100">
-                                {previewImage ? (
-                                    <img src={previewImage} alt="Profile Preview" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                        <Upload className="w-10 h-10" />
+                            <div className="space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">First Name</label>
+                                        <input
+                                            type="text"
+                                            name="first_name"
+                                            value={formData.first_name}
+                                            onChange={handleChange}
+                                            className="mt-1 block w-full rounded-md border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                        />
                                     </div>
-                                )}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                                        <input
+                                            type="text"
+                                            name="last_name"
+                                            value={formData.last_name}
+                                            onChange={handleChange}
+                                            className="mt-1 block w-full rounded-md border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">Skills (comma separated)</label>
+                                        <input
+                                            type="text"
+                                            name="skills"
+                                            value={formData.skills}
+                                            onChange={handleChange}
+                                            placeholder="React, Python, Motion Graphics..."
+                                            className="mt-1 block w-full rounded-md border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Portfolio URL / Description</label>
+                                        <textarea
+                                            name="portfolio"
+                                            rows={3}
+                                            value={formData.portfolio}
+                                            onChange={handleChange}
+                                            placeholder="Link to your website, Behance, GitHub, or describe recent highlights."
+                                            className="mt-1 block w-full rounded-md border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Work Experience</label>
+                                        <textarea
+                                            name="works"
+                                            rows={3}
+                                            value={formData.works}
+                                            onChange={handleChange}
+                                            placeholder="Summarize impactful roles, clients, or outcomes."
+                                            className="mt-1 block w-full rounded-md border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border"
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <label className="cursor-pointer bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Change Photo
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={handleImageChange}
-                                />
-                            </label>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">First Name</label>
-                                <input
-                                    type="text"
-                                    name="first_name"
-                                    value={formData.first_name}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                                <input
-                                    type="text"
-                                    name="last_name"
-                                    value={formData.last_name}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Skills (comma separated)</label>
-                            <input
-                                type="text"
-                                name="skills"
-                                value={formData.skills}
-                                onChange={handleChange}
-                                placeholder="React, Python, Django..."
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Portfolio URL / Description</label>
-                            <textarea
-                                name="portfolio"
-                                rows={3}
-                                value={formData.portfolio}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Previous Works</label>
-                            <textarea
-                                name="works"
-                                rows={4}
-                                value={formData.works}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                            />
-                        </div>
-
-                        <div className="flex justify-end pt-4">
+                        <div className="flex justify-end pt-2">
                             <button
                                 type="button"
                                 onClick={() => navigate('/freelancer/profile')}

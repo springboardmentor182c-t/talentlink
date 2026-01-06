@@ -17,7 +17,7 @@ import { useUser } from "../../context/UserContext";
 
 // --- Mock Data: Stats ---
 const stats = [
-  { title: "This Month Revenue", value: "$13,596", icon: <AttachMoneyIcon />, change: "+1.2%", isPositive: true, bgColor: "#ecfdf5", iconColor: "#10b981" },
+  { title: "This Month Revenue", value: "₹13,596", icon: <AttachMoneyIcon />, change: "+1.2%", isPositive: true, bgColor: "#ecfdf5", iconColor: "#10b981" },
   { title: "Project Accepted", value: "+16", icon: <CheckCircleIcon />, change: "-2.4%", isPositive: false, bgColor: "#fefce8", iconColor: "#eab308" },
   { title: "Delivered On Time", value: "92.8%", icon: <LocalShippingIcon />, change: "+1.2%", isPositive: true, bgColor: "#eff6ff", iconColor: "#3b82f6" },
   { title: "Responsed On Time", value: "1h 00m", icon: <AccessTimeIcon />, change: "-0.8%", isPositive: false, bgColor: "#fef2f2", iconColor: "#ef4444" },
@@ -54,10 +54,10 @@ const latestClients = [
 ];
 
 const transactions = [
-  { id: "#INV-001", client: "Stark Tech", date: "Nov 28, 2025", amount: "$1,200", status: "Paid" },
-  { id: "#INV-002", client: "Global Mart", date: "Nov 25, 2025", amount: "$850", status: "Pending" },
-  { id: "#INV-003", client: "Nova Labs", date: "Nov 22, 2025", amount: "$2,300", status: "Paid" },
-  { id: "#INV-004", client: "Acme Corp", date: "Nov 20, 2025", amount: "$450", status: "Failed" },
+  { id: "#INV-001", client: "Stark Tech", date: "Nov 28, 2025", amount: "₹1,200", status: "Paid" },
+  { id: "#INV-002", client: "Global Mart", date: "Nov 25, 2025", amount: "₹850", status: "Pending" },
+  { id: "#INV-003", client: "Nova Labs", date: "Nov 22, 2025", amount: "₹2,300", status: "Paid" },
+  { id: "#INV-004", client: "Acme Corp", date: "Nov 20, 2025", amount: "₹450", status: "Failed" },
 ];
 
 export default function FreelancerDashboard() {

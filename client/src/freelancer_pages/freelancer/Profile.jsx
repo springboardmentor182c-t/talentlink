@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import profileService from '../../services/profileService';
-import { User, Briefcase, Link as LinkIcon, Edit2, MapPin, Mail, Loader } from 'lucide-react';
+import { User, Briefcase, Link as LinkIcon, Edit2, Mail, Loader } from 'lucide-react';
 import FreelancerLayout from '../../freelancer_layouts/FreelancerLayout';
+import { resolveProfileImage } from '../../utils/profileImage';
 
 const Profile = () => {
     const [profile, setProfile] = useState(null);
@@ -63,14 +64,12 @@ const Profile = () => {
     }
 
     // Fallback values
-    const profileImage = profile.profile_image
-        ? (profile.profile_image.startsWith('http') ? profile.profile_image : `${process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000'}${profile.profile_image}`)
-        : null;
+    const profileImage = resolveProfileImage(profile?.profile_image);
 
     return (
         <FreelancerLayout>
-            <div className="py-8 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-4xl mx-auto space-y-6">
+            <div className="min-h-screen bg-gray-50 py-3 px-3 sm:px-4 lg:px-5">
+                <div className="w-full space-y-6">
 
                     {/* Header / Basic Info */}
                     <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8 relative">
@@ -151,7 +150,7 @@ const Profile = () => {
                     <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8">
                         <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                             <Briefcase className="w-5 h-5 text-indigo-600" />
-                            Previous Works
+                            Work Experience
                         </h2>
                         <div className="prose text-gray-600">
                             {profile.works ? (

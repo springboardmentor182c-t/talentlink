@@ -31,6 +31,7 @@ import ClientSettings from "./freelancer_pages/client/ClientSettings";
 import ClientHelp from "./freelancer_pages/client/ClientHelp";
 import ClientProfile from "./freelancer_pages/client/ClientProfile";
 import EditClientProfile from "./freelancer_pages/client/EditClientProfile";
+import Freelancers from "./freelancer_pages/client/Freelancers";
 
 /* ===== Freelancer Dashboard Pages ===== */
 import FreelancerDashboard from "./freelancer_pages/freelancer/FreelancerDashboard";
@@ -40,13 +41,14 @@ import FreelancerProposals from "./freelancer_pages/freelancer/FreelancerProposa
 import Accounting from "./freelancer_pages/freelancer/Accounting";
 import Expenses from "./freelancer_pages/freelancer/Expenses";
 import Inquiry from "./freelancer_pages/freelancer/Inquiry";
-import Contracts from "./freelancer_pages/freelancer/Contracts";
+import Contracts from "./freelancer_pages/freelancer/FreelancerContracts";
 import CalendarPage from "./freelancer_pages/freelancer/CalendarPage";
 import Clients from "./freelancer_pages/freelancer/Clients";
 import Reports from "./freelancer_pages/freelancer/Reports";
-import Settings from "./freelancer_pages/freelancer/Settings";
+import Settings from "./freelancer_pages/freelancer/FreelancerSettings";
 import Profile from "./freelancer_pages/freelancer/Profile";
 import EditProfile from "./freelancer_pages/freelancer/EditProfile";
+import FreelancerMessages from "./freelancer_pages/freelancer/FreelancerMessages";
 
 /* ===== Notifications ===== */
 import NotificationHome from "./notifications/features/notifications/pages/NotificationsPage";
@@ -86,6 +88,7 @@ function App() {
                 <Route path="financials" element={<ClientFinancials />} />
                 <Route path="contracts" element={<ClientContracts />} />
                 <Route path="proposals" element={<JobProposals />} />
+                <Route path="freelancers" element={<Freelancers />} />
                 <Route path="documents" element={<ClientDocuments />} />
                 <Route path="messages" element={<ClientMessages />} />
                 <Route path="settings" element={<ClientSettings />} />
@@ -113,6 +116,7 @@ function App() {
               <Route path="/freelancer/clients" element={<Clients />} />
               <Route path="/freelancer/reports" element={<Reports />} />
               <Route path="/freelancer/settings" element={<Settings />} />
+              <Route path="/freelancer/messages" element={<FreelancerMessages />} />
               <Route path="/freelancer/profile" element={<Profile />} />
               <Route path="/freelancer/profile/edit" element={<EditProfile />} />
               {/* Dynamic route for project proposal */}
@@ -142,5 +146,4 @@ const phStyle = {
   fontWeight: 'bold',
   color: '#475569'
 };
-
 export default App;

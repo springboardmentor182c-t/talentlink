@@ -9,6 +9,11 @@ export const userService = {
         return response.data;
     },
 
+    // Auth: Logout
+    logout: async (refreshToken) => {
+        return axiosInstance.post('users/logout/', { refresh: refreshToken });
+    },
+
     // Auth: Register (Client)
     registerClient: async (userData) => {
         // Updated to use the correct generic endpoint

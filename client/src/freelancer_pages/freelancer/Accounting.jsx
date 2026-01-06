@@ -2,7 +2,7 @@ import React from "react";
 import { 
   Grid, Card, Typography, Box, Button, Chip, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
-  IconButton, Stack 
+  Stack 
 } from "@mui/material";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -20,10 +20,10 @@ import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
 
 // --- Mock Data: Financial Stats ---
 const stats = [
-  { label: "Total Income", value: "$45,200", change: "+12%", color: "#10b981", icon: <TrendingUpIcon /> },
-  { label: "Total Expenses", value: "$12,450", change: "-5%", color: "#ef4444", icon: <TrendingDownIcon /> },
-  { label: "Net Profit", value: "$32,750", change: "+8%", color: "#3b82f6", icon: <AccountBalanceWalletIcon /> },
-  { label: "Pending Invoices", value: "$4,200", change: "3 Inv", color: "#f59e0b", icon: <MoreVertIcon /> },
+  { label: "Total Income", value: "₹45,200", change: "+12%", color: "#10b981", icon: <TrendingUpIcon /> },
+  { label: "Total Expenses", value: "₹12,450", change: "-5%", color: "#ef4444", icon: <TrendingDownIcon /> },
+  { label: "Net Profit", value: "₹32,750", change: "+8%", color: "#3b82f6", icon: <AccountBalanceWalletIcon /> },
+  { label: "Pending Invoices", value: "₹4,200", change: "3 Inv", color: "#f59e0b", icon: <MoreVertIcon /> },
 ];
 
 // --- Mock Data: Chart (Income vs Expense) ---
@@ -39,11 +39,11 @@ const chartData = [
 
 // --- Mock Data: Transactions Table ---
 const transactions = [
-  { id: "#TRX-998", desc: "Website Development - Acme Corp", date: "Nov 28, 2025", type: "Income", amount: "+ $2,500.00", status: "Completed" },
-  { id: "#TRX-999", desc: "Server Hosting (AWS)", date: "Nov 27, 2025", type: "Expense", amount: "- $120.00", status: "Completed" },
-  { id: "#TRX-100", desc: "Logo Design - StartUp Inc", date: "Nov 25, 2025", type: "Income", amount: "+ $850.00", status: "Pending" },
-  { id: "#TRX-101", desc: "Software License (Adobe)", date: "Nov 22, 2025", type: "Expense", amount: "- $55.00", status: "Completed" },
-  { id: "#TRX-102", desc: "Mobile App UI - TechFlow", date: "Nov 20, 2025", type: "Income", amount: "+ $3,200.00", status: "Overdue" },
+  { id: "#TRX-998", desc: "Website Development - Acme Corp", date: "Nov 28, 2025", type: "Income", amount: "+ ₹2,500.00", status: "Completed" },
+  { id: "#TRX-999", desc: "Server Hosting (AWS)", date: "Nov 27, 2025", type: "Expense", amount: "- ₹120.00", status: "Completed" },
+  { id: "#TRX-100", desc: "Logo Design - StartUp Inc", date: "Nov 25, 2025", type: "Income", amount: "+ ₹850.00", status: "Pending" },
+  { id: "#TRX-101", desc: "Software License (Adobe)", date: "Nov 22, 2025", type: "Expense", amount: "- ₹55.00", status: "Completed" },
+  { id: "#TRX-102", desc: "Mobile App UI - TechFlow", date: "Nov 20, 2025", type: "Income", amount: "+ ₹3,200.00", status: "Overdue" },
 ];
 
 export default function Accounting() {
