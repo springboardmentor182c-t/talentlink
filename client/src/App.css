@@ -206,16 +206,29 @@ a {
 
 /* --- Verify OTP Page Background --- */
 .verify-page-background {
-  /* Abstract Security/Tech Background */
-  background-image: url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop');
+  /* Layered background: subtle gradient + image */
+  background-image:
+    radial-gradient(
+      circle at center,
+      rgba(59, 130, 246, 0.18),
+      rgba(2, 6, 23, 0.85)
+    ),
+    url('assets/otp.jpg');
+
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
+
   min-height: calc(100vh - 70px);
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   position: relative;
+  overflow: hidden;
 }
+
 
 /* Dark Overlay for text readability */
 .verify-page-background::before {
@@ -306,7 +319,7 @@ a {
 /* --- Login Page Background --- */
 .login-page-background {
   /* Darker, cleaner abstract image for Login */
-  background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop');
+  background-image: url('assets/Login1.png');
 
   background-size: cover;
   background-position: center;
@@ -401,20 +414,27 @@ a {
 
 /* --- Signup Page Background --- */
 .signup-page-background {
-  /* Dark Blue Network Image */
-  background-image: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop');
-
-  /* background-image: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop'); */
+  /* Background image */
+  background-image:
+    linear-gradient(
+      rgba(15, 25, 45, 0.55),
+      rgba(15, 25, 45, 0.55)
+    ),
+    url('assets/singup2.png');
 
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+
   min-height: calc(100vh - 70px);
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   position: relative;
 }
+
 
 /* Optional: Add a subtle overlay to make text more readable */
 .signup-page-background::before {
@@ -451,7 +471,7 @@ a {
 /* --- Forgot Password Page Background --- */
 .forgot-password-background {
   /* Calm, Abstract Light Blue/Teal background */
-  background-image: url('https://images.unsplash.com/photo-1518655048521-f130df041f66?q=80&w=2070&auto=format&fit=crop');
+  background-image: url('assets/fortgot.png');
   background-size: cover;
   background-position: center;
   min-height: calc(100vh - 70px);
