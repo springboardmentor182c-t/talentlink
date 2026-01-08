@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import profileService from "../../services/profileService";
 import { profileImageOrFallback } from "../../utils/profileImage";
-import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
 import messagingStyles from "../shared/messagingStyles";
 
 const icons = {
@@ -47,7 +46,57 @@ const FreelancerMessages = () => {
       const proposals = Array.isArray(response.data) ? response.data : [];
       const grouped = groupByClient(proposals);
       const enriched = await attachClientProfiles(grouped);
-      setClients(enriched);
+
+      // Inject permanent TalentLink system conversation at the top
+      const talentKey = 'talentlink';
+      const talentEntry = {
+        clientKey: talentKey,
+        clientId: null,
+        name: 'TalentLink',
+        email: 'notifications@talentlink',
+        lastProject: 'Welcome Message',
+        status: 'system',
+        createdAt: new Date().toISOString(),
+        proposals: [],
+        profile: null,
+      };
+
+      // Ensure talentlink messages exist in localStorage
+      const ensureLocalTalentMessages = () => {
+        try {
+          const key = 'talentlink_messages';
+          const existing = JSON.parse(localStorage.getItem(key) || 'null');
+          if (!existing) {
+            const welcome = JSON.parse(localStorage.getItem('pending_welcome') || 'null');
+            const initial = [
+              {
+                id: 'talent-' + Date.now(),
+                sender: 'talentlink',
+                text: (welcome && (welcome.message || welcome.title)) || 'Welcome to TalentLink! Explore projects and respond to messages to get started.',
+                timestamp: new Date().toISOString(),
+              },
+            ];
+            localStorage.setItem(key, JSON.stringify(initial));
+            return initial;
+          }
+          return existing;
+        } catch (e) {
+          return [];
+        }
+      };
+
+      ensureLocalTalentMessages();
+
+      setClients([talentEntry, ...enriched]);
+      try {
+        const stored = JSON.parse(localStorage.getItem('talentlink_messages') || '[]');
+        setConversationMap((prev) => ({
+          ...prev,
+          [talentEntry.clientKey]: { conversationId: 'talentlink', proposalId: null, messages: stored },
+        }));
+      } catch (e) {
+        // ignore
+      }
     } catch (err) {
       console.error("Error loading client conversations", err);
       const message = err?.response?.data?.detail || "Unable to load client messages.";
@@ -132,6 +181,19 @@ const FreelancerMessages = () => {
     async (client, proposal) => {
       if (!client || !proposal) return null;
       const key = client.clientKey;
+      // Handle local TalentLink conversation
+      if (key === 'talentlink') {
+        try {
+          const stored = JSON.parse(localStorage.getItem('talentlink_messages') || '[]');
+          setConversationMap((prev) => ({
+            ...prev,
+            [key]: { conversationId: 'talentlink', proposalId: null, messages: stored },
+          }));
+          return 'talentlink';
+        } catch (e) {
+          console.error('Error loading talentlink local messages', e);
+        }
+      }
       const isActive = key === selectedKey;
       setMessageLoadingKey(key);
       if (isActive) {
@@ -239,23 +301,40 @@ const FreelancerMessages = () => {
       if (!conversationId) {
         throw new Error("Conversation missing");
       }
+      // If this is the local TalentLink thread, persist to localStorage instead of calling server
+      if (key === 'talentlink') {
+        const storedKey = 'talentlink_messages';
+        try {
+          const existing = JSON.parse(localStorage.getItem(storedKey) || '[]');
+          const newMsg = { id: 'local-' + Date.now(), sender: 'user', text: messageText, timestamp: new Date().toISOString() };
+          const updated = [...existing, newMsg];
+          localStorage.setItem(storedKey, JSON.stringify(updated));
+          setConversationMap((prev) => ({
+            ...prev,
+            [key]: { conversationId: 'talentlink', proposalId: null, messages: updated },
+          }));
+        } catch (e) {
+          console.error('Error saving talentlink message', e);
+          throw e;
+        }
+      } else {
+        const response = await axiosInstance.post(`messaging/conversations/${conversationId}/messages/`, {
+          text: messageText,
+        });
 
-      const response = await axiosInstance.post(`messaging/conversations/${conversationId}/messages/`, {
-        text: messageText,
-      });
-
-      setConversationMap((prev) => {
-        const existing = prev[key] || { conversationId, proposalId: latestProposal.id, messages: [] };
-        return {
-          ...prev,
-          [key]: {
-            ...existing,
-            conversationId,
-            proposalId: latestProposal.id,
-            messages: [...(existing.messages || []), response.data],
-          },
-        };
-      });
+        setConversationMap((prev) => {
+          const existing = prev[key] || { conversationId, proposalId: latestProposal.id, messages: [] };
+          return {
+            ...prev,
+            [key]: {
+              ...existing,
+              conversationId,
+              proposalId: latestProposal.id,
+              messages: [...(existing.messages || []), response.data],
+            },
+          };
+        });
+      }
       setDraftMessage("");
     } catch (err) {
       console.error("Error sending message", err);
@@ -283,7 +362,7 @@ const FreelancerMessages = () => {
   const isSending = selectedClient ? sendingKey === selectedClient.clientKey : false;
 
   return (
-    <FreelancerLayout>
+    <>
       <div style={styles.page}>
         <div style={styles.layout}>
         <aside style={styles.sidebar}>
@@ -447,7 +526,7 @@ const FreelancerMessages = () => {
         </section>
       </div>
       </div>
-    </FreelancerLayout>
+    </>
   );
 };
 const styles = messagingStyles;

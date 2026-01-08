@@ -3,9 +3,10 @@ import { performLogout } from '../../../utils/logout';
 
 export const loginUser = async (email, password) => {
     try {
-        const response = await axiosInstance.post('login/', { 
-            email, 
-            password 
+        // Backend routes for authentication live under `users/` (e.g. /api/users/login/)
+        const response = await axiosInstance.post('users/login/', {
+            email,
+            password,
         });
 
                 if (response.data.access) {

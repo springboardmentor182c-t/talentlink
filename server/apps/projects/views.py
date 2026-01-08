@@ -28,8 +28,15 @@ class ProposalViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Avoid executing user-dependent queries during schema generation
+        if getattr(self, 'swagger_fake_view', False):
+            return ProjectProposal.objects.none()
+
         # Freelancer sees only HIS proposals
-        return ProjectProposal.objects.filter(freelancer=self.request.user)
+        user = getattr(self.request, 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return ProjectProposal.objects.none()
+        return ProjectProposal.objects.filter(freelancer=user)
 
     def perform_create(self, serializer):
         serializer.save(freelancer=self.request.user)
@@ -54,16 +61,23 @@ class ProjectViewSet(viewsets.ModelViewSet):
     search_fields = ["title", "description", "required_skills"]
 
     def get_queryset(self):
-        user = self.request.user
+        # Avoid executing user-dependent queries during schema generation
+        if getattr(self, 'swagger_fake_view', False):
+            return Project.objects.none()
+
+        user = getattr(self.request, 'user', None)
+
+        if not user or not getattr(user, 'is_authenticated', False):
+            return Project.objects.none()
 
         # ---------- CLIENT ----------
-        if user.role == "client":
+        if getattr(user, 'role', None) == "client":
             return Project.objects.filter(
                 client=user
             ).order_by("-created_at")
 
         # ---------- FREELANCER ----------
-        if user.role == "freelancer":
+        if getattr(user, 'role', None) == "freelancer":
             # Surfacing all client-visible listings keeps filters useful for freelancers
             return Project.objects.filter(
                 status__in=["Open", "Pending", "Active"],

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import profileService from '../../services/profileService';
 import { User, Briefcase, Link as LinkIcon, Edit2, Mail, Loader } from 'lucide-react';
-import FreelancerLayout from '../../freelancer_layouts/FreelancerLayout';
+ 
 import { resolveProfileImage } from '../../utils/profileImage';
 
 const Profile = () => {
@@ -67,7 +67,7 @@ const Profile = () => {
     const profileImage = resolveProfileImage(profile?.profile_image);
 
     return (
-        <FreelancerLayout>
+        <>
             <div className="min-h-screen bg-gray-50 py-3 px-3 sm:px-4 lg:px-5">
                 <div className="w-full space-y-6">
 
@@ -163,7 +163,7 @@ const Profile = () => {
 
                 </div>
             </div>
-        </FreelancerLayout>
+        </>
     );
 };
 

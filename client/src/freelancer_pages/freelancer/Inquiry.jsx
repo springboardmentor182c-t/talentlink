@@ -1,11 +1,11 @@
 import React from "react";
 import { Typography, Card, List, ListItem, ListItemText, ListItemAvatar, Avatar, Divider } from "@mui/material";
 import MailIcon from "@mui/icons-material/Mail";
-import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
+ 
 
 export default function Inquiry() {
   return (
-    <FreelancerLayout>
+    <>
       <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>Work Inquiries</Typography>
       <Card>
         <List>
@@ -26,6 +26,6 @@ export default function Inquiry() {
           ))}
         </List>
       </Card>
-    </FreelancerLayout>
+    </>
   );
 }

@@ -1,11 +1,11 @@
 import React from "react";
 import { Typography, Grid, Card, Box } from "@mui/material";
 import EventIcon from "@mui/icons-material/Event";
-import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
+ 
 
 export default function CalendarPage() {
   return (
-    <FreelancerLayout>
+    <>
       <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>Schedule & Deadlines</Typography>
       <Grid container spacing={3}>
         {[1, 2, 3].map((i) => (
@@ -22,6 +22,6 @@ export default function CalendarPage() {
           </Grid>
         ))}
       </Grid>
-    </FreelancerLayout>
+    </>
   );
 }

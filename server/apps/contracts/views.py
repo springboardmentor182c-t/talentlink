@@ -102,7 +102,14 @@ class ContractList(generics.ListAPIView):
             "client", "freelancer"
         ).order_by("-created_at")
 
-        user = self.request.user
+        # Avoid executing user-dependent queries during schema generation
+        if getattr(self, 'swagger_fake_view', False):
+            return Contract.objects.none()
+
+        user = getattr(self.request, 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return Contract.objects.none()
+
         if not user.is_staff:
             qs = qs.filter(Q(client=user) | Q(freelancer=user))
 

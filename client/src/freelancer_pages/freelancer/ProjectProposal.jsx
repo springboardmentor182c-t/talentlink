@@ -4,7 +4,7 @@ import ProposalForm from "../../components/ProposalForm";
 import ProposalList from "../../components/ProposalList";
 import ProposalSidebar from "../../components/ProposalSidebar";
 import axiosInstance from "../../utils/axiosInstance";
-import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
+ 
 
 export default function ProjectProposal() {
   const { id } = useParams();
@@ -27,7 +27,7 @@ export default function ProjectProposal() {
   }, [projectId]);
 
   return (
-    <FreelancerLayout>
+    <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <main className="lg:col-span-2">
           <div className="bg-[#3b82f6]/10 p-8 rounded-[24px]">
@@ -61,6 +61,6 @@ export default function ProjectProposal() {
 
         <ProposalSidebar currentProjectId={projectId} />
       </div>
-    </FreelancerLayout>
+    </>
   );
 }

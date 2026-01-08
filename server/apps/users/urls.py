@@ -13,6 +13,7 @@ from .views import (
     ForgotPasswordView, 
     ResetPasswordView,
     ProfileView,
+    UserSearchView,
     LogoutView,
 )
 
@@ -32,4 +33,5 @@ urlpatterns = [
 
     # Current user profile
     path('profile/', ProfileView.as_view(), name='profile'),
+    path('search/', UserSearchView.as_view(), name='user_search'),
 ]

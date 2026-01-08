@@ -1,10 +1,10 @@
 import React from "react";
 import { Typography, Grid, Card, Box } from "@mui/material";
-import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
+ 
 
 export default function Reports() {
   return (
-    <FreelancerLayout>
+    <>
       <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>Performance Reports</Typography>
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
@@ -20,6 +20,6 @@ export default function Reports() {
           </Card>
         </Grid>
       </Grid>
-    </FreelancerLayout>
+    </>
   );
 }

@@ -1,4 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import financeService from '../../services/financeService';
+import { Autocomplete, TextField } from '@mui/material';
+import axiosInstance from '../../utils/axiosInstance';
+import { exportToCSV } from '../../utils/exportUtils';
 
 // --- SVG Icons ---
 const Icons = {
@@ -8,66 +12,388 @@ const Icons = {
   Download: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 };
 
-const transactions = [
-  { id: 'INV-001', date: 'Nov 29, 2025', description: 'Milestone 1: UI Design', freelancer: 'Sarah Smith', amount: '₹1,200.00', status: 'Paid' },
-  { id: 'INV-002', date: 'Nov 25, 2025', description: 'Server Setup Fee', freelancer: 'Mike Johnson', amount: '₹450.00', status: 'Pending' },
-  { id: 'INV-003', date: 'Nov 15, 2025', description: 'Logo Design Bundle', freelancer: 'DesignCo', amount: '₹800.00', status: 'Paid' },
-  { id: 'INV-004', date: 'Nov 01, 2025', description: 'Consultation Hour', freelancer: 'Alex Brown', amount: '₹150.00', status: 'Paid' },
-];
+// local state until backend present
+const DEFAULT_STATS = { total_spent: '₹0.00', pending: '₹0.00', last_payment: '—' };
+
+// transactions will be loaded from API
 
 const ClientFinancials = () => {
+  const [stats, setStats] = useState(DEFAULT_STATS);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const fileRefs = useRef({});
+  const [actionLoading, setActionLoading] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ freelancer: '', amount: '', paid_amount: '', payment_type: '', description: '' });
+  const [freelancerOptions, setFreelancerOptions] = useState([]);
+  const [freelancerInput, setFreelancerInput] = useState('');
+  const freelancerSearchTimeout = useRef(null);
+  const [payDialogOpen, setPayDialogOpen] = useState(false);
+  const [payInvoiceId, setPayInvoiceId] = useState(null);
+  const [payForm, setPayForm] = useState({ amount: '', payment_type: 'full' });
+  const [settleDialogOpen, setSettleDialogOpen] = useState(false);
+  const [settleInvoiceId, setSettleInvoiceId] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const s = await financeService.getClientOverview().catch(() => null);
+        const tx = await financeService.getClientTransactions().catch(() => null);
+        if (!mounted) return;
+        if (s) setStats(s);
+        if (tx) setTransactions(tx);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const handleUploadProof = async (transactionId) => {
+    const file = fileRefs.current[transactionId]?.files?.[0];
+    if (!file) return alert('Select a file first');
+    try {
+      await financeService.submitTransactionProof(transactionId, file);
+      alert('Uploaded proof');
+    } catch (e) {
+      console.error(e);
+      alert('Upload failed');
+    }
+  };
+
+  const formatDisplayDate = (value) => {
+    if (!value) return '—';
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return value;
+    return dt.toLocaleDateString();
+  };
+
+  const resolveInvoiceId = (tx) => tx?.invoice_id || tx?.invoiceId || tx?.id || '—';
+
+  const reloadTransactions = async () => {
+    setLoading(true);
+    try {
+      const [s, tx] = await Promise.all([
+        financeService.getClientOverview().catch(() => null),
+        financeService.getClientTransactions().catch(() => null),
+      ]);
+      if (s) setStats(s);
+      setTransactions(tx || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportTransactions = () => {
+    if (!Array.isArray(transactions) || transactions.length === 0) {
+      console.warn('No transactions available for export');
+      return;
+    }
+
+    const rows = transactions.map((tx) => ({
+      invoice_id: resolveInvoiceId(tx),
+      date: formatDisplayDate(tx.created_at || tx.date),
+      description: tx.description || '',
+      freelancer: tx.freelancer_name || tx.freelancer_email || tx.freelancer || tx.recipient || '',
+      amount: tx.amount || tx.total_amount || '',
+      status: tx.status || '',
+    }));
+
+    exportToCSV({
+      filename: 'client-transactions.csv',
+      data: rows,
+      columns: [
+        { key: 'invoice_id', label: 'Invoice ID' },
+        { key: 'date', label: 'Date' },
+        { key: 'description', label: 'Description' },
+        { key: 'freelancer', label: 'Freelancer' },
+        { key: 'amount', label: 'Amount' },
+        { key: 'status', label: 'Status' },
+      ],
+    });
+  };
+
+  const handleClientAction = async (invoiceId, action) => {
+    if (!invoiceId) return;
+    if (action === 'pay') {
+      // if tx provided in call, use its remaining amount as default
+      const tx = transactions.find((x) => (x.invoice_id || x.id) === invoiceId || (x.id === invoiceId));
+      let defaultAmount = '';
+      if (tx) {
+        const amt = Number(tx.amount || 0);
+        const paid = Number(tx.paid_amount || 0);
+        const remaining = Math.max(0, amt - paid);
+        defaultAmount = remaining > 0 ? remaining.toString() : amt.toString();
+      }
+      setPayInvoiceId(invoiceId);
+      setPayForm({ amount: defaultAmount, payment_type: defaultAmount && Number(defaultAmount) < Number(tx?.amount || 0) ? 'partial' : 'full' });
+      setPayDialogOpen(true);
+    } else if (action === 'reject' || action === 'hold') {
+      setActionLoading(true);
+      try {
+        await financeService.clientTransactionAction(invoiceId, { action });
+        alert('Action performed');
+        await reloadTransactions();
+      } catch (e) {
+        console.error(e);
+        alert('Action failed');
+      } finally { setActionLoading(false); }
+    }
+  };
+
+  const closePayDialog = () => {
+    setPayDialogOpen(false);
+    setPayInvoiceId(null);
+    setPayForm({ amount: '', payment_type: 'full' });
+  };
+
+  const submitPay = async () => {
+    if (!payInvoiceId || !payForm.amount) return alert('Amount is required');
+    setActionLoading(true);
+    try {
+      await financeService.clientTransactionAction(payInvoiceId, { action: 'pay', amount: payForm.amount, payment_type: payForm.payment_type });
+      alert('Payment recorded');
+      closePayDialog();
+      await reloadTransactions();
+    } catch (e) {
+      console.error(e);
+      alert('Payment failed');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const openCreateDialog = () => setCreateDialogOpen(true);
+  const closeCreateDialog = () => setCreateDialogOpen(false);
+  const submitCreateTransaction = async () => {
+    // If user typed an email and didn't select, try resolving it via search
+    let freelancerId = createForm.freelancer;
+    if ((!freelancerId || freelancerId === '') && freelancerInput) {
+      try {
+        const res = await axiosInstance.get(`users/search/?q=${encodeURIComponent(freelancerInput)}`);
+        const first = (res.data || [])[0];
+        if (first && first.id) {
+          freelancerId = first.id;
+        }
+      } catch (err) {
+        console.error('resolve freelancer', err);
+      }
+    }
+
+    if (!freelancerId || !createForm.amount) return alert('Freelancer and amount required');
+    try {
+      await financeService.createClientTransaction({ freelancer: freelancerId, amount: createForm.amount, paid_amount: createForm.paid_amount || 0, payment_type: createForm.payment_type, description: createForm.description });
+      alert('Transaction created');
+      closeCreateDialog();
+      await reloadTransactions();
+    } catch (e) {
+      console.error(e);
+      alert('Create failed');
+    }
+  };
+
   return (
     <div style={styles.container}>
       <h1 style={styles.pageTitle}>Financial Overview</h1>
-      
+
       {/* Summary Cards */}
       <div style={styles.statsGrid}>
-        <StatCard title="Total Spent" amount="₹12,450.00" icon={<Icons.Wallet />} color="#3b82f6" />
-        <StatCard title="Pending Invoices" amount="₹450.00" icon={<Icons.Invoice />} color="#f59e0b" />
-        <StatCard title="Last Payment" amount="₹1,200.00" sub="Paid to Sarah Smith" icon={<Icons.ArrowUp />} color="#10b981" />
+        <StatCard title="Total Spent" amount={stats.total_spent || '—'} icon={<Icons.Wallet />} color="#3b82f6" />
+        <StatCard title="Pending Amount" amount={stats.pending || '—'} icon={<Icons.Invoice />} color="#f59e0b" />
+        <StatCard title="Pending Invoices" amount={stats.pending_invoices_count ?? '0'} icon={<Icons.Invoice />} color="#f97316" />
+        <StatCard title="Last Payment" amount={stats.last_payment || '—'} sub={stats.last_payment_to || ''} icon={<Icons.ArrowUp />} color="#10b981" />
       </div>
+
+      {/* Create Transaction Dialog for Client */}
+      {createDialogOpen && (
+        <div style={{position:'fixed', top:0,left:0,right:0,bottom:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:'white',padding:20,borderRadius:8,width:480}}>
+            <h3>Create Transaction</h3>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              <Autocomplete
+                freeSolo
+                options={freelancerOptions}
+                getOptionLabel={(opt) => opt?.email || ''}
+                inputValue={freelancerInput}
+                onInputChange={(_e, newInput) => {
+                  setFreelancerInput(newInput);
+                  if (freelancerSearchTimeout.current) clearTimeout(freelancerSearchTimeout.current);
+                  if (!newInput || newInput.length < 2) return setFreelancerOptions([]);
+                  freelancerSearchTimeout.current = setTimeout(async () => {
+                    try {
+                      const res = await axiosInstance.get(`users/search/?q=${encodeURIComponent(newInput)}`);
+                      setFreelancerOptions(res.data || []);
+                    } catch (err) {
+                      console.error('freelancer search', err);
+                      setFreelancerOptions([]);
+                    }
+                  }, 300);
+                }}
+                onChange={(_e, value) => {
+                  if (value && value.id) setCreateForm({...createForm, freelancer: value.id});
+                  else setCreateForm({...createForm, freelancer: ''});
+                }}
+                renderInput={(params) => <TextField {...params} label="Freelancer (email)" />}
+              />
+              <input placeholder="Amount" value={createForm.amount} onChange={(e)=>setCreateForm({...createForm, amount:e.target.value})} />
+              <input placeholder="Paid amount (optional)" value={createForm.paid_amount} onChange={(e)=>setCreateForm({...createForm, paid_amount:e.target.value})} />
+              <input placeholder="Payment type (advance/partial/full)" value={createForm.payment_type} onChange={(e)=>setCreateForm({...createForm, payment_type:e.target.value})} />
+              <input placeholder="Description" value={createForm.description} onChange={(e)=>setCreateForm({...createForm, description:e.target.value})} />
+            </div>
+            <div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:12}}>
+              <button onClick={closeCreateDialog}>Cancel</button>
+              <button onClick={submitCreateTransaction}>Create</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pay Dialog */}
+      {payDialogOpen && (
+        <div style={{position:'fixed', top:0,left:0,right:0,bottom:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:'white',padding:20,borderRadius:8,width:420}}>
+            <h3>Pay Invoice</h3>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              <input placeholder="Amount" value={payForm.amount} onChange={(e)=>setPayForm({...payForm, amount: e.target.value})} />
+              <select value={payForm.payment_type} onChange={(e)=>setPayForm({...payForm, payment_type: e.target.value})}>
+                <option value="full">Full</option>
+                <option value="partial">Partial</option>
+                <option value="advance">Advance</option>
+              </select>
+            </div>
+            <div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:12}}>
+              <button onClick={closePayDialog}>Cancel</button>
+              <button onClick={submitPay} disabled={actionLoading}>{actionLoading ? 'Processing...' : 'Pay'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {settleDialogOpen && (
+        <div style={{position:'fixed', top:0,left:0,right:0,bottom:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:'white',padding:20,borderRadius:8,width:420}}>
+            <h3>Settle Invoice</h3>
+            <div style={{marginTop:8, fontSize:13, color:'#374151'}}>Are you sure you want to mark this invoice as settled? This will set the paid amount to the invoice total.</div>
+            <div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:12}}>
+              <button onClick={() => { setSettleDialogOpen(false); setSettleInvoiceId(null); }}>Cancel</button>
+              <button onClick={async () => {
+                if (!settleInvoiceId) return;
+                setActionLoading(true);
+                try {
+                  await financeService.clientTransactionAction(settleInvoiceId, { action: 'settle' });
+                  await reloadTransactions();
+                } catch (err) {
+                  console.error(err);
+                } finally {
+                  setActionLoading(false);
+                  setSettleDialogOpen(false);
+                  setSettleInvoiceId(null);
+                }
+              }}>{actionLoading ? 'Processing...' : 'Settle'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Transactions Table */}
       <div style={styles.card}>
         <div style={styles.cardHeader}>
           <h2 style={styles.cardTitle}>Transaction History</h2>
-          <button style={styles.outlineBtn}>
-            <span style={{marginRight: '8px', display:'flex'}}><Icons.Download /></span> Export Report
-          </button>
+          <div style={{display:'flex', gap:8}}>
+            <button style={styles.outlineBtn} onClick={handleExportTransactions} disabled={!transactions || transactions.length === 0}>
+              <span style={{marginRight: '8px', display:'flex'}}><Icons.Download /></span> Export Report
+            </button>
+            <button style={styles.outlineBtn} onClick={openCreateDialog}>Create Transaction</button>
+          </div>
         </div>
-        
-        <table style={styles.table}>
-          <thead>
-            <tr style={styles.tHeadRow}>
-              <th style={styles.th}>Invoice ID</th>
-              <th style={styles.th}>Date</th>
-              <th style={styles.th}>Description</th>
-              <th style={styles.th}>Freelancer</th>
-              <th style={styles.th}>Amount</th>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((t) => (
-              <tr key={t.id} style={styles.tr}>
-                <td style={styles.td}>{t.id}</td>
-                <td style={styles.td}>{t.date}</td>
-                <td style={{...styles.td, fontWeight: '500'}}>{t.description}</td>
-                <td style={styles.td}>{t.freelancer}</td>
-                <td style={{...styles.td, fontWeight: 'bold'}}>{t.amount}</td>
-                <td style={styles.td}>
-                  <span style={{...styles.badge, backgroundColor: t.status === 'Paid' ? '#dcfce7' : '#fef3c7', color: t.status === 'Paid' ? '#166534' : '#b45309'}}>
-                    {t.status}
-                  </span>
-                </td>
-                <td style={styles.td}>
-                  <button style={styles.linkBtn}>Download</button>
-                </td>
+
+        {loading ? (
+          <div style={{padding: 20}}>Loading...</div>
+        ) : (
+          <table style={styles.table}>
+            <thead>
+              <tr style={styles.tHeadRow}>
+                <th style={styles.th}>Invoice ID</th>
+                <th style={styles.th}>Date</th>
+                <th style={styles.th}>Description</th>
+                <th style={styles.th}>Freelancer</th>
+                <th style={styles.th}>Amount</th>
+                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {transactions && transactions.length ? transactions.map((t) => (
+                <tr key={t.id} style={styles.tr}>
+                  <td style={styles.td}>{resolveInvoiceId(t)}</td>
+                  <td style={styles.td}>{formatDisplayDate(t.created_at || t.date)}</td>
+                  <td style={{...styles.td, fontWeight: '500'}}>{t.description}</td>
+                  <td style={styles.td}>{t.freelancer_name || t.freelancer_email || t.freelancer || t.recipient}</td>
+                  <td style={{...styles.td, fontWeight: 'bold'}}>
+                    {t.amount}
+                    {t.paid_amount ? (
+                      <div style={{fontSize:12,color:'#64748b'}}>Paid: {t.paid_amount}{Number(t.paid_amount) < Number(t.amount) ? ` — Remaining: ${ (Number(t.amount) - Number(t.paid_amount)).toFixed(2) }` : ''}</div>
+                    ) : null}
+                  </td>
+                  <td style={styles.td}>
+                    <span style={{...styles.badge, backgroundColor: t.status === 'paid' ? '#dcfce7' : '#fef3c7', color: t.status === 'paid' ? '#166534' : '#b45309'}}>
+                      {t.status}
+                    </span>
+                  </td>
+                  <td style={styles.td}>
+                    {t.status === 'pending' && (
+                      <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+                        <input ref={(el) => (fileRefs.current[t.id] = el)} type="file" />
+                        <button style={styles.linkBtn} onClick={() => handleUploadProof(t.invoice_id || t.id)}>Upload Proof</button>
+                      </div>
+                    )}
+                    {t.status === 'pending' && (
+                      <div style={{display:'flex', gap:8, marginTop:8}}>
+                        <button style={styles.linkBtn} onClick={() => handleClientAction(t.invoice_id || t.id, 'pay')}>Pay</button>
+                        <button style={styles.linkBtn} onClick={() => { setSettleInvoiceId(t.invoice_id || t.id); setSettleDialogOpen(true); }}>Settle</button>
+                        <button style={styles.linkBtn} onClick={() => handleClientAction(t.invoice_id || t.id, 'reject')}>Reject</button>
+                        <button style={styles.linkBtn} onClick={() => handleClientAction(t.invoice_id || t.id, 'hold')}>Hold</button>
+                      </div>
+                    )}
+                    {t.status === 'partial' && (
+                      <div style={{display:'flex', gap:8, marginTop:8}}>
+                        <button
+                          style={styles.linkBtn}
+                          disabled={actionLoading}
+                          onClick={async () => {
+                            setActionLoading(true);
+                            try {
+                              await financeService.clientTransactionAction(t.invoice_id || t.id, { action: 'settle' });
+                              await reloadTransactions();
+                            } catch (err) {
+                              console.error(err);
+                              alert('Failed to mark as paid');
+                            } finally {
+                              setActionLoading(false);
+                            }
+                          }}
+                        >
+                          Mark as Paid
+                        </button>
+                        <button style={styles.linkBtn} onClick={() => handleClientAction(t.invoice_id || t.id, 'pay')}>Pay</button>
+                        <button style={styles.linkBtn} onClick={() => { setSettleInvoiceId(t.invoice_id || t.id); setSettleDialogOpen(true); }}>Settle</button>
+                      </div>
+                    )}
+                    {t.download_url && (
+                      <button style={styles.linkBtn} onClick={() => window.open(t.download_url, '_blank')}>Download</button>
+                    )}
+                  </td>
+                </tr>
+              )) : (
+                <tr><td colSpan={7} style={{padding:20}}>No transactions found</td></tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
@@ -85,7 +411,14 @@ const StatCard = ({ title, amount, sub, icon, color }) => (
 );
 
 const styles = {
-  container: { maxWidth: '1200px', margin: '0 auto' },
+  container: {
+    width: '100%',
+    margin: 0,
+    padding: '24px',
+    boxSizing: 'border-box',
+    background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)',
+    minHeight: '100%',
+  },
   pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1e293b', marginBottom: '25px' },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' },
   statCard: { backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '15px' },

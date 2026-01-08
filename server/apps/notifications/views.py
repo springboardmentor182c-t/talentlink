@@ -12,7 +12,15 @@ class NotificationViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "delete"]
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).order_by("-created_at")
+        # Avoid executing user-dependent queries during schema generation
+        if getattr(self, 'swagger_fake_view', False):
+            return Notification.objects.none()
+
+        user = getattr(self.request, 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return Notification.objects.none()
+
+        return Notification.objects.filter(user=user).order_by("-created_at")
 
     def create(self, request, *args, **kwargs):
         return Response({"detail": "Use event endpoints to create notifications."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

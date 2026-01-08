@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axiosInstance from "../utils/axiosInstance";
-import { resolveProfileImage } from "../utils/profileImage";
+import { profileImageOrFallback, resolveProfileImage } from "../utils/profileImage";
 
 const UserContext = createContext();
 
@@ -13,7 +13,7 @@ export const UserProvider = ({ children }) => {
     name: storedName || "User",
     email: storedEmail || "",
     role: storedRole || "User",
-    avatar: "https://i.pravatar.cc/150?img=3",
+    avatar: profileImageOrFallback(null, storedName || storedEmail || "User"),
   });
 
   const [loading, setLoading] = useState(true);
@@ -52,7 +52,7 @@ export const UserProvider = ({ children }) => {
 
         // Handle Avatar
         const resolvedAvatar = resolveProfileImage(profile.profile_image);
-        const avatarUrl = resolvedAvatar || "https://i.pravatar.cc/150?img=3";
+        const avatarUrl = resolvedAvatar || profileImageOrFallback(null, nameFromProfile || emailFromProfile || "User");
 
         setUser((prev) => ({
           ...prev,

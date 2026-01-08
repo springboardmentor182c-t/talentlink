@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom'; 
 import { useUser } from '../../context/UserContext';
+import Alert from '@mui/material/Alert';
+import LinearProgress from '@mui/material/LinearProgress';
 // 1. Import useTheme to access dynamic colors
 import { useTheme } from '@mui/material/styles';
+import financeService from '../../services/financeService';
+import { contractService } from '../../services/contractService';
+import axiosInstance from '../../utils/axiosInstance';
 
 // --- SVG ICONS ---
 const Icons = {
@@ -30,35 +35,399 @@ const Icons = {
   )
 };
 
-// --- MOCK DATA ---
-const spendingData = [
-  { name: 'Jan', value: 1200 }, { name: 'Feb', value: 2100 },
-  { name: 'Mar', value: 1800 }, { name: 'Apr', value: 3500 },
-  { name: 'May', value: 3100 }, { name: 'Jun', value: 5200 },
-  { name: 'Jul', value: 7800 },
-];
+// --- DATA HELPERS ---
+const toNumber = (value) => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value === 'string') {
+    const normalized = value.replace(/[^0-9.-]/g, '');
+    const num = Number.parseFloat(normalized);
+    return Number.isFinite(num) ? num : 0;
+  }
+  if (typeof value === 'object' && typeof value.valueOf === 'function') {
+    const num = Number(value.valueOf());
+    return Number.isFinite(num) ? num : 0;
+  }
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+};
 
-const activityFeed = [
-  { id: 1, text: 'Received 3 new proposals for "Website Redesign"', time: '1 hour ago', icon: <Icons.FileText />, color: '#3b82f6' },
-  { id: 2, text: 'Payment released to Sarah for "UI Milestone"', time: '4 hours ago', icon: <Icons.Wallet />, color: '#10b981' },
-  { id: 3, text: 'Invoice #1024 is pending approval', time: '1 day ago', icon: <Icons.Invoice />, color: '#f59e0b' },
-  { id: 4, text: 'Job Post "React Developer" is now live', time: '2 days ago', icon: <Icons.Briefcase />, color: '#6366f1' },
-];
+const formatCurrencyINR = (value) =>
+  new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(toNumber(value));
 
-const deadlines = [
-  { id: 1, title: 'Approve Milestone 2', date: 'Due Tomorrow', tag: 'Action Required', color: '#ef4444' },
-  { id: 2, title: 'Review "Mobile App" Proposal', date: 'Expires in 2 days', tag: 'Hiring', color: '#f59e0b' },
-];
+const formatRelativeTime = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 0) {
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
 
-const activeJobs = [
-  { id: 1, title: 'Website Redesign', applicants: 12, status: 'Interviewing' },
-  { id: 2, title: 'SEO Optimization', applicants: 5, status: 'Reviewing' },
-  { id: 3, title: 'Mobile App Dev', applicants: 0, status: 'Draft' },
-];
+const computeSpendingSeries = (transactions = []) => {
+  const buckets = new Map();
+  transactions.forEach((tx) => {
+    const createdAt = tx?.created_at ? new Date(tx.created_at) : null;
+    if (!createdAt || Number.isNaN(createdAt.getTime())) return;
+    const key = `${createdAt.getFullYear()}-${createdAt.getMonth()}`;
+    const label = createdAt.toLocaleString(undefined, { month: 'short' });
+    const paidAmount =
+      toNumber(tx?.paid_amount) ||
+      (['paid', 'completed'].includes((tx?.status || '').toLowerCase()) ? toNumber(tx?.amount) : 0);
+    const existing =
+      buckets.get(key) ||
+      { name: label, value: 0, order: createdAt.getFullYear() * 12 + createdAt.getMonth() };
+    existing.value += paidAmount;
+    existing.name = label;
+    buckets.set(key, existing);
+  });
+
+  return Array.from(buckets.values())
+    .sort((a, b) => a.order - b.order)
+    .slice(-6)
+    .map(({ name, value }) => ({ name, value: Number(value.toFixed(2)) }));
+};
+
+const PROPOSAL_STATUS_META = {
+  submitted: { label: 'New Proposal', color: '#f59e0b' },
+  considering: { label: 'In Review', color: '#6366f1' },
+  accepted: { label: 'Accepted', color: '#10b981' },
+  rejected: { label: 'Rejected', color: '#ef4444' },
+  default: { label: 'Update', color: '#3b82f6' },
+};
+
+const TRANSACTION_STATUS_META = {
+  pending: { label: 'Invoice Pending', color: '#ef4444' },
+  partial: { label: 'Partial Payment', color: '#f97316' },
+  on_hold: { label: 'On Hold', color: '#eab308' },
+  overdue: { label: 'Overdue', color: '#dc2626' },
+  default: { label: 'Invoice', color: '#94a3b8' },
+};
+
+const JOB_PROGRESS_WIDTH = {
+  open: '35%',
+  pending: '25%',
+  active: '80%',
+  completed: '100%',
+  cancelled: '15%',
+};
+
+const JOB_PROGRESS_COLOR = {
+  active: '#3b82f6',
+  completed: '#10b981',
+  cancelled: '#ef4444',
+};
+
+const getProposalStatusMeta = (status) =>
+  PROPOSAL_STATUS_META[(status || '').toLowerCase()] || PROPOSAL_STATUS_META.default;
+
+const deriveActionItems = (proposals = [], transactions = []) => {
+  const items = [];
+
+  const proposalItems = proposals
+    .filter((proposal) => ['submitted', 'considering'].includes((proposal?.status || '').toLowerCase()))
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    .slice(0, 4);
+
+  proposalItems.forEach((proposal) => {
+    const meta = getProposalStatusMeta(proposal.status);
+    items.push({
+      id: `proposal-${proposal.id}`,
+      title: proposal.project_title ? `Review "${proposal.project_title}"` : 'Review proposal',
+      date: formatRelativeTime(proposal.created_at),
+      tag: meta.label,
+      color: meta.color,
+    });
+  });
+
+  if (items.length < 4) {
+    const transactionItems = transactions
+      .filter((tx) => ['pending', 'partial', 'on_hold', 'overdue'].includes((tx?.status || '').toLowerCase()))
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      .slice(0, 4 - items.length);
+
+    transactionItems.forEach((tx) => {
+      const meta = TRANSACTION_STATUS_META[(tx?.status || '').toLowerCase()] || TRANSACTION_STATUS_META.default;
+      items.push({
+        id: `transaction-${tx.id || tx.invoice_id}`,
+        title: `Invoice ${tx.invoice_id || tx.id}`,
+        date: formatRelativeTime(tx.created_at),
+        tag: meta.label,
+        color: meta.color,
+      });
+    });
+  }
+
+  return items;
+};
+
+const deriveActiveJobs = (projects = [], proposals = []) => {
+  const proposalCounts = proposals.reduce((map, proposal) => {
+    if (!proposal?.project_id) return map;
+    const entry = map.get(proposal.project_id) || { total: 0 };
+    entry.total += 1;
+    map.set(proposal.project_id, entry);
+    return map;
+  }, new Map());
+
+  return projects
+    .filter((project) => ['open', 'pending', 'active'].includes((project?.status || '').toLowerCase()))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 4)
+    .map((project) => {
+      const entry = proposalCounts.get(project.id) || {};
+      const applicants = Number(entry.total || project.proposals_count || 0);
+      return {
+        id: project.id,
+        title: project.title || 'Untitled project',
+        applicants,
+        status: project.status || 'Open',
+      };
+    });
+};
+
+const ACTIVITY_META = {
+  proposal_submitted: { Icon: Icons.FileText, color: '#3b82f6' },
+  contract_created: { Icon: Icons.Briefcase, color: '#10b981' },
+  contract_updated: { Icon: Icons.Briefcase, color: '#f59e0b' },
+  project_posted: { Icon: Icons.Briefcase, color: '#6366f1' },
+  message_received: { Icon: Icons.Users, color: '#0ea5e9' },
+  default: { Icon: Icons.Invoice, color: '#94a3b8' },
+};
+
+const getActivityMeta = (verb) => ACTIVITY_META[(verb || '').toLowerCase()] || ACTIVITY_META.default;
+
+const deriveActivityFeed = (notifications = [], transactions = [], proposals = []) => {
+  const items = [];
+
+  notifications.slice(0, 6).forEach((notification) => {
+    const { Icon, color } = getActivityMeta(notification?.verb);
+    items.push({
+      id: `notification-${notification.id}`,
+      Icon,
+      color,
+      text: notification.title || notification.body || 'Notification',
+      time: formatRelativeTime(notification.created_at),
+    });
+  });
+
+  if (items.length < 6) {
+    const transactionItems = [...transactions]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 6 - items.length);
+
+    transactionItems.forEach((tx) => {
+      const statusKey = (tx?.status || '').toLowerCase();
+      const color = statusKey === 'paid' ? '#10b981' : '#f97316';
+      items.push({
+        id: `transaction-${tx.id || tx.invoice_id}`,
+        Icon: Icons.Invoice,
+        color,
+        text: `Invoice ${tx.invoice_id || tx.id} ${statusKey === 'paid' ? 'was paid' : 'requires attention'}`,
+        time: formatRelativeTime(tx.created_at),
+      });
+    });
+  }
+
+  if (items.length < 6) {
+    const proposalItems = proposals
+      .filter((proposal) => ['submitted', 'considering', 'accepted'].includes((proposal?.status || '').toLowerCase()))
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 6 - items.length);
+
+    proposalItems.forEach((proposal) => {
+      const meta = getProposalStatusMeta(proposal.status);
+      items.push({
+        id: `proposal-${proposal.id}`,
+        Icon: Icons.FileText,
+        color: meta.color,
+        text: proposal.project_title
+          ? `Proposal for "${proposal.project_title}" is ${meta.label.toLowerCase()}`
+          : `Proposal #${proposal.id} is ${meta.label.toLowerCase()}`,
+        time: formatRelativeTime(proposal.created_at),
+      });
+    });
+  }
+
+  return items;
+};
 
 const ClientDashboard = () => {
   const navigate = useNavigate(); 
   const { user } = useUser();
+  const [welcome, setWelcome] = useState(null);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardError, setDashboardError] = useState(null);
+  const [overview, setOverview] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [proposals, setProposals] = useState([]);
+  const [contracts, setContracts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    try {
+      const pending = localStorage.getItem('pending_welcome');
+      if (pending) {
+        const p = JSON.parse(pending);
+        setWelcome(p);
+        setWelcomeOpen(true);
+      } else {
+        const existing = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+        const firstUnread = existing.find(n => !n.read);
+        if (firstUnread) {
+          setWelcome({ title: firstUnread.title, message: firstUnread.message });
+          setWelcomeOpen(true);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  const loadDashboard = useCallback(async () => {
+    const requests = [
+      financeService.getClientOverview(),
+      financeService.getClientTransactions(),
+      axiosInstance.get('projects/').then((res) => {
+        const data = res.data;
+        if (Array.isArray(data)) return data;
+        if (data && Array.isArray(data.results)) return data.results;
+        return data ? [data] : [];
+      }),
+      axiosInstance.get('proposals/received/').then((res) => {
+        const data = res.data;
+        if (Array.isArray(data)) return data;
+        if (data && Array.isArray(data.results)) return data.results;
+        return data ? [data] : [];
+      }),
+      contractService.getContracts(),
+      axiosInstance.get('notifications/').then((res) => {
+        const data = res.data;
+        if (Array.isArray(data)) return data;
+        if (data && Array.isArray(data.results)) return data.results;
+        return data ? [data] : [];
+      }),
+    ];
+
+    const sources = [
+      'finance overview',
+      'transactions',
+      'projects',
+      'proposals',
+      'contracts',
+      'notifications',
+    ];
+
+    const results = await Promise.allSettled(requests);
+    return { results, sources };
+  }, []);
+
+  const applyDashboardResults = useCallback((results, sources) => {
+    const getValue = (idx, fallback) =>
+      results[idx]?.status === 'fulfilled' ? results[idx].value ?? fallback : fallback;
+
+    setOverview(getValue(0, null));
+    setTransactions(Array.isArray(getValue(1, [])) ? getValue(1, []) : []);
+    setProjects(Array.isArray(getValue(2, [])) ? getValue(2, []) : []);
+    setProposals(Array.isArray(getValue(3, [])) ? getValue(3, []) : []);
+    setContracts(Array.isArray(getValue(4, [])) ? getValue(4, []) : []);
+    setNotifications(Array.isArray(getValue(5, [])) ? getValue(5, []) : []);
+
+    const firstError = results.find((result) => result.status === 'rejected');
+    results.forEach((result, idx) => {
+      if (result.status === 'rejected') {
+        console.error(`Client dashboard: failed to load ${sources[idx]}`, result.reason);
+      }
+    });
+
+    if (firstError) {
+      const status = firstError.reason?.response?.status;
+      setDashboardError({
+        severity: status === 401 ? 'error' : 'warning',
+        message:
+          status === 401
+            ? 'Session expired. Please sign back in to load your dashboard data.'
+            : 'Some dashboard widgets failed to load. Showing the data we could retrieve.',
+      });
+    } else {
+      setDashboardError(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchData = async () => {
+      setDashboardLoading(true);
+      setDashboardError(null);
+      try {
+        const { results, sources } = await loadDashboard();
+        if (!active) return;
+        applyDashboardResults(results, sources);
+      } catch (err) {
+        if (!active) return;
+        console.error('Client dashboard: unexpected error', err);
+        setOverview(null);
+        setTransactions([]);
+        setProjects([]);
+        setProposals([]);
+        setContracts([]);
+        setNotifications([]);
+        setDashboardError({
+          severity: 'error',
+          message: 'Unable to load dashboard data right now. Please try refreshing.',
+        });
+      } finally {
+        if (active) {
+          setDashboardLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      active = false;
+    };
+  }, [loadDashboard, applyDashboardResults]);
+
+  const refreshDashboard = useCallback(async () => {
+    setDashboardLoading(true);
+    setDashboardError(null);
+    try {
+      const { results, sources } = await loadDashboard();
+      applyDashboardResults(results, sources);
+    } catch (err) {
+      console.error('Client dashboard: refresh error', err);
+      setDashboardError({
+        severity: 'error',
+        message: 'Refresh failed. Please try again in a moment.',
+      });
+    } finally {
+      setDashboardLoading(false);
+    }
+  }, [loadDashboard, applyDashboardResults]);
+
+  const handleWelcomeClose = () => {
+    setWelcomeOpen(false);
+    try { localStorage.removeItem('pending_welcome'); } catch (e) {}
+  };
   
   // 2. Get the current theme
   const theme = useTheme();
@@ -87,9 +456,93 @@ const ClientDashboard = () => {
     }
   };
 
+  const spendingSeries = useMemo(() => computeSpendingSeries(transactions), [transactions]);
+  const actionItems = useMemo(() => deriveActionItems(proposals, transactions), [proposals, transactions]);
+  const jobsList = useMemo(() => deriveActiveJobs(projects, proposals), [projects, proposals]);
+  const activityList = useMemo(
+    () => deriveActivityFeed(notifications, transactions, proposals),
+    [notifications, transactions, proposals]
+  );
+
+  const statsData = useMemo(() => {
+    const openJobCount = projects.filter((project) => (project?.status || '').toLowerCase() === 'open').length;
+    const activeJobCount = projects.filter((project) => (project?.status || '').toLowerCase() === 'active').length;
+    const pendingJobCount = projects.filter((project) => (project?.status || '').toLowerCase() === 'pending').length;
+    const newProposalsCount = proposals.filter((proposal) => (proposal?.status || '').toLowerCase() === 'submitted').length;
+    const reviewProposalsCount = proposals.filter((proposal) =>
+      ['submitted', 'considering'].includes((proposal?.status || '').toLowerCase())
+    ).length;
+    const uniqueFreelancers = new Set(
+      (contracts || [])
+        .map((contract) => contract?.freelancer)
+        .filter(Boolean)
+    ).size;
+    const activeContractsCount = contracts.filter(
+      (contract) => (contract?.status || '').toLowerCase() === 'active'
+    ).length;
+
+    const totalSpent = overview ? formatCurrencyINR(overview.total_spent) : formatCurrencyINR(0);
+    const pendingAmount = overview ? formatCurrencyINR(overview.pending) : formatCurrencyINR(0);
+
+    return [
+      {
+        key: 'spent',
+        Icon: Icons.Wallet,
+        title: 'Total Spent',
+        value: totalSpent,
+        change: overview ? `Pending ${pendingAmount}` : 'No pending invoices',
+        color: '#3b82f6',
+      },
+      {
+        key: 'jobs',
+        Icon: Icons.Briefcase,
+        title: 'Open Job Posts',
+        value: openJobCount.toString(),
+        change: `${activeJobCount} active · ${pendingJobCount} pending`,
+        color: '#8b5cf6',
+      },
+      {
+        key: 'proposals',
+        Icon: Icons.FileText,
+        title: 'New Proposals',
+        value: newProposalsCount.toString(),
+        change: `${reviewProposalsCount} awaiting review`,
+        color: '#10b981',
+      },
+      {
+        key: 'talent',
+        Icon: Icons.Users,
+        title: 'Hired Talent',
+        value: uniqueFreelancers.toString(),
+        change: `${activeContractsCount} active contracts`,
+        color: '#ec4899',
+      },
+    ];
+  }, [overview, projects, proposals, contracts]);
+
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      
+    <div style={styles.pageContainer}>
+      {/* --- Welcome Alert (one-time) --- */}
+      {welcome && welcomeOpen && (
+        <div style={{ marginBottom: 12 }}>
+          <Alert severity="success" onClose={handleWelcomeClose}>
+            <strong>{welcome.title}</strong>: {welcome.message}
+          </Alert>
+        </div>
+      )}
+
+      {dashboardError && (
+        <div style={{ marginBottom: 12 }}>
+          <Alert severity={dashboardError.severity}>{dashboardError.message}</Alert>
+        </div>
+      )}
+
+      {dashboardLoading && (
+        <div style={styles.loadingBar}>
+          <LinearProgress />
+        </div>
+      )}
+
       {/* --- Header --- */}
       <div style={styles.header}>
         <div>
@@ -97,45 +550,43 @@ const ClientDashboard = () => {
           <h1 style={{...styles.title, color: theme.palette.text.primary }}>Client Overview</h1>
           <p style={{...styles.subtitle, color: theme.palette.text.secondary }}>Manage your job postings, proposals, and hired talent.</p>
         </div>
-        <button style={styles.btn} onClick={handlePostJob}> 
-          <span style={{ marginRight: '8px', display: 'flex' }}><Icons.Plus /></span> Post a Job
-        </button>
+        <div style={styles.headerActions}>
+          <button
+            style={{
+              ...styles.secondaryBtn,
+              opacity: dashboardLoading ? 0.7 : 1,
+              cursor: dashboardLoading ? 'wait' : 'pointer',
+            }}
+            onClick={refreshDashboard}
+            disabled={dashboardLoading}
+          >
+            Refresh
+          </button>
+          <button style={styles.btn} onClick={handlePostJob}>
+            <span style={{ marginRight: '8px', display: 'flex' }}><Icons.Plus /></span> Post a Job
+          </button>
+        </div>
       </div>
 
       {/* --- Top Stats Row --- */}
       <div style={styles.statsGrid}>
-        <StatCard 
-          icon={<Icons.Wallet />} 
-          title="Total Spent" 
-          value="₹12,450" 
-          change="+15% vs last mo" 
-          color="#3b82f6"
-          theme={theme} // Pass theme down
-        />
-        <StatCard 
-          icon={<Icons.Briefcase />} 
-          title="Open Job Posts" 
-          value="3" 
-          change="1 Draft" 
-          color="#8b5cf6"
-          theme={theme}
-        />
-        <StatCard 
-          icon={<Icons.FileText />} 
-          title="New Proposals" 
-          value="18" 
-          change="5 to review" 
-          color="#10b981"
-          theme={theme}
-        />
-        <StatCard 
-          icon={<Icons.Users />} 
-          title="Hired Talent" 
-          value="4" 
-          change="Active Contracts" 
-          color="#ec4899"
-          theme={theme}
-        />
+        {statsData.length > 0 ? (
+          statsData.map(({ key, Icon, title, value, change, color }) => (
+            <StatCard
+              key={key}
+              icon={<Icon />}
+              title={title}
+              value={value}
+              change={change}
+              color={color}
+              theme={theme}
+            />
+          ))
+        ) : (
+          <div style={styles.emptyState}>
+            {dashboardLoading ? 'Loading dashboard stats…' : 'No dashboard stats available yet.'}
+          </div>
+        )}
       </div>
 
       {/* --- Middle Section: Chart & Deadlines --- */}
@@ -151,24 +602,41 @@ const ClientDashboard = () => {
             <select style={themeStyles.select}><option>This Year</option></select>
           </div>
           <div style={{ width: '100%', height: 280 }}>
-            <ResponsiveContainer>
-              <AreaChart data={spendingData}>
-                <defs>
-                  <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#94a3b8', fontSize:12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill:'#94a3b8', fontSize:12}} prefix="₹" />
-                <Tooltip 
-                  contentStyle={{borderRadius:'8px', border:'none', boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}} 
-                  formatter={(value) => [`₹${value}`, 'Spent']}
-                />
-                <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} fill="url(#colorVal)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {spendingSeries.length > 0 ? (
+              <ResponsiveContainer>
+                <AreaChart data={spendingSeries}>
+                  <defs>
+                    <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={themeStyles.chartGrid} />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: themeStyles.chartText, fontSize: 12 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: themeStyles.chartText, fontSize: 12 }}
+                    tickFormatter={(value) => formatCurrencyINR(value)}
+                  />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    formatter={(value) => [formatCurrencyINR(value), 'Spent']}
+                  />
+                  <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} fill="url(#colorVal)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={styles.emptyState}>
+                {dashboardLoading ? 'Loading spending data…' : 'No spending activity yet.'}
+              </div>
+            )}
           </div>
         </div>
 
@@ -179,20 +647,26 @@ const ClientDashboard = () => {
           <div style={{...themeStyles.card, marginBottom: '20px'}}>
             <h2 style={{...styles.cardTitle, ...themeStyles.textPrimary}}>Actions Required</h2>
             <div style={styles.list}>
-              {deadlines.map(d => (
-                <div key={d.id} style={{...styles.deadlineItem, borderBottom: `1px solid ${theme.palette.divider}`}}>
-                  <div style={styles.deadlineInfo}>
-                    <span style={{color: d.color, marginRight:'10px', display:'flex'}}><Icons.Clock /></span>
-                    <div>
-                      <div style={{...styles.itemTitle, ...themeStyles.textPrimary}}>{d.title}</div>
-                      <div style={{...styles.itemSub, ...themeStyles.textSecondary}}>{d.date}</div>
+              {actionItems.length > 0 ? (
+                actionItems.map((item) => (
+                  <div key={item.id} style={{...styles.deadlineItem, borderBottom: `1px solid ${theme.palette.divider}`}}>
+                    <div style={styles.deadlineInfo}>
+                      <span style={{color: item.color, marginRight:'10px', display:'flex'}}><Icons.Clock /></span>
+                      <div>
+                        <div style={{...styles.itemTitle, ...themeStyles.textPrimary}}>{item.title}</div>
+                        <div style={{...styles.itemSub, ...themeStyles.textSecondary}}>{item.date}</div>
+                      </div>
                     </div>
+                    <span style={{...styles.tag, color: item.color, backgroundColor: `${item.color}20`}}>
+                      {item.tag}
+                    </span>
                   </div>
-                  <span style={{...styles.tag, color: d.color, backgroundColor: `${d.color}20`}}>
-                    {d.tag}
-                  </span>
+                ))
+              ) : (
+                <div style={styles.emptyState}>
+                  {dashboardLoading ? 'Loading action items…' : 'No pending actions right now.'}
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -200,26 +674,39 @@ const ClientDashboard = () => {
           <div style={themeStyles.card}>
             <h2 style={{...styles.cardTitle, ...themeStyles.textPrimary}}>Job Postings</h2>
             <div style={styles.list}>
-              {activeJobs.map(job => (
-                <div key={job.id} style={{marginBottom: '15px'}}>
-                   <div style={styles.flexBetween}>
-                      <span style={{...styles.itemTitle, ...themeStyles.textPrimary}}>{job.title}</span>
-                      <span style={{...styles.itemSub, fontWeight: '600', color: '#3b82f6'}}>
-                        {job.status}
-                      </span>
-                   </div>
-                   <div style={{...styles.itemSub, ...themeStyles.textSecondary}}>
-                     {job.applicants} Applicants
-                   </div>
-                   <div style={{...styles.progressBarBg, backgroundColor: theme.palette.mode === 'dark' ? '#334155' : '#f1f5f9'}}>
-                      <div style={{
-                        ...styles.progressBarFill, 
-                        width: job.status === 'Interviewing' ? '70%' : job.status === 'Reviewing' ? '40%' : '10%',
-                        backgroundColor: job.status === 'Draft' ? '#94a3b8' : '#3b82f6'
-                      }}></div>
-                   </div>
+              {jobsList.length > 0 ? (
+                jobsList.map((job) => {
+                  const statusKey = (job.status || '').toLowerCase();
+                  const width = JOB_PROGRESS_WIDTH[statusKey] || '25%';
+                  const barColor = JOB_PROGRESS_COLOR[statusKey] || '#3b82f6';
+                  return (
+                    <div key={job.id || job.title} style={{marginBottom: '15px'}}>
+                      <div style={styles.flexBetween}>
+                        <span style={{...styles.itemTitle, ...themeStyles.textPrimary}}>{job.title}</span>
+                        <span style={{...styles.itemSub, fontWeight: '600', color: '#3b82f6'}}>
+                          {job.status || 'Open'}
+                        </span>
+                      </div>
+                      <div style={{...styles.itemSub, ...themeStyles.textSecondary}}>
+                        {job.applicants > 0 ? `${job.applicants} applicants` : 'No applicants yet'}
+                      </div>
+                      <div style={{...styles.progressBarBg, backgroundColor: theme.palette.mode === 'dark' ? '#334155' : '#f1f5f9'}}>
+                        <div
+                          style={{
+                            ...styles.progressBarFill,
+                            width,
+                            backgroundColor: barColor,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={styles.emptyState}>
+                  {dashboardLoading ? 'Loading job postings…' : 'No active job postings yet.'}
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -230,19 +717,27 @@ const ClientDashboard = () => {
       <div style={themeStyles.card}>
         <h2 style={{...styles.cardTitle, ...themeStyles.textPrimary}}>Hiring & Payment Activity</h2>
         <div style={styles.activityList}>
-          {activityFeed.map((item, index) => (
-            <div key={item.id} style={styles.activityItem}>
-              <div style={{...styles.activityIcon, backgroundColor: `${item.color}20`, color: item.color}}>
-                {item.icon}
-              </div>
-              <div style={styles.activityContent}>
-                <div style={{...styles.activityText, ...themeStyles.textPrimary}}>{item.text}</div>
-                <div style={{...styles.activityTime, ...themeStyles.textSecondary}}>{item.time}</div>
-              </div>
-              {/* Connector Line */}
-              {index !== activityFeed.length - 1 && <div style={{...styles.connectorLine, backgroundColor: theme.palette.divider}}></div>}
+          {activityList.length > 0 ? (
+            activityList.map((item, index) => {
+              const ActivityIcon = item.Icon || Icons.Invoice;
+              return (
+                <div key={item.id} style={styles.activityItem}>
+                  <div style={{...styles.activityIcon, backgroundColor: `${item.color}20`, color: item.color}}>
+                    <ActivityIcon />
+                  </div>
+                  <div style={styles.activityContent}>
+                    <div style={{...styles.activityText, ...themeStyles.textPrimary}}>{item.text}</div>
+                    <div style={{...styles.activityTime, ...themeStyles.textSecondary}}>{item.time}</div>
+                  </div>
+                  {index !== activityList.length - 1 && <div style={{...styles.connectorLine, backgroundColor: theme.palette.divider}}></div>}
+                </div>
+              );
+            })
+          ) : (
+            <div style={styles.emptyState}>
+              {dashboardLoading ? 'Loading activity…' : 'No recent activity yet.'}
             </div>
-          ))}
+          )}
         </div>
       </div>
 
@@ -273,11 +768,24 @@ const StatCard = ({ icon, title, value, change, color, theme }) => (
 
 // --- STYLES (Kept as base, colors overridden dynamically) ---
 const styles = {
+  pageContainer: {
+    width: '100%',
+    margin: 0,
+    padding: '24px',
+    boxSizing: 'border-box',
+  },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '30px',
+    flexWrap: 'wrap',
+    gap: '16px',
+  },
+  headerActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
   },
   greeting: {
     fontSize: '14px',
@@ -293,6 +801,15 @@ const styles = {
   subtitle: {
     fontSize: '14px',
     marginTop: '5px',
+  },
+  secondaryBtn: {
+    backgroundColor: 'transparent',
+    color: '#3b82f6',
+    border: '1px solid #3b82f6',
+    padding: '10px 18px',
+    borderRadius: '8px',
+    fontWeight: '600',
+    transition: '0.2s',
   },
   btn: {
     backgroundColor: '#3b82f6',
@@ -312,6 +829,7 @@ const styles = {
     gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
     gap: '20px',
     marginBottom: '25px',
+    width: '100%',
   },
   statCard: {
     padding: '20px',
@@ -349,10 +867,14 @@ const styles = {
     gap: '25px',
     marginBottom: '25px',
     flexWrap: 'wrap',
+    width: '100%',
   },
   column: {
     display: 'flex',
     flexDirection: 'column',
+  },
+  loadingBar: {
+    marginBottom: '16px',
   },
   card: {
     padding: '25px',
@@ -425,6 +947,11 @@ const styles = {
   progressBarFill: {
     height: '100%',
     borderRadius: '3px',
+  },
+  emptyState: {
+    padding: '12px 0',
+    fontSize: '13px',
+    color: '#64748b',
   },
   activityList: {
     marginTop: '20px',

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { Typography, Grid, Card, Avatar, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } from "@mui/material";
+import React, { useEffect, useMemo, useState } from "react";
+import { Typography, Grid, Card, Avatar, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, TextField } from "@mui/material";
+import { useSearch } from "../../context/SearchContext";
 import profileService from "../../services/profileService";
 
 export default function Freelancers() {
@@ -7,6 +8,7 @@ export default function Freelancers() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const { searchTerm, setSearchTerm } = useSearch();
 
   useEffect(() => {
     let mounted = true;
@@ -56,25 +58,58 @@ export default function Freelancers() {
     }
   };
 
+  const filteredFreelancers = useMemo(() => {
+    if (!searchTerm) return freelancers;
+    const query = searchTerm.toLowerCase();
+    return freelancers.filter((freelancer) => {
+      const fields = [
+        freelancer.name,
+        freelancer.first_name,
+        freelancer.last_name,
+        freelancer.title,
+        freelancer.tagline,
+        freelancer.skills,
+        freelancer.email
+      ];
+      return fields.some((value) =>
+        value && value.toString().toLowerCase().includes(query)
+      );
+    });
+  }, [freelancers, searchTerm]);
+
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>Freelancers</Typography>
 
+      <TextField
+        value={searchTerm}
+        onChange={(event) => setSearchTerm(event.target.value)}
+        placeholder="Search freelancers"
+        size="small"
+        fullWidth
+        disabled={loading}
+        sx={{ mb: 3 }}
+      />
+
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}><CircularProgress /></Box>
       ) : (
-        <Grid container spacing={3}>
-          {freelancers.map((f) => (
-            <Grid item xs={12} sm={6} md={3} key={f.id || f.user || JSON.stringify(f)}>
-              <Card sx={{ p: 3, textAlign: "center" }}>
-                <Avatar sx={{ width: 64, height: 64, margin: "0 auto", mb: 2 }} src={f.profile_image || f.avatar || undefined}>{!(f.profile_image || f.avatar) && (f.first_name ? (f.first_name[0] + (f.last_name ? f.last_name[0] : '')).toUpperCase() : 'F')}</Avatar>
-                <Typography variant="h6">{f.name || `${f.first_name || ''} ${f.last_name || ''}`.trim() || 'Freelancer'}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{f.title || f.tagline || ''}</Typography>
-                <Button variant="outlined" size="small" fullWidth onClick={() => openProfile(f)}>View Profile</Button>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        filteredFreelancers.length === 0 ? (
+          <Box sx={{ textAlign: 'center', p: 6, color: 'text.secondary' }}>No freelancers match that search.</Box>
+        ) : (
+          <Grid container spacing={3}>
+            {filteredFreelancers.map((f) => (
+              <Grid item xs={12} sm={6} md={3} key={f.id || f.user || JSON.stringify(f)}>
+                <Card sx={{ p: 3, textAlign: "center" }}>
+                  <Avatar sx={{ width: 64, height: 64, margin: "0 auto", mb: 2 }} src={f.profile_image || f.avatar || undefined}>{!(f.profile_image || f.avatar) && (f.first_name ? (f.first_name[0] + (f.last_name ? f.last_name[0] : '')).toUpperCase() : 'F')}</Avatar>
+                  <Typography variant="h6">{f.name || `${f.first_name || ''} ${f.last_name || ''}`.trim() || 'Freelancer'}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{f.title || f.tagline || ''}</Typography>
+                  <Button variant="outlined" size="small" fullWidth onClick={() => openProfile(f)}>View Profile</Button>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )
       )}
 
       <Dialog open={!!selected} onClose={() => setSelected(null)} maxWidth="md" fullWidth>

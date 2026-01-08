@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSignup } from '../hooks/useSignup';
 import { Link } from 'react-router-dom';
 
@@ -35,6 +35,29 @@ const SignupForm = () => {
             role // <--- Passing the selected role
         );
     };
+
+    useEffect(() => {
+        if (isSuccess) {
+            try {
+                if (!localStorage.getItem('seen_welcome')) {
+                    const note = {
+                        id: Date.now(),
+                        title: 'Welcome to TalentLink',
+                        message: `Welcome ${formData.firstName || formData.email || ''}!`,
+                        date: new Date().toISOString(),
+                        read: false
+                    };
+                    const existing = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+                    existing.unshift(note);
+                    localStorage.setItem('local_notifications', JSON.stringify(existing));
+                    localStorage.setItem('pending_welcome', JSON.stringify({ title: note.title, message: note.message }));
+                    localStorage.setItem('seen_welcome', '1');
+                }
+            } catch (e) {
+                console.warn('Could not persist welcome after signup', e);
+            }
+        }
+    }, [isSuccess]);
 
     if (isSuccess) {
         return (

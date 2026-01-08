@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import profileService from '../../services/profileService';
 import { Upload, X, Loader } from 'lucide-react';
-import FreelancerLayout from '../../freelancer_layouts/FreelancerLayout';
+ 
 
 const EditProfile = () => {
     const navigate = useNavigate();
@@ -78,7 +78,7 @@ const EditProfile = () => {
     if (loading) return <div className="flex justify-center items-center h-screen"><Loader className="animate-spin text-indigo-600 mb-4" /></div>;
 
     return (
-        <FreelancerLayout>
+        <>
             <div className="min-h-screen bg-slate-50 py-3 px-3 sm:px-4 lg:px-5">
                 <div className="w-full bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-9">
                     <div className="flex justify-between items-center mb-6">
@@ -204,7 +204,7 @@ const EditProfile = () => {
                     </form>
                 </div>
             </div>
-        </FreelancerLayout>
+        </>
     );
 };
 

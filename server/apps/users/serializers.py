@@ -21,6 +21,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['email'] = self.user.email
         data['name'] = self.user.first_name
         return data
+    class Meta:
+        # Unique ref_name for schema generation
+        ref_name = "UsersTokenObtainPairSerializer"
 
 # --- 2. Registration Serializer ---
 class RegisterSerializer(serializers.ModelSerializer):
@@ -32,6 +35,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email', 'password', 'first_name', 'last_name', 'role']
+
+        # Unique ref_name to avoid drf-yasg collisions
+        ref_name = "UsersRegisterSerializer"
 
     def create(self, validated_data):
         # FIX: Try to get the role. If it's missing/null, default to 'freelancer'.

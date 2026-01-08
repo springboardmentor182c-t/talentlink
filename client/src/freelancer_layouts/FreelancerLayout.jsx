@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { Box, CssBaseline, ThemeProvider, createTheme, Toolbar } from "@mui/material";
+import { Outlet } from 'react-router-dom';
 import FreelancerSidebar from "../freelancer_components/sidebar/FreelancerSidebar";
 import FreelancerNavbar from "../freelancer_components/navbar/FreelancerNavbar";
 import NotificationSidebar from "../notifications/features/notifications/components/NotificationSidebar";
@@ -147,13 +148,20 @@ export default function FreelancerLayout({ children }) {
           <Box 
             component="main" 
             className="hide-scrollbar"
-            sx={{ flex: 1, overflowY: 'auto', padding: 0 }}
+            sx={{ flex: 1, overflowY: 'auto', bgcolor: 'background.default' }}
           >
-            <Toolbar /> 
-            
-            {/* FIX: Removed maxWidth and mx:auto. Now it fills 100% width */}
-            <Box sx={{ p: 3, width: '100%' }}> 
-               {children}
+            <Toolbar sx={{ mb: { xs: 2, md: 3 } }} />
+
+            <Box
+              sx={{
+                width: '100%',
+                mx: 'auto',
+                px: { xs: 2, sm: 3, lg: 4 },
+                pb: { xs: 4, md: 6 },
+                boxSizing: 'border-box',
+              }}
+            >
+              <Outlet context={{ setNotifications }} />
             </Box>
           </Box>
         </Box>

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { 
   AppBar, Toolbar, Box, Avatar, IconButton, Typography, InputBase, Badge, 
   Menu, MenuItem, ListItemIcon, Divider, Dialog, DialogTitle, 
-  DialogContent, DialogActions, Button, TextField, Stack, Fade, useTheme as useMuiTheme
+  DialogContent, DialogActions, Button, TextField, Stack, Fade, Paper, useTheme as useMuiTheme
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
@@ -19,9 +19,10 @@ import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
 
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
-import profileService from "../../services/profileService";
 import { performLogout } from "../../utils/logout";
 import { useTheme } from "../../context/ThemeContext";
+import { profileImageOrFallback } from "../../utils/profileImage";
+import { useSearch } from "../../context/SearchContext";
 
 export default function FreelancerNavbar({
   onNotificationClick,
@@ -40,6 +41,7 @@ export default function FreelancerNavbar({
   // 3. Get Theme Controls
   const { theme, toggleTheme } = useTheme();
   const muiTheme = useMuiTheme(); // To access palette colors directly if needed
+  const { searchTerm, setSearchTerm, getSuggestions } = useSearch();
 
   // --- State for Menu ---
   const [anchorEl, setAnchorEl] = useState(null);
@@ -47,14 +49,45 @@ export default function FreelancerNavbar({
 
   // --- State for Edit Profile Modal ---
   const [openModal, setOpenModal] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchWrapperRef = useRef(null);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+  const suggestions = useMemo(() => getSuggestions('freelancer', 10), [getSuggestions, searchTerm]);
+  const suggestionPaperSx = useMemo(() => ({
+    position: 'absolute',
+    top: 'calc(100% + 8px)',
+    left: 0,
+    right: 0,
+    borderRadius: 3,
+    boxShadow: theme === 'dark' ? '0 20px 38px rgba(15, 23, 42, 0.45)' : '0 16px 32px rgba(15, 23, 42, 0.12)',
+    border: `1px solid ${muiTheme.palette.divider}`,
+    backgroundColor: muiTheme.palette.background.paper,
+    zIndex: muiTheme.zIndex.modal,
+    maxHeight: 320,
+    overflowY: 'auto',
+    padding: '8px 0'
+  }), [muiTheme, theme]);
+  const suggestionItemSx = (active) => ({
+    px: 2,
+    py: 1.2,
+    cursor: 'pointer',
+    borderRadius: 2,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0.5,
+    bgcolor: active ? muiTheme.palette.action.hover : 'transparent',
+    transition: 'background-color 0.15s ease',
+    '&:hover': { bgcolor: muiTheme.palette.action.hover }
+  });
   
   // --- SEPARATE PROFILE STATE (Presentation Hack) ---
   const [freelancerName, setFreelancerName] = useState(user?.name || "Freelancer Name");
   const [freelancerAvatar, setFreelancerAvatar] = useState(() => {
     try {
-      return localStorage.getItem("freelancer_avatar") || "";
+      return localStorage.getItem("freelancer_avatar") || user?.avatar || "";
     } catch (e) {
-      return "";
+      return user?.avatar || "";
     }
   });
   const [tempName, setTempName] = useState("");
@@ -66,9 +99,55 @@ export default function FreelancerNavbar({
     const savedName = localStorage.getItem("freelancer_name");
     const savedAvatar = localStorage.getItem("freelancer_avatar");
 
-    if (savedName) setFreelancerName(savedName);
-    if (savedAvatar) setFreelancerAvatar(savedAvatar);
+    if (savedName) {
+      setFreelancerName(savedName);
+    } else if (user?.name) {
+      setFreelancerName(user.name);
+    }
+
+    if (savedAvatar) {
+      setFreelancerAvatar(savedAvatar);
+    } else if (user?.avatar) {
+      setFreelancerAvatar(user.avatar);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!localStorage.getItem("freelancer_name") && user?.name) {
+      setFreelancerName(user.name);
+    }
+  }, [user?.name]);
+
+  useEffect(() => {
+    if (!localStorage.getItem("freelancer_avatar") && user?.avatar) {
+      setFreelancerAvatar(user.avatar);
+    }
+  }, [user?.avatar]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target)) {
+        setIsSuggestionsOpen(false);
+        setHighlightIndex(-1);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!isSuggestionsOpen) return;
+    setHighlightIndex((prev) => {
+      if (suggestions.length === 0) return -1;
+      if (prev < 0) return prev;
+      return Math.min(prev, suggestions.length - 1);
+    });
+  }, [suggestions.length, isSuggestionsOpen]);
+
+  useEffect(() => {
+    setHighlightIndex(-1);
+  }, [searchTerm]);
 
   // --- Handlers ---
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
@@ -81,10 +160,9 @@ export default function FreelancerNavbar({
   };
 
   const handleEditProfile = () => {
-    setTempName(freelancerName);
-    setPreview(freelancerAvatar);
-    setOpenModal(true);
+    // Navigate to the full edit profile page instead of opening the modal
     handleMenuClose();
+    navigate('/freelancer/profile/edit');
   };
 
   const handleFileChange = (e) => {
@@ -95,6 +173,75 @@ export default function FreelancerNavbar({
       setPreview(url);
     }
   };
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+    if (!isSuggestionsOpen) {
+      setIsSuggestionsOpen(true);
+    }
+  };
+
+  const handleSearchFocus = () => {
+    setIsSuggestionsOpen(true);
+  };
+
+  const handleSuggestionSelect = (item) => {
+    if (!item || !item.path) return;
+    navigate(item.path);
+    setIsSuggestionsOpen(false);
+    setHighlightIndex(-1);
+    if (searchOpen) {
+      setSearchOpen(false);
+    }
+  };
+
+  const handleSearchKeyDown = (event) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (!isSuggestionsOpen) {
+        setIsSuggestionsOpen(true);
+        return;
+      }
+      setHighlightIndex((prev) => {
+        if (suggestions.length === 0) return -1;
+        const next = prev + 1;
+        return next >= suggestions.length ? 0 : next;
+      });
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (!isSuggestionsOpen) {
+        setIsSuggestionsOpen(true);
+        return;
+      }
+      setHighlightIndex((prev) => {
+        if (suggestions.length === 0) return -1;
+        if (prev === -1) return suggestions.length - 1;
+        const next = prev - 1;
+        return next < 0 ? suggestions.length - 1 : next;
+      });
+    } else if (event.key === 'Enter') {
+      if (isSuggestionsOpen && suggestions.length > 0 && highlightIndex >= 0) {
+        event.preventDefault();
+        handleSuggestionSelect(suggestions[highlightIndex]);
+      }
+    } else if (event.key === 'Escape') {
+      if (isSuggestionsOpen) {
+        event.preventDefault();
+        setIsSuggestionsOpen(false);
+        setHighlightIndex(-1);
+      }
+    }
+  };
+
+  const openMobileSearch = () => {
+    setSearchOpen(true);
+    setIsSuggestionsOpen(true);
+  };
+
+  const shouldShowSuggestions = isSuggestionsOpen && (suggestions.length > 0 || searchTerm.trim().length > 0);
+  const emptyStateMessage = searchTerm.trim().length > 0
+    ? `No suggestions match "${searchTerm.trim()}".`
+    : 'Start typing to discover quick links.';
 
   const handleSave = () => {
     // 1. Update Local State
@@ -151,35 +298,66 @@ export default function FreelancerNavbar({
                 {sidebarOpen ? <ChevronLeftIcon /> : <MenuIcon />}
               </IconButton>
             )}
-
-            {/* Search Bar */}
-            <Box
-              sx={{
-                display: "flex", 
-                alignItems: "center", 
-                bgcolor: theme === 'dark' ? "rgba(255,255,255,0.05)" : "grey.100", // Dynamic bg
-                borderRadius: "50px", 
-                px: 2.5, 
-                py: 0.8, 
-                width: "100%", 
-                maxWidth: 400,
-                border: "1px solid transparent",
-                transition: "all 0.2s ease",
-                "&:hover": { bgcolor: theme === 'dark' ? "rgba(255,255,255,0.1)" : "grey.200" },
-                "&:focus-within": { 
-                  bgcolor: "background.paper", 
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                  borderColor: "primary.main"
-                }
-              }}
-            >
-              <SearchIcon sx={{ color: "text.secondary", mr: 1.5 }} />
-              <InputBase 
-                placeholder="Search projects..." 
-                fullWidth 
-                sx={{ fontSize: "0.95rem", fontWeight: 500 }} 
-              />
+            {/* Search Bar: hidden on xs, show icon that opens dialog */}
+            <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', width: '100%', maxWidth: 400 }}>
+              <Box
+                ref={searchWrapperRef}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  bgcolor: theme === 'dark' ? "rgba(255,255,255,0.05)" : "grey.100",
+                  borderRadius: '50px',
+                  px: 2.5,
+                  py: 0.8,
+                  width: '100%',
+                  border: '1px solid transparent',
+                  transition: 'all 0.2s ease',
+                  position: 'relative'
+                }}
+              >
+                <SearchIcon sx={{ color: 'text.secondary', mr: 1.5 }} />
+                <InputBase
+                  placeholder="Search projects..."
+                  fullWidth
+                  sx={{ fontSize: '0.95rem', fontWeight: 500 }}
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  onFocus={handleSearchFocus}
+                  onKeyDown={handleSearchKeyDown}
+                />
+                {shouldShowSuggestions && (
+                  <Paper sx={suggestionPaperSx}>
+                    {suggestions.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary" sx={{ px: 2, py: 1.5, textAlign: 'center' }}>
+                        {emptyStateMessage}
+                      </Typography>
+                    ) : (
+                      suggestions.map((item, index) => (
+                        <Box
+                          key={item.id}
+                          sx={suggestionItemSx(index === highlightIndex)}
+                          onMouseEnter={() => setHighlightIndex(index)}
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            handleSuggestionSelect(item);
+                          }}
+                        >
+                          <Typography variant="body2" fontWeight={600}>{item.label}</Typography>
+                          {item.description && (
+                            <Typography variant="caption" color="text.secondary">
+                              {item.description}
+                            </Typography>
+                          )}
+                        </Box>
+                      ))
+                    )}
+                  </Paper>
+                )}
+              </Box>
             </Box>
+            <IconButton sx={{ display: { xs: 'inline-flex', sm: 'none' } }} onClick={openMobileSearch}>
+              <SearchIcon />
+            </IconButton>
           </Box>
 
           {/* Right Section */}
@@ -221,20 +399,21 @@ export default function FreelancerNavbar({
             >
               {/* USE SEPARATE STATE HERE */}
               {(() => {
-                const avatarUploaded = !!localStorage.getItem("avatar_uploaded");
-                const src = avatarUploaded ? freelancerAvatar : null;
+                const displayName = freelancerName || user?.name || user?.email || "Freelancer";
+                const savedAvatar = localStorage.getItem("freelancer_avatar");
+                const src = savedAvatar || freelancerAvatar || user?.avatar || profileImageOrFallback(null, displayName, { background: "2563eb" });
                 return (
                   <Avatar
                     src={src || undefined}
                     sx={{ width: 40, height: 40, border: '2px solid white', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
                   >
-                    {!src && getInitials(freelancerName)}
+                    {!src && getInitials(displayName)}
                   </Avatar>
                 );
               })()}
               <Box sx={{ display: { xs: "none", md: "block" } }}>
                 <Typography variant="subtitle2" sx={{ lineHeight: 1.2, fontWeight: 700 }}>
-                  {freelancerName}
+                  {freelancerName || user?.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: '0.7rem' }}>
                   FREELANCER
@@ -297,6 +476,64 @@ export default function FreelancerNavbar({
           </Box>
         </Toolbar>
       </AppBar>
+
+      {/* Mobile Search Dialog */}
+      <Dialog open={searchOpen} onClose={() => { setSearchOpen(false); setIsSuggestionsOpen(false); }} fullWidth>
+        <DialogContent>
+          <Stack spacing={2}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <SearchIcon sx={{ color: 'text.secondary' }} />
+              <InputBase
+                autoFocus
+                placeholder="Search projects..."
+                fullWidth
+                value={searchTerm}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
+              />
+            </Box>
+
+            {suggestions.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 1 }}>
+                {emptyStateMessage}
+              </Typography>
+            ) : (
+              suggestions.map((item, index) => (
+                <Box
+                  key={`${item.id}-mobile-${index}`}
+                  sx={{
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    px: 2,
+                    py: 1.2,
+                    cursor: 'pointer'
+                  }}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    handleSuggestionSelect(item);
+                  }}
+                  onTouchStart={(event) => {
+                    event.preventDefault();
+                    handleSuggestionSelect(item);
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={600}>{item.label}</Typography>
+                  {item.description && (
+                    <Typography variant="caption" color="text.secondary">
+                      {item.description}
+                    </Typography>
+                  )}
+                </Box>
+              ))
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setSearchOpen(false); setIsSuggestionsOpen(false); }}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Edit Profile Dialog */}
       <Dialog 

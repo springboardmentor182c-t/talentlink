@@ -4,7 +4,7 @@ import { Search, Clock, MapPin, User, Gift } from 'lucide-react';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
 import jobService from '../../services/jobService';
-import FreelancerLayout from '../../freelancer_layouts/FreelancerLayout';
+ 
 import profileService from '../../services/profileService';
 import ClientProfileModal from '../../components/Modals/ClientProfileModal';
 import { resolveProfileImage } from '../../utils/profileImage';
@@ -141,7 +141,7 @@ export default function FreelancerProjects() {
   };
 
   return (
-    <FreelancerLayout>
+    <>
       <div className="flex-1 p-6 bg-gray-100 min-h-screen">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Jobs Available</h1>
         <p className="text-gray-600 mb-6">Find your dream job here</p>
@@ -394,6 +394,6 @@ export default function FreelancerProjects() {
         fallbackName={clientProfileFallback.name}
         fallbackEmail={clientProfileFallback.email}
       />
-    </FreelancerLayout>
+    </>
   );
 }

@@ -1,12 +1,16 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { 
   Grid, Card, Typography, Box, Button, Chip, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
-  Stack 
+  Stack, Autocomplete, TextField 
 } from "@mui/material";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
+
+import financeService from '../../services/financeService';
+import axiosInstance from '../../utils/axiosInstance';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 // Icons
 import DownloadIcon from "@mui/icons-material/Download";
@@ -16,40 +20,76 @@ import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 
-import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
+ 
 
-// --- Mock Data: Financial Stats ---
-const stats = [
-  { label: "Total Income", value: "₹45,200", change: "+12%", color: "#10b981", icon: <TrendingUpIcon /> },
-  { label: "Total Expenses", value: "₹12,450", change: "-5%", color: "#ef4444", icon: <TrendingDownIcon /> },
-  { label: "Net Profit", value: "₹32,750", change: "+8%", color: "#3b82f6", icon: <AccountBalanceWalletIcon /> },
-  { label: "Pending Invoices", value: "₹4,200", change: "3 Inv", color: "#f59e0b", icon: <MoreVertIcon /> },
-];
+// placeholders until API responds
+const DEFAULT_STATS = { total_income: '₹0.00', total_expenses: '₹0.00', net_profit: '₹0.00', pending_invoices: '0' };
+const DEFAULT_CHART = [];
 
-// --- Mock Data: Chart (Income vs Expense) ---
-const chartData = [
-  { month: "Jan", income: 4000, expense: 2400 },
-  { month: "Feb", income: 3000, expense: 1398 },
-  { month: "Mar", income: 2000, expense: 9800 },
-  { month: "Apr", income: 2780, expense: 3908 },
-  { month: "May", income: 1890, expense: 4800 },
-  { month: "Jun", income: 2390, expense: 3800 },
-  { month: "Jul", income: 3490, expense: 4300 },
-];
-
-// --- Mock Data: Transactions Table ---
-const transactions = [
-  { id: "#TRX-998", desc: "Website Development - Acme Corp", date: "Nov 28, 2025", type: "Income", amount: "+ ₹2,500.00", status: "Completed" },
-  { id: "#TRX-999", desc: "Server Hosting (AWS)", date: "Nov 27, 2025", type: "Expense", amount: "- ₹120.00", status: "Completed" },
-  { id: "#TRX-100", desc: "Logo Design - StartUp Inc", date: "Nov 25, 2025", type: "Income", amount: "+ ₹850.00", status: "Pending" },
-  { id: "#TRX-101", desc: "Software License (Adobe)", date: "Nov 22, 2025", type: "Expense", amount: "- ₹55.00", status: "Completed" },
-  { id: "#TRX-102", desc: "Mobile App UI - TechFlow", date: "Nov 20, 2025", type: "Income", amount: "+ ₹3,200.00", status: "Overdue" },
-];
 
 export default function Accounting() {
+  const [stats, setStats] = useState(DEFAULT_STATS);
+  const [chartData, setChartData] = useState(DEFAULT_CHART);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const s = await financeService.getFreelancerOverview().catch(() => null);
+        const tx = await financeService.getFreelancerTransactions().catch(() => null);
+        const ch = s?.chart || null;
+        if (!mounted) return;
+        if (s) setStats(s);
+        if (tx) setTransactions(tx);
+        if (ch) setChartData(ch);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const handleRequestPayout = async () => {
+    const amount = prompt('Enter payout amount');
+    if (!amount) return;
+    try {
+      await financeService.requestPayout(amount);
+      alert('Payout requested');
+    } catch (e) {
+      console.error(e);
+      alert('Payout request failed');
+    }
+  };
+
+  const [txDialogOpen, setTxDialogOpen] = React.useState(false);
+  const [txForm, setTxForm] = React.useState({ client: '', amount: '', description: '' });
+  const [clientOptions, setClientOptions] = useState([]);
+  const [clientInputValue, setClientInputValue] = useState('');
+  const clientSearchTimeout = useRef(null);
+
+  const openTxDialog = () => setTxDialogOpen(true);
+  const closeTxDialog = () => setTxDialogOpen(false);
+
+  const submitTxRequest = async () => {
+    if (!txForm.client || !txForm.amount) return alert('Client and amount required');
+    try {
+      await financeService.createFreelancerTransaction({ client: txForm.client, amount: txForm.amount, description: txForm.description });
+      alert('Transaction request created');
+      // reload transactions
+      const tx = await financeService.getFreelancerTransactions().catch(() => null);
+      if (tx) setTransactions(tx);
+      closeTxDialog();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to create transaction');
+    }
+  };
+
   return (
-    <FreelancerLayout>
-      
+    <>
       {/* --- Page Header --- */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
         <Box>
@@ -58,13 +98,18 @@ export default function Accounting() {
         </Box>
         <Stack direction="row" spacing={2}>
           <Button variant="outlined" startIcon={<DownloadIcon />}>Export Report</Button>
-          <Button variant="contained" startIcon={<AddIcon />} sx={{ bgcolor: "#3b82f6" }}>Add Transaction</Button>
+          <Button variant="contained" startIcon={<AddIcon />} sx={{ bgcolor: "#3b82f6" }} onClick={openTxDialog}>Add Transaction</Button>
         </Stack>
       </Box>
 
       {/* --- Top Stats Cards --- */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {stats.map((stat, index) => (
+        {(Array.isArray(stats) ? stats : [
+          { label: 'Total Income', value: stats.total_income || '—', change: '+', color: '#10b981', icon: <TrendingUpIcon /> },
+          { label: 'Total Expenses', value: stats.total_expenses || '—', change: '-', color: '#ef4444', icon: <TrendingDownIcon /> },
+          { label: 'Net Profit', value: stats.net_profit || '—', change: '+', color: '#3b82f6', icon: <AccountBalanceWalletIcon /> },
+          { label: 'Pending Invoices', value: stats.pending_invoices || '0', change: '—', color: '#f59e0b', icon: <MoreVertIcon /> },
+        ]).map((stat, index) => (
           <Grid item xs={12} sm={6} md={3} key={index}>
             <Card sx={{ p: 3, display: "flex", flexDirection: "column", gap: 1 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
@@ -85,6 +130,45 @@ export default function Accounting() {
           </Grid>
         ))}
       </Grid>
+
+      <Dialog open={txDialogOpen} onClose={closeTxDialog}>
+        <DialogTitle>Create Transaction Request</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 400 }}>
+            <Autocomplete
+              freeSolo
+              options={clientOptions}
+              getOptionLabel={(opt) => opt?.email || ''}
+              inputValue={clientInputValue}
+              onInputChange={(_e, newInput) => {
+                setClientInputValue(newInput);
+                if (clientSearchTimeout.current) clearTimeout(clientSearchTimeout.current);
+                if (!newInput || newInput.length < 2) return setClientOptions([]);
+                clientSearchTimeout.current = setTimeout(async () => {
+                  try {
+                    const res = await axiosInstance.get(`users/search/?q=${encodeURIComponent(newInput)}`);
+                    setClientOptions(res.data || []);
+                  } catch (err) {
+                    console.error('user search', err);
+                    setClientOptions([]);
+                  }
+                }, 300);
+              }}
+              onChange={(_e, value) => {
+                if (value && value.id) setTxForm({...txForm, client: value.id});
+                else setTxForm({...txForm, client: ''});
+              }}
+              renderInput={(params) => <TextField {...params} label="Client (email)" required />}
+            />
+            <TextField label="Amount" value={txForm.amount} onChange={(e) => setTxForm({...txForm, amount: e.target.value})} required />
+            <TextField label="Description" value={txForm.description} onChange={(e) => setTxForm({...txForm, description: e.target.value})} />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeTxDialog}>Cancel</Button>
+          <Button variant="contained" onClick={submitTxRequest}>Send Request</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* --- Main Content Row --- */}
       <Grid container spacing={3}>
@@ -167,6 +251,6 @@ export default function Accounting() {
         </Grid>
 
       </Grid>
-    </FreelancerLayout>
+    </>
   );
 }

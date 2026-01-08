@@ -17,9 +17,17 @@ class ConversationListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Avoid executing user-dependent queries during schema generation
+        if getattr(self, 'swagger_fake_view', False):
+            return Conversation.objects.none()
+
+        user = getattr(self.request, 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return Conversation.objects.none()
+
         return (
             Conversation.objects
-            .filter(participants=self.request.user)
+            .filter(participants=user)
             .select_related("proposal")
             .prefetch_related("participants", "messages")
             .order_by("-created_at")
