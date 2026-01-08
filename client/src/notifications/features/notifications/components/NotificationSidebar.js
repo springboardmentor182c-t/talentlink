@@ -89,14 +89,16 @@
 
 
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import NotificationItem from "./NotificationItem";
 import { getNotifications, markRead, deleteNotification } from "../services/notificationService";
+import { profileImageOrFallback } from "../../../../utils/profileImage";
 import "./NotificationSidebar.css";
 import "./NotificationItem.css"; 
 
 export default function NotificationSidebar({ isOpen, onClose, onItemsChange }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -189,8 +191,11 @@ export default function NotificationSidebar({ isOpen, onClose, onItemsChange }) 
 
   const handleViewAll = () => {
     onClose(); 
-    // UPDATED PATH: Points to the route inside ClientLayout
-    navigate("/client/notifications");
+    // Choose appropriate notifications page depending on current layout path
+    const path = location?.pathname || '';
+    if (path.startsWith('/client')) return navigate('/client/notifications');
+    if (path.startsWith('/freelancer')) return navigate('/freelancer/notifications');
+    return navigate('/notifications');
   };
 
   if (!isOpen) return null;
@@ -221,7 +226,10 @@ export default function NotificationSidebar({ isOpen, onClose, onItemsChange }) 
                 onToggleRead={handleToggleRead}
                 onAvatarClick={() => {
                    onClose();
-                   navigate(`/messages/${item.id}`);
+                   const path = location?.pathname || '';
+                   if (path.startsWith('/client')) return navigate(`/client/messages/${item.id}`);
+                   if (path.startsWith('/freelancer')) return navigate(`/freelancer/messages/${item.id}`);
+                   return navigate(`/messages/${item.id}`);
                 }}
                 onToggleFavourite={handleToggleFavourite}
                 onDelete={handleDelete}
@@ -246,6 +254,9 @@ export default function NotificationSidebar({ isOpen, onClose, onItemsChange }) 
 function mapFromApi(item) {
   const created = item.created_at ? new Date(item.created_at) : null;
   const safeTitle = item.title || "Notification";
+  const actorName = item.actor_name || item.metadata?.actor_name || safeTitle;
+  const rawAvatar = item.metadata?.actor_profile_image || item.metadata?.profile_image || item.metadata?.actor_avatar || item.metadata?.avatar;
+  const avatarUrl = profileImageOrFallback(rawAvatar, actorName || safeTitle, { background: "3b82f6", color: "ffffff" });
   return {
     id: item.id,
     title: safeTitle,
@@ -254,7 +265,7 @@ function mapFromApi(item) {
     category: item.is_starred ? "favourites" : "all",
     time: created ? created.toLocaleTimeString() : "",
     relative: created ? formatRelative(created) : "",
-    avatar: `https://ui-avatars.com/api/?background=3b82f6&color=fff&name=${encodeURIComponent(item.actor_name || safeTitle)}`,
+    avatar: avatarUrl,
     raw: item,
   };
 }

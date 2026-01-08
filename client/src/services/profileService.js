@@ -35,7 +35,7 @@ export const profileService = {
             }
           }
         });
-        const response = await axiosInstance.post('profiles/me/', formData, {
+        const response = await axiosInstance.post('profiles/me/?profile_type=freelancer', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -59,7 +59,7 @@ export const profileService = {
             }
           }
         });
-        const response = await axiosInstance.patch('profiles/me/', formData, {
+        const response = await axiosInstance.patch('profiles/me/?profile_type=freelancer', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -137,7 +137,7 @@ export const profileService = {
             }
           }
         });
-        const response = await axiosInstance.post('profiles/me/', formData, {
+        const response = await axiosInstance.post('profiles/me/?profile_type=client', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -163,7 +163,7 @@ export const profileService = {
         });
         // Changed to patch here too for consistency if needed, but keeping post if existing logic required it
         // But assumed me/ update uses patch.
-        const response = await axiosInstance.patch('profiles/me/', formData, {
+        const response = await axiosInstance.patch('profiles/me/?profile_type=client', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;

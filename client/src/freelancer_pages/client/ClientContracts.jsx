@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { contractService } from '../../services/contractService';
 import profileService from '../../services/profileService';

@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Typography, Card, Box, Chip, TextField, MenuItem, Stack, CircularProgress, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
 import DescriptionIcon from "@mui/icons-material/Description";
-import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
 import { contractService } from "../../services/contractService";
 import profileService from "../../services/profileService";
 import { useUser } from "../../context/UserContext";
@@ -15,6 +14,7 @@ export default function Contracts() {
   const [status, setStatus] = useState("all");
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
 
   useEffect(() => {
@@ -104,108 +104,188 @@ export default function Contracts() {
     return fallback || 'N/A';
   };
 
+  const formatDateSafe = (value) => {
+    if (!value) return 'N/A';
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return value;
+    return dt.toLocaleDateString();
+  };
+
+  const handleCloseDetails = useCallback(() => {
+    setDetailOpen(false);
+    setSelectedContract(null);
+    setDetailLoading(false);
+  }, []);
+
+  const hydrateClient = useCallback(async (detail) => {
+    if (!detail) return detail;
+    const clientEntity = detail.client ?? detail.client_id ?? detail.client_user;
+    if (clientEntity && (typeof clientEntity === 'number' || typeof clientEntity === 'string')) {
+      try {
+        const profile = await profileService.client.getProfileByUserId(clientEntity).catch(() => null);
+        if (profile) {
+          return { ...detail, client: profile };
+        }
+      } catch (err) {
+        console.debug('hydrateClient failed', err?.message || err);
+      }
+    }
+    return detail;
+  }, []);
+
+  const handleViewContract = useCallback(async (contract) => {
+    if (!contract) return;
+    setSelectedContract(contract);
+    setDetailOpen(true);
+    if (!contract.id) return;
+
+    setDetailLoading(true);
+    try {
+      const detail = await contractService.getContract(contract.id);
+      const enriched = await hydrateClient(detail || contract);
+      if (enriched) {
+        setSelectedContract((prev) => ({ ...(prev || {}), ...enriched }));
+        setContracts((prev) => prev.map((item) => item.id === contract.id ? { ...item, ...enriched } : item));
+      }
+    } catch (err) {
+      console.error('Failed to load contract details', err);
+    } finally {
+      setDetailLoading(false);
+    }
+  }, [hydrateClient]);
+
   return (
-    <FreelancerLayout>
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>Contracts</Typography>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100%',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)',
+        boxSizing: 'border-box',
+        px: { xs: 2, md: 4, lg: 6 },
+        py: { xs: 3, md: 6 }
+      }}
+    >
+      <Box
+        sx={{
+          maxWidth: '1380px',
+          mx: 'auto',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: { xs: 3, md: 4 }
+        }}
+      >
+        <Typography variant="h5" fontWeight={700}>Contracts</Typography>
 
-      <Card sx={{ p: 3, mb: 3 }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-          <TextField
-            size="small"
-            placeholder="Search by contract or client"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            InputProps={{
-              startAdornment: <SearchIcon sx={{ mr: 1 }} />,
-            }}
-            sx={{ minWidth: 240 }}
-          />
+        <Card sx={{ p: 3 }}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+            <TextField
+              size="small"
+              placeholder="Search by contract or client"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              InputProps={{
+                startAdornment: <SearchIcon sx={{ mr: 1 }} />,
+              }}
+              sx={{ minWidth: 240 }}
+            />
 
-          <TextField
-            select
-            size="small"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            sx={{ width: 160 }}
-          >
-            {statuses.map((s) => (
-              <MenuItem key={s} value={s}>{s === 'all' ? 'All statuses' : s.charAt(0).toUpperCase() + s.slice(1)}</MenuItem>
-            ))}
-          </TextField>
+            <TextField
+              select
+              size="small"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              sx={{ width: 160 }}
+            >
+              {statuses.map((s) => (
+                <MenuItem key={s} value={s}>{s === 'all' ? 'All statuses' : s.charAt(0).toUpperCase() + s.slice(1)}</MenuItem>
+              ))}
+            </TextField>
 
-          <Box sx={{ ml: 'auto' }}>
-            <IconButton onClick={() => { setQuery(''); setStatus('all'); }} title="Clear filters">
-              Clear
-            </IconButton>
-          </Box>
-        </Stack>
-      </Card>
-
-      <Card sx={{ p: 3 }}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}><CircularProgress /></Box>
-        ) : visible.length === 0 ? (
-          <Box sx={{ p: 6, textAlign: 'center', color: 'text.secondary' }}>No contracts found.</Box>
-        ) : (
-          visible.map((c) => (
-            <Box key={c.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, p: 2, border: '1px solid #eee', borderRadius: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <DescriptionIcon color="action" />
-                <Box>
-                  <Typography fontWeight={600}>{c.title || c.name || c.contract_title || 'Contract'}</Typography>
-                  <Typography variant="caption" color="text.secondary">{new Date(c.created_at || c.date || c.created || Date.now()).toLocaleDateString()}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{resolveName(c.client ?? c.client_name ?? c.client_user)}</Typography>
-                </Box>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Chip label={(c.status || c.state || '').toString().replace(/_/g, ' ') || 'Unknown'} color={(c.status || c.state || '').toString().toLowerCase() === 'signed' ? 'success' : 'warning'} size="small" />
-                <Button size="small" onClick={() => { setSelectedContract(c); setDetailOpen(true); }}>View</Button>
-                {/* Show sign button inline for freelancers when contract is not signed or cancelled */}
-                {((c.status || c.state || '').toString().toLowerCase() !== 'signed' && (c.status || c.state || '').toString().toLowerCase() !== 'cancelled') && (
-                  <Button size="small" variant="contained" onClick={async () => {
-                    const id = c.id;
-                    setActionLoading((s) => ({ ...s, [id]: true }));
-                    try {
-                      await contractService.updateContract(id, { status: 'signed' });
-                      // optimistic local update
-                      setContracts((prev) => prev.map((x) => x.id === id ? { ...x, status: 'signed' } : x));
-                    } catch (err) {
-                      console.error('Sign contract failed', err);
-                    } finally {
-                      setActionLoading((s) => { const n = { ...s }; delete n[id]; return n; });
-                    }
-                  }} disabled={!!actionLoading[c.id]}>
-                    {actionLoading[c.id] ? 'Signing...' : 'Sign'}
-                  </Button>
-                )}
-              </Box>
+            <Box sx={{ ml: { xs: 0, sm: 'auto' } }}>
+              <IconButton onClick={() => { setQuery(''); setStatus('all'); }} title="Clear filters">
+                Clear
+              </IconButton>
             </Box>
-          ))
-        )}
-      </Card>
+          </Stack>
+        </Card>
+
+        <Card sx={{ p: 3 }}>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}><CircularProgress /></Box>
+          ) : visible.length === 0 ? (
+            <Box sx={{ p: 6, textAlign: 'center', color: 'text.secondary' }}>No contracts found.</Box>
+          ) : (
+            <Stack spacing={2}>
+              {visible.map((c) => (
+                <Box key={c.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, p: 2, border: '1px solid #e2e8f0', borderRadius: 2, flexWrap: 'wrap' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <DescriptionIcon color="action" />
+                    <Box>
+                      <Typography fontWeight={600}>{c.title || c.name || c.contract_title || 'Contract'}</Typography>
+                      <Typography variant="caption" color="text.secondary">{new Date(c.created_at || c.date || c.created || Date.now()).toLocaleDateString()}</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{resolveName(c.client ?? c.client_name ?? c.client_user)}</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip label={(c.status || c.state || '').toString().replace(/_/g, ' ') || 'Unknown'} color={(c.status || c.state || '').toString().toLowerCase() === 'signed' ? 'success' : 'warning'} size="small" />
+                    <Button size="small" onClick={() => handleViewContract(c)}>View</Button>
+                    {((c.status || c.state || '').toString().toLowerCase() !== 'signed' && (c.status || c.state || '').toString().toLowerCase() !== 'cancelled') && (
+                      <Button size="small" variant="contained" onClick={async () => {
+                        const id = c.id;
+                        setActionLoading((s) => ({ ...s, [id]: true }));
+                        try {
+                          await contractService.updateContract(id, { status: 'signed' });
+                          setContracts((prev) => prev.map((x) => x.id === id ? { ...x, status: 'signed' } : x));
+                          setSelectedContract((prev) => (prev && prev.id === id ? { ...prev, status: 'signed' } : prev));
+                        } catch (err) {
+                          console.error('Sign contract failed', err);
+                        } finally {
+                          setActionLoading((s) => { const n = { ...s }; delete n[id]; return n; });
+                        }
+                      }} disabled={!!actionLoading[c.id]}>
+                        {actionLoading[c.id] ? 'Signing...' : 'Sign'}
+                      </Button>
+                    )}
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </Card>
+      </Box>
 
       {/* Details dialog */}
-      <Dialog open={detailOpen} onClose={() => { setDetailOpen(false); setSelectedContract(null); }} maxWidth="md" fullWidth>
+      <Dialog open={detailOpen} onClose={handleCloseDetails} maxWidth="md" fullWidth>
         <DialogTitle>Contract Details</DialogTitle>
         <DialogContent dividers>
           {selectedContract ? (
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
-              <Typography variant="h6">{selectedContract.title || selectedContract.name}</Typography>
-              <Typography variant="body2" color="text.secondary">Client: {selectedContract.client?.name || selectedContract.client_name || selectedContract.client || 'N/A'}</Typography>
-              <Typography variant="body2" color="text.secondary">Amount: {selectedContract.total_amount != null ? Number(selectedContract.total_amount).toLocaleString('en-IN', { style: 'currency', currency: 'INR' }) : 'N/A'}</Typography>
-              <Typography variant="body2" color="text.secondary">Start Date: {selectedContract.start_date || 'N/A'}</Typography>
-              <Typography variant="body2" color="text.secondary">End Date: {selectedContract.end_date || 'N/A'}</Typography>
-              <Box>
-                <Typography variant="subtitle2">Terms</Typography>
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{selectedContract.terms || 'No terms provided.'}</Typography>
+            <Box sx={{ position: 'relative' }}>
+              {detailLoading && (
+                <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(255,255,255,0.65)', zIndex: 1 }}>
+                  <CircularProgress size={28} />
+                </Box>
+              )}
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
+                <Typography variant="h6">{selectedContract.title || selectedContract.name}</Typography>
+                <Typography variant="body2" color="text.secondary">Client: {resolveName(selectedContract.client ?? selectedContract.client_name ?? selectedContract.client_user)}</Typography>
+                <Typography variant="body2" color="text.secondary">Amount: {selectedContract.total_amount != null ? Number(selectedContract.total_amount).toLocaleString('en-IN', { style: 'currency', currency: 'INR' }) : 'N/A'}</Typography>
+                <Typography variant="body2" color="text.secondary">Start Date: {formatDateSafe(selectedContract.start_date)}</Typography>
+                <Typography variant="body2" color="text.secondary">End Date: {formatDateSafe(selectedContract.end_date)}</Typography>
+                <Box>
+                  <Typography variant="subtitle2">Terms</Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{selectedContract.terms || 'No terms provided.'}</Typography>
+                </Box>
               </Box>
             </Box>
           ) : (
-            <Box>Loading...</Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={28} />
+            </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setDetailOpen(false); setSelectedContract(null); }}>Close</Button>
+          <Button onClick={handleCloseDetails}>Close</Button>
           {selectedContract && ((selectedContract.status || selectedContract.state || '').toString().toLowerCase() !== 'signed' && (selectedContract.status || selectedContract.state || '').toString().toLowerCase() !== 'cancelled') && (
             <Button variant="contained" onClick={async () => {
               const id = selectedContract.id;
@@ -224,6 +304,6 @@ export default function Contracts() {
           )}
         </DialogActions>
       </Dialog>
-    </FreelancerLayout>
+    </Box>
   );
 }

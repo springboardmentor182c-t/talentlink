@@ -11,7 +11,9 @@ import {
   Box,
   Typography,
   Badge,
-  Button
+  Button,
+  useMediaQuery,
+  useTheme
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useNavigate, useLocation } from "react-router-dom"; 
@@ -22,33 +24,35 @@ import DashboardIcon from "@mui/icons-material/DashboardRounded";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLongRounded";
 import WorkIcon from "@mui/icons-material/WorkRounded"; 
-import MailIcon from "@mui/icons-material/MailRounded";
 import DescriptionIcon from "@mui/icons-material/DescriptionRounded"; 
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonthRounded";
 import PeopleIcon from "@mui/icons-material/PeopleRounded";
-import AssessmentIcon from "@mui/icons-material/AssessmentRounded";
 import SettingsIcon from "@mui/icons-material/SettingsRounded";
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline'; 
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 const menuItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/freelancer" },
-  { text: "Accounting", icon: <AccountBalanceWalletIcon />, path: "/freelancer/accounting" },
-  { text: "Expenses", icon: <ReceiptLongIcon />, path: "/freelancer/expenses" },
   { text: "Projects", icon: <WorkIcon />, path: "/freelancer/projects" }, 
   { text: "Proposals", icon: <DriveFileRenameOutlineIcon />, path: "/freelancer/proposals" }, 
-  { text: "Work Inquiry", icon: <MailIcon />, path: "/freelancer/inquiry" },
-  { text: "Messages", icon: <ChatBubbleOutlineIcon />, path: "/freelancer/messages" },
-  { text: "Contracts", icon: <DescriptionIcon />, path: "/freelancer/contracts" },
-  { text: "Calendar", icon: <CalendarMonthIcon />, path: "/freelancer/calendar" },
   { text: "Clients", icon: <PeopleIcon />, path: "/freelancer/clients" },
-  { text: "Reports", icon: <AssessmentIcon />, path: "/freelancer/reports" },
-  { text: "Settings", icon: <SettingsIcon />, path: "/freelancer/settings" },
+  { text: "Accounting", icon: <AccountBalanceWalletIcon />, path: "/freelancer/accounting" },
+  { text: "Expenses", icon: <ReceiptLongIcon />, path: "/freelancer/expenses" },
+  { text: "Contracts", icon: <DescriptionIcon />, path: "/freelancer/contracts" },
+  { text: "Messages", icon: <ChatBubbleOutlineIcon />, path: "/freelancer/messages" },
 ];
 
-export default function FreelancerSidebar({ width = 260, open = true }) {
+const preferenceItems = [
+  { text: "Settings", icon: <SettingsIcon />, path: "/freelancer/settings" },
+  { text: "Help Center", icon: <HelpOutlineIcon />, path: "/freelancer/help" },
+];
+
+export default function FreelancerSidebar({ width = 260, open = true, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const sidebarBg = '#0a1f44'; 
   const activeBg = "#3b82f6";   
@@ -60,27 +64,33 @@ export default function FreelancerSidebar({ width = 260, open = true }) {
     navigate('/login');
   };
 
-  if (!open) {
-    return null;
-  }
+  // For mobile screens use a temporary Drawer so it overlays content and can be closed.
+  const variant = isMobile ? 'temporary' : 'permanent';
+
+  // If it's a permanent drawer and closed, don't render
+  if (variant === 'permanent' && !open) return null;
 
   return (
     <Drawer
-      variant="permanent"
+      variant={variant}
+      open={open}
+      onClose={onClose}
+      ModalProps={{ keepMounted: true }}
       sx={{
         width,
         flexShrink: 0,
         "& .MuiDrawer-paper": {
           width,
           boxSizing: "border-box",
-          bgcolor: sidebarBg, 
+          bgcolor: sidebarBg,
           color: "white",
           borderRight: "none",
-          
           // --- HIDE SCROLLBAR IN MUI DRAWER ---
           "&::-webkit-scrollbar": { display: "none" },
-          msOverflowStyle: "none", 
-          scrollbarWidth: "none",  
+          msOverflowStyle: "none",
+          scrollbarWidth: "none",
+          // For temporary drawers on mobile, ensure high zIndex
+          ...(isMobile && { zIndex: theme => theme.zIndex.drawer + 2 }),
         },
       }}
     >
@@ -163,6 +173,65 @@ export default function FreelancerSidebar({ width = 260, open = true }) {
                       fontWeight: "bold" 
                     } 
                   }} 
+                />
+              )}
+            </ListItemButton>
+          );
+        })}
+      </Box>
+
+      <Typography variant="caption" sx={{ color: "#64748b", px: 2, letterSpacing: 1, fontWeight: 600, mt: 3 }}>
+        PREFERENCES
+      </Typography>
+      <Box sx={{ mt: 1 }}>
+        {preferenceItems.map((item) => {
+          const isActive = location.pathname === item.path;
+
+          return (
+            <ListItemButton
+              key={item.text}
+              onClick={() => navigate(item.path)}
+              selected={isActive}
+              sx={{
+                borderRadius: 2,
+                mb: 1,
+                transition: "all 0.2s ease-in-out",
+
+                "&.Mui-selected": {
+                  bgcolor: "rgba(59,130,246,0.15)",
+                  color: activeText,
+                  borderLeft: "4px solid #3b82f6",
+                  pl: 1.5,
+                  "&:hover": { bgcolor: "rgba(59,130,246,0.2)" },
+                  "& .MuiListItemIcon-root": { color: activeText },
+                  "& .MuiListItemText-primary": { fontWeight: 600 },
+                },
+
+                "&:not(.Mui-selected)": {
+                  color: inactiveText,
+                  "&:hover": {
+                    bgcolor: "rgba(255,255,255,0.05)",
+                    color: "white",
+                    "& .MuiListItemIcon-root": { color: "white" }
+                  },
+                },
+              }}
+            >
+              <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }} />
+
+              {item.badge && (
+                <Badge
+                  badgeContent={item.badge}
+                  sx={{
+                    "& .MuiBadge-badge": {
+                      bgcolor: isActive ? "white" : activeBg,
+                      color: isActive ? activeBg : "white",
+                      fontWeight: "bold"
+                    }
+                  }}
                 />
               )}
             </ListItemButton>

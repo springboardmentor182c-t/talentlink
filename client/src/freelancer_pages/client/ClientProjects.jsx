@@ -276,11 +276,11 @@ const ClientProjects = () => {
   const [showPostForm, setShowPostForm] = useState(false);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 ${showPostForm ? 'py-2 sm:py-4 px-1 sm:px-3 md:px-6' : 'py-4 sm:py-8 px-3 sm:px-4 md:px-6 lg:px-8'}`}>
-      <div className={showPostForm ? 'max-w-[1400px] mx-auto w-full' : 'max-w-4xl mx-auto'}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 py-6 sm:py-10 px-4 sm:px-6 lg:px-10">
+      <div className="max-w-[1380px] mx-auto w-full">
         {!showPostForm ? (
           <>
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
               <h1 className="text-2xl font-bold text-gray-800">Your Posted Projects</h1>
               <button
                 onClick={() => setShowPostForm(true)}
@@ -289,52 +289,56 @@ const ClientProjects = () => {
                 Post a Job
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {postedProjects && postedProjects.length > 0 ? (
                 postedProjects.map(project => {
                   const statusKey = (project.status || '').toLowerCase();
                   const statusBadgeClass = STATUS_BADGE_CLASSES[statusKey] || STATUS_BADGE_CLASSES.default;
 
                   return (
-                    <div key={project.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
-                      <div className="flex flex-col lg:flex-row justify-between">
-                        <div className="flex-1">
-                          <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <div key={project.id} className="bg-white/95 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow p-6 md:p-8">
+                      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_240px]">
+                        <div className="space-y-4">
+                          <div className="flex flex-wrap items-center gap-3">
                             <h3 className="text-xl font-semibold text-gray-800">{project.title}</h3>
                             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusBadgeClass}`}>{project.status || 'N/A'}</span>
                             <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">{project.location || 'N/A'}</span>
                           </div>
-                          <p className="text-gray-600 mb-4">{project.description}</p>
-                          <div className="flex flex-wrap gap-2 mb-4">
+                          <p className="text-gray-600 leading-relaxed">{project.description}</p>
+                          <div className="flex flex-wrap gap-2">
                             {(Array.isArray(project.skills) ? project.skills : typeof project.skills === 'string' ? project.skills.split(',').map(s => s.trim()).filter(Boolean) : []).map((skill, idx) => (
                               <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">{skill}</span>
                             ))}
                           </div>
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-600">
                             <div className="flex items-center"><FaIndianRupeeSign className="w-4 h-4 mr-1" /><span>₹{project.min_budget} - ₹{project.max_budget}</span></div>
                             <div className="flex items-center"><Clock className="w-4 h-4 mr-1" /><span>{project.duration || 'N/A'}</span></div>
                             <div className="flex items-center"><MapPin className="w-4 h-4 mr-1" /><span>{project.location || 'N/A'}</span></div>
                             <div className="flex items-center"><span className="font-semibold">Type:</span> <span>{project.project_type || 'N/A'}</span></div>
                           </div>
                         </div>
-                        <div className="flex flex-col justify-between mt-4 lg:mt-0 lg:ml-6">
-                          <div className="text-right mb-4">
-                            <p className="text-sm text-gray-500">Status</p>
-                            <p className="font-semibold text-gray-800 mb-2">{project.status || 'N/A'}</p>
-                            <label className="text-xs font-medium text-gray-500 block mb-1">Update status</label>
-                            <select
-                              value={project.status || 'Open'}
-                              onChange={e => handleStatusChange(project.id, project.status, e.target.value)}
-                              disabled={statusUpdatingId === project.id}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
-                            >
-                              {PROJECT_STATUS_OPTIONS.map(option => (
-                                <option key={option} value={option}>{option}</option>
-                              ))}
-                            </select>
-                            {statusUpdatingId === project.id && (
-                              <p className="mt-1 text-xs text-gray-500">Updating status...</p>
-                            )}
+                        <div className="flex flex-col justify-between gap-6 rounded-xl border border-gray-100 bg-slate-50/60 p-4 lg:p-5">
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Status</p>
+                              <p className="text-lg font-semibold text-gray-800">{project.status || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 block mb-1">Update status</label>
+                              <select
+                                value={project.status || 'Open'}
+                                onChange={e => handleStatusChange(project.id, project.status, e.target.value)}
+                                disabled={statusUpdatingId === project.id}
+                                className="w-full min-w-[180px] px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white disabled:bg-gray-100"
+                              >
+                                {PROJECT_STATUS_OPTIONS.map(option => (
+                                  <option key={option} value={option}>{option}</option>
+                                ))}
+                              </select>
+                              {statusUpdatingId === project.id && (
+                                <p className="mt-1 text-xs text-gray-500">Updating status...</p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -342,7 +346,7 @@ const ClientProjects = () => {
                   );
                 })
               ) : (
-                <div className="flex flex-col items-center justify-center py-10 bg-white rounded-lg shadow-sm">
+                <div className="flex flex-col items-center justify-center py-12 bg-white/90 rounded-2xl shadow-sm border border-gray-100">
                   <p className="text-xl font-semibold text-gray-700 mb-2">No projects posted yet</p>
                   <p className="text-gray-500 mb-6">Your posted projects will appear here.</p>
                 </div>
@@ -372,9 +376,9 @@ const ClientProjects = () => {
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full min-h-[70vh]">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full min-h-[70vh]">
               {/* Form Card */}
-              <div className="lg:col-span-2 flex flex-col bg-white rounded-xl shadow-xl p-2 sm:p-4 md:p-8 border border-gray-100 h-full justify-between">
+              <div className="lg:col-span-2 flex flex-col bg-white/95 rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-gray-100 h-full justify-between">
                 <form onSubmit={handleSubmit} className="flex flex-col justify-between h-full space-y-4 sm:space-y-6">
                   {/* Project Title */}
                   <div>
@@ -622,7 +626,7 @@ const ClientProjects = () => {
                   <div className="space-y-4 overflow-y-auto">
                     {postedProjects && postedProjects.length > 0 ? (
                       postedProjects.map(project => (
-                        <div key={project.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4">
+                        <div key={project.id} className="bg-white/95 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4">
                           <div className="flex flex-col">
                             <div className="flex flex-wrap items-center gap-3 mb-2">
                               <h3 className="text-base font-semibold text-gray-800">{project.title}</h3>
@@ -645,7 +649,7 @@ const ClientProjects = () => {
                         </div>
                       ))
                     ) : (
-                      <div className="flex flex-col items-center justify-center py-6 bg-white rounded-lg shadow-sm">
+                      <div className="flex flex-col items-center justify-center py-6 bg-white/90 rounded-xl border border-gray-100 shadow-sm">
                         <p className="text-base font-semibold text-gray-700 mb-2">No projects posted yet</p>
                         <p className="text-gray-500 mb-2 text-xs">Your posted projects will appear here.</p>
                       </div>

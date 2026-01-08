@@ -20,7 +20,11 @@ class ProposalViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        user = self.request.user
+        # Avoid executing user-dependent queries during schema generation
+        if getattr(self, 'swagger_fake_view', False):
+            return ProjectProposal.objects.none()
+
+        user = getattr(self.request, 'user', None)
         project_id = self.request.query_params.get("project_id")
         queryset = self.queryset
         # If filtering by project_id (for client proposals page)
@@ -32,7 +36,7 @@ class ProposalViewSet(viewsets.ModelViewSet):
                 return queryset.none()
             queryset = queryset.filter(project_id=pid)
         # If user is authenticated, filter by freelancer or client
-        if user and user.is_authenticated:
+        if user and getattr(user, 'is_authenticated', False):
             role = (getattr(user, "role", "") or "").lower()
             if role == "freelancer":
                 queryset = queryset.filter(freelancer=user)
@@ -130,12 +134,18 @@ class ProposalCreateView(generics.CreateAPIView):
     def get_serializer_context(self):
         context = super().get_serializer_context()
 
-        if self.request.user.is_authenticated:
+        # During schema generation (drf-yasg) avoid DB operations
+        if getattr(self, 'swagger_fake_view', False):
+            context["freelancer"] = None
+            return context
+
+        if self.request.user and getattr(self.request.user, 'is_authenticated', False):
             context["freelancer"] = self.request.user
         else:
+            # Use email as unique identifier for the custom user model
             anonymous_user, _ = User.objects.get_or_create(
-                username="anonymous",
-                defaults={"email": "anonymous@example.com"}
+                email="anonymous@example.com",
+                defaults={"first_name": "Anonymous", "is_active": False}
             )
             context["freelancer"] = anonymous_user
 

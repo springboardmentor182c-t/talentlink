@@ -48,7 +48,52 @@ const ClientMessages = () => {
       const proposals = Array.isArray(response.data) ? response.data : [];
       const grouped = groupProposalsByFreelancer(proposals);
       const enriched = await attachProfiles(grouped);
-      setFreelancers(enriched);
+
+      // Inject permanent TalentLink system conversation at the top for clients
+      const talentKey = 'talentlink';
+      const talentEntry = {
+        userKey: talentKey,
+        userId: null,
+        name: 'TalentLink',
+        email: 'notifications@talentlink',
+        bidAmount: null,
+        completionTime: null,
+        status: 'system',
+        createdAt: new Date().toISOString(),
+        proposals: [],
+        profile: null,
+      };
+
+      // Ensure talentlink messages exist in localStorage
+      try {
+        const key = 'talentlink_messages';
+        const existing = JSON.parse(localStorage.getItem(key) || 'null');
+        if (!existing) {
+          const welcome = JSON.parse(localStorage.getItem('pending_welcome') || 'null');
+          const initial = [
+            {
+              id: 'talent-' + Date.now(),
+              sender: 'talentlink',
+              text: (welcome && (welcome.message || welcome.title)) || 'Welcome to TalentLink! Start exploring freelancers and post jobs to get matched.',
+              timestamp: new Date().toISOString(),
+            },
+          ];
+          localStorage.setItem(key, JSON.stringify(initial));
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      setFreelancers([talentEntry, ...enriched]);
+      try {
+        const stored = JSON.parse(localStorage.getItem('talentlink_messages') || '[]');
+        setConversationMap((prev) => ({
+          ...prev,
+          [talentEntry.userKey]: { conversationId: 'talentlink', proposalId: null, messages: stored },
+        }));
+      } catch (e) {
+        // ignore
+      }
     } catch (err) {
       console.error('Error loading proposal contacts', err);
       const message = err?.response?.data?.detail || 'Unable to load freelancers for messaging.';
@@ -132,6 +177,19 @@ const ClientMessages = () => {
     async (freelancer, proposal) => {
       if (!freelancer || !proposal) return null;
       const key = freelancer.userKey;
+      // Handle local TalentLink conversation
+      if (key === 'talentlink') {
+        try {
+          const stored = JSON.parse(localStorage.getItem('talentlink_messages') || '[]');
+          setConversationMap((prev) => ({
+            ...prev,
+            [key]: { conversationId: 'talentlink', proposalId: null, messages: stored },
+          }));
+          return 'talentlink';
+        } catch (e) {
+          console.error('Error loading talentlink local messages', e);
+        }
+      }
       const isActive = key === selectedKey;
       setMessageLoadingKey(key);
       if (isActive) {
@@ -225,23 +283,39 @@ const ClientMessages = () => {
       if (!conversationId) {
         throw new Error('Conversation missing');
       }
+      if (key === 'talentlink') {
+        const storedKey = 'talentlink_messages';
+        try {
+          const existing = JSON.parse(localStorage.getItem(storedKey) || '[]');
+          const newMsg = { id: 'local-' + Date.now(), sender: 'user', text: messageText, timestamp: new Date().toISOString() };
+          const updated = [...existing, newMsg];
+          localStorage.setItem(storedKey, JSON.stringify(updated));
+          setConversationMap((prev) => ({
+            ...prev,
+            [key]: { conversationId: 'talentlink', proposalId: null, messages: updated },
+          }));
+        } catch (e) {
+          console.error('Error saving talentlink message', e);
+          throw e;
+        }
+      } else {
+        const response = await axiosInstance.post(`messaging/conversations/${conversationId}/messages/`, {
+          text: messageText,
+        });
 
-      const response = await axiosInstance.post(`messaging/conversations/${conversationId}/messages/`, {
-        text: messageText,
-      });
-
-      setConversationMap((prev) => {
-        const existing = prev[key] || { conversationId, proposalId: latestProposal.id, messages: [] };
-        return {
-          ...prev,
-          [key]: {
-            ...existing,
-            conversationId,
-            proposalId: latestProposal.id,
-            messages: [...(existing.messages || []), response.data],
-          },
-        };
-      });
+        setConversationMap((prev) => {
+          const existing = prev[key] || { conversationId, proposalId: latestProposal.id, messages: [] };
+          return {
+            ...prev,
+            [key]: {
+              ...existing,
+              conversationId,
+              proposalId: latestProposal.id,
+              messages: [...(existing.messages || []), response.data],
+            },
+          };
+        });
+      }
       setDraftMessage('');
     } catch (err) {
       console.error('Error sending message', err);

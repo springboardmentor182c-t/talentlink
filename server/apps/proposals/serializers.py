@@ -47,6 +47,8 @@ class ProposalSerializer(serializers.ModelSerializer):
             "attachments",
         ]
         read_only_fields = ["freelancer", "status", "created_at"]
+        # Unique ref_name to avoid drf-yasg serializer name collision
+        ref_name = "ProposalSerializerProposals"
 
     def get_freelancer(self, obj):
         try:

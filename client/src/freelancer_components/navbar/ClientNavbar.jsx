@@ -1,8 +1,8 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useUser } from '../../context/UserContext';
-import profileService from '../../services/profileService';
 import { performLogout } from '../../utils/logout';
+import { profileImageOrFallback } from '../../utils/profileImage';
 import {
   FaChevronDown, FaUser, FaCog, FaSignOutAlt,
   FaCloudUploadAlt, FaSearch,
@@ -17,19 +17,67 @@ import { useTheme as useMuiTheme, IconButton, Badge, Avatar } from '@mui/materia
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import Brightness4Icon from '@mui/icons-material/Brightness4'; // Moon
 import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
+import { useSearch } from '../../context/SearchContext';
 
   const ClientNavbar = ({ onNotificationClick, onSidebarToggle, onDelete, onToggleFavourite, notifications = [], sidebarOpen = true }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const searchWrapperRef = useRef(null);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
   
   const { user, updateProfile, logout } = useUser();
+  const { searchTerm, setSearchTerm, getSuggestions } = useSearch();
   
   // 2. Theme Logic
   const { theme, toggleTheme } = useAppTheme(); // From your Context
   const muiTheme = useMuiTheme(); // From Material UI (for colors)
+  const suggestions = useMemo(() => getSuggestions('client', 10), [getSuggestions, searchTerm]);
+  const suggestionStyles = useMemo(() => ({
+    panel: {
+      position: 'absolute',
+      top: 'calc(100% + 8px)',
+      left: 0,
+      right: 0,
+      backgroundColor: muiTheme.palette.background.paper,
+      borderRadius: 16,
+      border: `1px solid ${muiTheme.palette.divider}`,
+      boxShadow: theme === 'dark'
+        ? '0 20px 40px rgba(15, 23, 42, 0.45)'
+        : '0 16px 32px rgba(15, 23, 42, 0.12)',
+      zIndex: 120,
+      padding: '8px 0',
+      maxHeight: 320,
+      overflowY: 'auto'
+    },
+    item: (active) => ({
+      padding: '10px 16px',
+      cursor: 'pointer',
+      backgroundColor: active ? (theme === 'dark' ? 'rgba(148, 163, 184, 0.15)' : 'rgba(15, 23, 42, 0.08)') : 'transparent',
+      transition: 'background-color 0.15s ease',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4
+    }),
+    label: {
+      fontSize: 14,
+      fontWeight: 600,
+      color: muiTheme.palette.text.primary
+    },
+    description: {
+      fontSize: 12,
+      color: muiTheme.palette.text.secondary
+    },
+    empty: {
+      padding: '16px',
+      textAlign: 'center',
+      fontSize: 13,
+      color: muiTheme.palette.text.secondary
+    }
+  }), [muiTheme, theme]);
 
   const [tempName, setTempName] = useState(user?.name || "");
   const [tempAvatar, setTempAvatar] = useState(user?.avatar || "");
@@ -40,6 +88,27 @@ import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
         setTempAvatar(user.avatar);
     }
   }, [user]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target)) {
+        setIsSuggestionsOpen(false);
+        setHighlightIndex(-1);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    setHighlightIndex((prev) => {
+      if (!isSuggestionsOpen) return prev;
+      if (suggestions.length === 0) return -1;
+      if (prev < 0) return prev;
+      return Math.min(prev, suggestions.length - 1);
+    });
+  }, [suggestions.length, isSuggestionsOpen]);
 
   const handleLogout = () => {
     setIsMenuOpen(false);
@@ -54,10 +123,9 @@ import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
 
   const handleEditClick = (e) => {
     e.stopPropagation();
-    setTempName(user.name);
-    setTempAvatar(user.avatar);
-    setShowEditModal(true);
-    setIsMenuOpen(false); 
+    // Navigate to client profile edit page instead of opening inline modal
+    setIsMenuOpen(false);
+    navigate('/client/profile/edit');
   };
 
   const handleSaveProfile = () => {
@@ -120,6 +188,71 @@ import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
     }
   };
 
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+    if (!isSuggestionsOpen) {
+      setIsSuggestionsOpen(true);
+    }
+  };
+
+  const handleSearchFocus = () => {
+    setIsSuggestionsOpen(true);
+  };
+
+  const handleSuggestionSelect = (item) => {
+    if (!item || !item.path) return;
+    navigate(item.path);
+    setIsSuggestionsOpen(false);
+    setHighlightIndex(-1);
+  };
+
+  const handleSearchKeyDown = (event) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (!isSuggestionsOpen) {
+        setIsSuggestionsOpen(true);
+        return;
+      }
+      setHighlightIndex((prev) => {
+        if (suggestions.length === 0) return -1;
+        const next = prev + 1;
+        return next >= suggestions.length ? 0 : next;
+      });
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (!isSuggestionsOpen) {
+        setIsSuggestionsOpen(true);
+        return;
+      }
+      setHighlightIndex((prev) => {
+        if (suggestions.length === 0) return -1;
+        if (prev === -1) return suggestions.length - 1;
+        const next = prev - 1;
+        return next < 0 ? suggestions.length - 1 : next;
+      });
+    } else if (event.key === 'Enter') {
+      if (isSuggestionsOpen && suggestions.length > 0 && highlightIndex >= 0) {
+        event.preventDefault();
+        handleSuggestionSelect(suggestions[highlightIndex]);
+      }
+    } else if (event.key === 'Escape') {
+      if (isSuggestionsOpen) {
+        event.preventDefault();
+        setIsSuggestionsOpen(false);
+        setHighlightIndex(-1);
+      }
+    }
+  };
+
+  const shouldShowSuggestions = isSuggestionsOpen && (suggestions.length > 0 || searchTerm.trim().length > 0);
+  const emptyStateMessage = searchTerm.trim().length > 0
+    ? `No suggestions match "${searchTerm.trim()}".`
+    : 'Start typing to discover quick links.';
+
+  useEffect(() => {
+    setHighlightIndex(-1);
+  }, [searchTerm]);
+
   if (!user) return null; 
 
   return (
@@ -141,13 +274,39 @@ import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
               {sidebarOpen ? <FaChevronLeft /> : <FaBars />}
             </button>
           )}
-          <div style={dynamicStyles.searchContainer}>
+          <div ref={searchWrapperRef} style={dynamicStyles.searchContainer}>
             <FaSearch style={styles.searchIcon} />
             <input 
               type="text" 
               placeholder="Search projects, talent..." 
               style={dynamicStyles.searchInput} 
+              value={searchTerm}
+              onChange={handleSearchChange}
+              onFocus={handleSearchFocus}
+              onKeyDown={handleSearchKeyDown}
             />
+            {shouldShowSuggestions && (
+              <div style={suggestionStyles.panel}>
+                {suggestions.length === 0 ? (
+                  <div style={suggestionStyles.empty}>{emptyStateMessage}</div>
+                ) : (
+                  suggestions.map((item, index) => (
+                    <div
+                      key={item.id}
+                      style={suggestionStyles.item(index === highlightIndex)}
+                      onMouseEnter={() => setHighlightIndex(index)}
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        handleSuggestionSelect(item);
+                      }}
+                    >
+                      <span style={suggestionStyles.label}>{item.label}</span>
+                      {item.description && <span style={suggestionStyles.description}>{item.description}</span>}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -184,10 +343,10 @@ import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
           <div style={styles.profileContainer}>
             <div style={styles.profileWrapper} onClick={toggleMenu}>
               {(() => {
-                const avatarUploaded = !!localStorage.getItem('avatar_uploaded');
-                const saved = localStorage.getItem('freelancer_avatar');
-                const src = avatarUploaded ? (saved || user.avatar) : null;
-                const initials = (user && user.name) ? user.name.split(/\s+/).map(p => p[0]).slice(0,2).join('').toUpperCase() : 'U';
+                const displayName = user?.name || user?.email || "Client";
+                const saved = localStorage.getItem('client_avatar') || localStorage.getItem('freelancer_avatar');
+                const src = saved || user?.avatar || profileImageOrFallback(null, displayName, { background: '0f172a' });
+                const initials = displayName.split(/\s+/).map((part) => part[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
                 return (
                   <Avatar src={src || undefined} style={styles.avatar}>
                     {!src && initials}
@@ -310,6 +469,7 @@ const styles = {
     borderRadius: '50px',
     width: '320px',
     transition: '0.2s',
+    position: 'relative',
   },
   searchIcon: {
     color: '#94a3b8',

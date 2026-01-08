@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { Typography, Grid, Card, Avatar, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } from "@mui/material";
-import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
+import React, { useEffect, useMemo, useState } from "react";
+import { Typography, Grid, Card, Avatar, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, TextField } from "@mui/material";
+import { useSearch } from "../../context/SearchContext";
 import profileService from "../../services/profileService";
 
 export default function Clients() {
@@ -8,6 +8,7 @@ export default function Clients() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const { searchTerm, setSearchTerm } = useSearch();
 
   useEffect(() => {
     let mounted = true;
@@ -91,26 +92,80 @@ export default function Clients() {
     }
   };
 
-  return (
-    <FreelancerLayout>
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>Find New Clients</Typography>
+  const filteredClients = useMemo(() => {
+    if (!searchTerm) return clients;
+    const query = searchTerm.toLowerCase();
+    return clients.filter((client) => {
+      const fields = [
+        client.name,
+        client.first_name,
+        client.last_name,
+        client.company,
+        client.title,
+        client.email,
+        client.skills
+      ];
+      return fields.some((value) =>
+        value && value.toString().toLowerCase().includes(query)
+      );
+    });
+  }, [clients, searchTerm]);
 
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}><CircularProgress /></Box>
-      ) : (
-        <Grid container spacing={3}>
-          {clients.map((c) => (
-            <Grid item xs={12} sm={6} md={3} key={c.id || c.user || JSON.stringify(c)}>
-              <Card sx={{ p: 3, textAlign: "center" }}>
-                <Avatar sx={{ width: 64, height: 64, margin: "0 auto", mb: 2 }} src={c.profile_image || c.avatar || undefined}>{!(c.profile_image || c.avatar) && (c.first_name ? (c.first_name[0] + (c.last_name ? c.last_name[0] : '')).toUpperCase() : 'C')}</Avatar>
-                <Typography variant="h6">{c.name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.company || 'Client'}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{c.title || c.company || ''}</Typography>
-                <Button variant="outlined" size="small" fullWidth onClick={() => openProfile(c)}>View Profile</Button>
-              </Card>
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100%',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)',
+        boxSizing: 'border-box',
+        px: { xs: 2, md: 4, lg: 6 },
+        py: { xs: 3, md: 6 }
+      }}
+    >
+      <Box
+        sx={{
+          maxWidth: '1380px',
+          mx: 'auto',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: { xs: 3, md: 4 }
+        }}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Typography variant="h5" fontWeight={700}>Find New Clients</Typography>
+
+          <TextField
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search clients"
+            size="small"
+            fullWidth
+            disabled={loading}
+          />
+        </Box>
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}><CircularProgress /></Box>
+        ) : (
+          filteredClients.length === 0 ? (
+            <Box sx={{ textAlign: 'center', p: 6, color: 'text.secondary' }}>No clients match that search.</Box>
+          ) : (
+            <Grid container spacing={3}>
+              {filteredClients.map((c) => (
+                <Grid item xs={12} sm={6} md={3} key={c.id || c.user || JSON.stringify(c)}>
+                  <Card sx={{ p: 3, textAlign: 'center', height: '100%' }}>
+                    <Avatar sx={{ width: 64, height: 64, margin: '0 auto', mb: 2 }} src={c.profile_image || c.avatar || undefined}>{!(c.profile_image || c.avatar) && (c.first_name ? (c.first_name[0] + (c.last_name ? c.last_name[0] : '')).toUpperCase() : 'C')}</Avatar>
+                    <Typography variant="h6">{c.name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.company || 'Client'}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{c.title || c.company || ''}</Typography>
+                    <Button variant="outlined" size="small" fullWidth onClick={() => openProfile(c)}>View Profile</Button>
+                  </Card>
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
-      )}
+          )
+        )}
+      </Box>
 
       <Dialog open={!!selected} onClose={() => setSelected(null)} maxWidth="sm" fullWidth>
         <DialogTitle>Client Profile</DialogTitle>
@@ -189,6 +244,6 @@ export default function Clients() {
           <Button onClick={() => setSelected(null)}>Close</Button>
         </DialogActions>
       </Dialog>
-    </FreelancerLayout>
+    </Box>
   );
 }

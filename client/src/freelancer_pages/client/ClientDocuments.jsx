@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import FileUpload from '../../components/FileUpload';
+import profileService from '../../services/profileService';
+import axiosInstance from '../../utils/axiosInstance';
 
 // --- SVG Icons ---
 const Icons = {
@@ -10,89 +13,250 @@ const Icons = {
   Download: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
 };
 
-const docs = [
-  { id: 1, name: 'Project_Contract_v2.pdf', type: 'pdf', size: '2.4 MB', date: 'Nov 20, 2025', category: 'Contracts' },
-  { id: 2, name: 'Invoice_#1024.pdf', type: 'pdf', size: '1.1 MB', date: 'Nov 25, 2025', category: 'Invoices' },
-  { id: 3, name: 'Homepage_Mockup.png', type: 'image', size: '4.5 MB', date: 'Nov 28, 2025', category: 'Design' },
-  { id: 4, name: 'Requirements_Spec.docx', type: 'word', size: '500 KB', date: 'Nov 10, 2025', category: 'Specs' },
-];
+// documents are fetched from the profile API
 
 const ClientDocuments = () => {
+  const [docs, setDocs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+
   const getIcon = (type) => {
     if (type === 'pdf') return <Icons.Pdf />;
     if (type === 'image') return <Icons.Image />;
     return <Icons.File />;
   };
 
-  return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.pageTitle}>Documents</h1>
-        <div style={styles.actions}>
-          <div style={styles.searchWrapper}>
-            <div style={styles.searchIcon}><Icons.Search /></div>
-            <input type="text" placeholder="Search files..." style={styles.searchInput} />
-          </div>
-          <button style={styles.uploadBtn}>
-            <span style={{marginRight: '8px', display:'flex'}}><Icons.Upload /></span> Upload File
-          </button>
-        </div>
-      </div>
+  const normalizeDocs = (profile) => {
+    // backend may return documents in different shapes. Try common locations.
+    const candidates = [];
 
-      <div style={styles.card}>
-        <table style={styles.table}>
-          <thead>
-            <tr style={styles.tHeadRow}>
-              <th style={styles.th}>Name</th>
-              <th style={styles.th}>Category</th>
-              <th style={styles.th}>Date Uploaded</th>
-              <th style={styles.th}>Size</th>
-              <th style={styles.th}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {docs.map((doc) => (
-              <tr key={doc.id} style={styles.tr}>
-                <td style={styles.td}>
-                  <div style={styles.fileName}>
-                    <span style={styles.fileIcon}>{getIcon(doc.type)}</span>
-                    {doc.name}
-                  </div>
-                </td>
-                <td style={styles.td}><span style={styles.catBadge}>{doc.category}</span></td>
-                <td style={styles.td}>{doc.date}</td>
-                <td style={styles.td}>{doc.size}</td>
-                <td style={styles.td}>
-                  <button style={styles.downloadBtn}><Icons.Download /></button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    const pushRaw = (r) => {
+      if (!r) return;
+      if (Array.isArray(r)) r.forEach((it) => candidates.push(it));
+      else candidates.push(r);
+    };
+
+    // common places
+    pushRaw(profile?.documents || profile?.document);
+    pushRaw(profile?.client_profile?.documents);
+    pushRaw(profile?.freelancer_profile?.documents);
+    pushRaw(profile?.data?.documents);
+    pushRaw(profile?.profile?.documents);
+    // if profile itself is a string/url or array
+    if (typeof profile === 'string' || Array.isArray(profile)) pushRaw(profile);
+
+    // flatten and filter
+    const rawList = candidates.flat().filter(Boolean);
+    if (!rawList.length) return [];
+
+    return rawList.map((r, idx) => {
+      const url = typeof r === 'string' ? r : (r.url || r.path || r.file || '');
+      const name = (typeof r === 'string' ? url.split('/').pop() : (r.name || (url && url.split('/').pop()) || `file-${idx}`));
+      const lower = (url || '').toLowerCase();
+      const type = lower.endsWith('.pdf') ? 'pdf' : (lower.match(/\.(png|jpg|jpeg|gif)$/i) ? 'image' : 'file');
+      return { id: idx, url, name, type, size: r.size || '', date: r.uploaded_at || r.date || '' };
+    });
+  };
+
+  const loadDocs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const profile = await profileService.client.getProfile();
+      console.debug('ClientDocuments: profile response', profile);
+      setDocs(normalizeDocs(profile));
+    } catch (err) {
+      console.error('Failed to load documents', err);
+      setDocs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadDocs(); }, [loadDocs]);
+
+  const handleUpload = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      console.debug('Uploading file', file);
+      const res = await profileService.client.updateProfile({ documents: file });
+      console.debug('Upload response', res);
+      // Try to read uploaded document info from the response and merge into UI immediately.
+      const uploaded = normalizeDocs(res);
+      if (uploaded && uploaded.length) {
+        setDocs((prev) => {
+          // avoid duplicates by url
+          const urls = new Set(prev.map(d => d.url));
+          const merged = [...uploaded.filter(d => !urls.has(d.url)), ...prev];
+          return merged;
+        });
+      } else {
+        // fallback: refresh from server to ensure consistent shape
+        await loadDocs();
+      }
+      alert('Document uploaded');
+    } catch (err) {
+      console.error('Upload failed', err, err?.response?.data);
+      const serverData = err?.response?.data;
+      let msg = 'Upload failed';
+      if (serverData) msg = typeof serverData === 'string' ? serverData : JSON.stringify(serverData);
+      alert(msg);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownload = (url) => {
+    // try to open absolute or relative url
+    if (!url) return;
+    if (url.startsWith('http')) return window.open(url, '_blank');
+    const apiRoot = axiosInstance.defaults.baseURL.replace(/\/api\/?$/, '');
+    const link = `${apiRoot}${url.startsWith('/') ? '' : '/'}${url}`;
+    window.open(link, '_blank');
+  };
+
+  return (
+    <div style={styles.wrapper}>
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <div style={styles.titleGroup}>
+            <h1 style={styles.pageTitle}>Documents</h1>
+            <p style={styles.subtitle}>Keep all project files organised and within easy reach for your team.</p>
+          </div>
+          <div style={styles.actions}>
+            <div style={styles.searchWrapper}>
+              <div style={styles.searchIcon}><Icons.Search /></div>
+              <input type="text" placeholder="Search files..." style={styles.searchInput} />
+            </div>
+            <div style={styles.uploadGroup}>
+              <FileUpload label="Upload document" accept="*" onChange={handleUpload} helperText={uploading ? 'Uploading...' : ''} />
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.card}>
+          {loading ? (
+            <div style={styles.loadingState}>Loading documents...</div>
+          ) : (
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr style={styles.tHeadRow}>
+                    <th style={styles.th}>Name</th>
+                    <th style={styles.th}>Category</th>
+                    <th style={styles.th}>Date Uploaded</th>
+                    <th style={styles.th}>Size</th>
+                    <th style={styles.th}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {docs.length ? docs.map((doc) => (
+                    <tr key={doc.id} style={styles.tr}>
+                      <td style={styles.td}>
+                        <div style={styles.fileName}>
+                          <span style={styles.fileIcon}>{getIcon(doc.type)}</span>
+                          {doc.name}
+                        </div>
+                      </td>
+                      <td style={styles.td}><span style={styles.catBadge}>{doc.category || 'General'}</span></td>
+                      <td style={styles.td}>{doc.date || '—'}</td>
+                      <td style={styles.td}>{doc.size || '—'}</td>
+                      <td style={styles.td}>
+                        <button style={styles.downloadBtn} onClick={() => handleDownload(doc.url)}><Icons.Download /></button>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={5} style={styles.emptyState}>No documents uploaded yet.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
 const styles = {
-  container: { maxWidth: '1200px', margin: '0 auto' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' },
-  pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1e293b' },
-  actions: { display: 'flex', gap: '15px' },
-  searchWrapper: { position: 'relative', display: 'flex', alignItems: 'center' },
+  wrapper: {
+    minHeight: '100vh',
+    padding: '32px 20px 48px',
+    background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)',
+    boxSizing: 'border-box'
+  },
+  container: {
+    maxWidth: '1380px',
+    margin: '0 auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px'
+  },
+  header: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: '16px 24px'
+  },
+  titleGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
+  },
+  pageTitle: { fontSize: '26px', fontWeight: '700', color: '#1e293b', margin: 0 },
+  subtitle: { fontSize: '14px', color: '#64748b', maxWidth: '540px', lineHeight: 1.5 },
+  actions: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: '16px',
+    minWidth: '240px'
+  },
+  searchWrapper: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    flex: '1 1 240px',
+    maxWidth: '340px'
+  },
   searchIcon: { position: 'absolute', left: '12px', display: 'flex' },
-  searchInput: { padding: '10px 10px 10px 35px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none', width: '250px' },
-  uploadBtn: { backgroundColor: '#3b82f6', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center' },
-  card: { backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' },
-  table: { width: '100%', borderCollapse: 'collapse' },
+  searchInput: {
+    width: '100%',
+    padding: '10px 12px 10px 38px',
+    borderRadius: '10px',
+    border: '1px solid #dbe4f0',
+    fontSize: '14px',
+    outline: 'none',
+    backgroundColor: '#ffffff'
+  },
+  uploadGroup: {
+    flex: '1 1 240px',
+    maxWidth: '360px',
+    width: '100%'
+  },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    borderRadius: '20px',
+    border: '1px solid #e2e8f0',
+    boxShadow: '0 20px 45px rgba(15, 23, 42, 0.08)',
+    overflow: 'hidden'
+  },
+  loadingState: { padding: '28px', fontSize: '14px', color: '#475569' },
+  tableWrapper: { width: '100%', overflowX: 'auto', padding: '0 12px 16px' },
+  table: { width: '100%', minWidth: '720px', borderCollapse: 'collapse' },
   tHeadRow: { backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' },
-  th: { textAlign: 'left', padding: '15px 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' },
+  th: { textAlign: 'left', padding: '16px 24px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' },
   tr: { borderBottom: '1px solid #f1f5f9' },
-  td: { padding: '15px 20px', fontSize: '14px', color: '#334155' },
-  fileName: { display: 'flex', alignItems: 'center', fontWeight: '500' },
-  fileIcon: { marginRight: '12px', display: 'flex' },
-  catBadge: { backgroundColor: '#f1f5f9', color: '#475569', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' },
-  downloadBtn: { background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }
+  td: { padding: '18px 24px', fontSize: '14px', color: '#334155' },
+  fileName: { display: 'flex', alignItems: 'center', fontWeight: '500', gap: '12px' },
+  fileIcon: { display: 'flex' },
+  catBadge: { backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '6px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: '600' },
+  downloadBtn: { background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', display: 'inline-flex', padding: '6px', borderRadius: '8px', transition: 'background-color 0.2s ease, color 0.2s ease' },
+  emptyState: { padding: '32px', textAlign: 'center', fontSize: '14px', color: '#64748b' }
 };
 
 export default ClientDocuments;

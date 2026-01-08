@@ -6,7 +6,7 @@ import {
   Box, Typography, Table, TableBody, TableCell, 
   TableContainer, TableHead, TableRow, Paper, Chip, CircularProgress 
 } from "@mui/material";
-import FreelancerLayout from "../../freelancer_layouts/FreelancerLayout";
+ 
 import axiosInstance from "../../utils/axiosInstance";
 
 export default function FreelancerProposals() {
@@ -43,7 +43,7 @@ export default function FreelancerProposals() {
   };
 
   return (
-    <FreelancerLayout>
+    <>
       <Box sx={{ p: 3 }}>
         <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>My Proposals</Typography>
         
@@ -98,6 +98,6 @@ export default function FreelancerProposals() {
           </TableContainer>
         )}
       </Box>
-    </FreelancerLayout>
+    </>
   );
 }

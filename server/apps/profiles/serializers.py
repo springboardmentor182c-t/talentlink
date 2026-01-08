@@ -5,6 +5,7 @@ class ClientProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', read_only=True)
     first_name = serializers.CharField(source='user.first_name', required=False)
     last_name = serializers.CharField(source='user.last_name', required=False)
+    documents = serializers.FileField(required=False, allow_null=True)
     
     class Meta:
         model = ClientProfile
@@ -20,6 +21,7 @@ class ClientProfileSerializer(serializers.ModelSerializer):
             'skills',
             'works',
             'profile_image',
+            'documents',
             'created_at',
             'updated_at'
         ]
@@ -77,6 +79,7 @@ class FreelancerProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name', required=False)
     last_name = serializers.CharField(source='user.last_name', required=False)
     profile_image = serializers.ImageField(required=False, allow_null=True)
+    documents = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model = FreelancerProfile
@@ -86,6 +89,7 @@ class FreelancerProfileSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'profile_image',
+            'documents',
             'skills', 
             'portfolio', 
             'works', 

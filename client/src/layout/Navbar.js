@@ -2,15 +2,40 @@
 
 
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 import { FaBriefcase } from 'react-icons/fa'; // Import the briefcase icon
 import '../App.css';
 
 const Navbar = () => {
     const navigate = useNavigate();
+    const [snackOpen, setSnackOpen] = useState(false);
+    const [snackMsg, setSnackMsg] = useState('');
+    const [snackTitle, setSnackTitle] = useState('');
+
+    useEffect(() => {
+        try {
+            const pending = localStorage.getItem('pending_welcome');
+            if (pending) {
+                const p = JSON.parse(pending);
+                setSnackTitle(p.title || 'Welcome');
+                setSnackMsg(p.message || 'Welcome to TalentLink');
+                setSnackOpen(true);
+                localStorage.removeItem('pending_welcome');
+            }
+        } catch (e) {
+            // ignore
+        }
+    }, []);
+
+    const handleSnackClose = () => {
+        setSnackOpen(false);
+    };
 
     return (
+        <>
         <nav className="navbar">
             {/* --- Logo Section --- */}
             {/* Kept consistent with your screenshot (Briefcase + TalentLink) */}
@@ -50,6 +75,12 @@ const Navbar = () => {
                 </button>
             </div>
         </nav>
+        <Snackbar open={snackOpen} autoHideDuration={6000} onClose={handleSnackClose} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+            <Alert onClose={handleSnackClose} severity="success" sx={{ width: '100%' }}>
+                <strong>{snackTitle}</strong>: {snackMsg}
+            </Alert>
+        </Snackbar>
+        </>
     );
 };
 

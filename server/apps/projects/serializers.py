@@ -41,16 +41,26 @@ class ProjectSerializer(serializers.ModelSerializer):
         return ProjectProposal.objects.filter(project_id=obj.id).count()
 
 class ProposalSerializer(serializers.ModelSerializer):
-    # We can apply the same safe logic here if needed, or keep as is
+    # Safe fields: project_id (integer) and project_title resolved dynamically
     freelancer_name = serializers.ReadOnlyField(source='freelancer.username')
-    project_title = serializers.ReadOnlyField(source='project.title')
+    project_title = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectProposal
         fields = [
-            'id', 'project', 'project_title', 
-            'freelancer', 'freelancer_name', 
-            'cover_letter', 'bid_amount', 
+            'id', 'project_id', 'project_title',
+            'freelancer', 'freelancer_name',
+            'cover_letter', 'bid_amount',
             'status', 'created_at'
         ]
         read_only_fields = ["client", "freelancer", "created_at"]
+        # Unique ref_name to avoid drf-yasg serializer name collision
+        ref_name = "ProposalSerializerProjects"
+
+    def get_project_title(self, obj):
+        try:
+            from apps.projects.models import Project
+            project = Project.objects.filter(id=obj.project_id).first()
+            return project.title if project else None
+        except Exception:
+            return None

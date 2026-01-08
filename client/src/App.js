@@ -9,6 +9,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { UserProvider } from "./context/UserContext";
 import { ProjectProvider } from "./context/ProjectContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { SearchProvider } from "./context/SearchContext";
 
 /* ===== AuthFlow UI Pages ===== */
 import Home from "./pages/Home";
@@ -49,6 +50,8 @@ import Settings from "./freelancer_pages/freelancer/FreelancerSettings";
 import Profile from "./freelancer_pages/freelancer/Profile";
 import EditProfile from "./freelancer_pages/freelancer/EditProfile";
 import FreelancerMessages from "./freelancer_pages/freelancer/FreelancerMessages";
+import FreelancerLayout from "./freelancer_layouts/FreelancerLayout";
+import FreelancerHelp from "./freelancer_pages/freelancer/FreelancerHelp";
 
 /* ===== Notifications ===== */
 import NotificationHome from "./notifications/features/notifications/pages/NotificationsPage";
@@ -64,7 +67,8 @@ function App() {
     <ThemeProvider>
       <UserProvider>
         <ProjectProvider>
-          <Router>
+          <SearchProvider>
+            <Router>
             <Routes>
               {/* ===================== */}
               {/* PUBLIC AUTHFLOW ROUTES */}
@@ -104,23 +108,26 @@ function App() {
               {/* ===================== */}
               {/* FREELANCER ROUTES */}
               {/* ===================== */}
-              <Route path="/freelancer" element={<FreelancerDashboard />} />
-              <Route path="/freelancer/projects" element={<Projects />} />
-
-              <Route path="/freelancer/proposals" element={<FreelancerProposals />} />
-              <Route path="/freelancer/accounting" element={<Accounting />} />
-              <Route path="/freelancer/expenses" element={<Expenses />} />
-              <Route path="/freelancer/inquiry" element={<Inquiry />} />
-              <Route path="/freelancer/contracts" element={<Contracts />} />
-              <Route path="/freelancer/calendar" element={<CalendarPage />} />
-              <Route path="/freelancer/clients" element={<Clients />} />
-              <Route path="/freelancer/reports" element={<Reports />} />
-              <Route path="/freelancer/settings" element={<Settings />} />
-              <Route path="/freelancer/messages" element={<FreelancerMessages />} />
-              <Route path="/freelancer/profile" element={<Profile />} />
-              <Route path="/freelancer/profile/edit" element={<EditProfile />} />
-              {/* Dynamic route for project proposal */}
-              <Route path="/freelancer/projects/:id" element={<ProjectProposal />} />
+              <Route path="/freelancer" element={<FreelancerLayout />}>
+                <Route index element={<FreelancerDashboard />} />
+                <Route path="dashboard" element={<FreelancerDashboard />} />
+                <Route path="projects" element={<Projects />} />
+                <Route path="projects/:id" element={<ProjectProposal />} />
+                <Route path="proposals" element={<FreelancerProposals />} />
+                <Route path="accounting" element={<Accounting />} />
+                <Route path="expenses" element={<Expenses />} />
+                <Route path="inquiry" element={<Inquiry />} />
+                <Route path="contracts" element={<Contracts />} />
+                <Route path="calendar" element={<CalendarPage />} />
+                <Route path="clients" element={<Clients />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="messages" element={<FreelancerMessages />} />
+                <Route path="notifications" element={<NotificationHome />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="profile/edit" element={<EditProfile />} />
+                <Route path="help" element={<FreelancerHelp />} />
+              </Route>
 
               {/* ===================== */}
               {/* 404 & Fallbacks */}
@@ -133,7 +140,8 @@ function App() {
               <Route path="*" element={<Navigate to="/404" />} />
 
             </Routes>
-          </Router>
+            </Router>
+          </SearchProvider>
         </ProjectProvider>
       </UserProvider>
     </ThemeProvider>

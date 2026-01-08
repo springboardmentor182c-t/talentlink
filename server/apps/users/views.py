@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django.utils import timezone
 import datetime
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -132,6 +133,47 @@ class ProfileView(views.APIView):
             "last_name": getattr(user, "last_name", ""),
             "role": getattr(user, "role", ""),
         }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class UserSearchView(views.APIView):
+    """Authenticated endpoint to search users by email or name.
+
+    Query params:
+    - q: search string (email or name)
+
+    Returns a list of up to 10 users with minimal fields.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        q = request.query_params.get('q', '').strip()
+        if not q:
+            return Response([], status=status.HTTP_200_OK)
+
+        try:
+            users = User.objects.filter(
+                Q(email__icontains=q) |
+                Q(first_name__icontains=q) |
+                Q(last_name__icontains=q)
+            ).order_by('email')[:10]
+        except Exception as exc:
+            # In case the User model does not have expected fields or other DB errors,
+            # avoid raising a 500 and return an empty result set for the autocomplete.
+            users = []
+
+        data = []
+        for u in users:
+            first = getattr(u, 'first_name') or ''
+            last = getattr(u, 'last_name') or ''
+            data.append({
+                'id': u.id,
+                'email': getattr(u, 'email', '') or '',
+                'first_name': first,
+                'last_name': last,
+                'full_name': (first + ' ' + last).strip()
+            })
+
         return Response(data, status=status.HTTP_200_OK)
 
 
