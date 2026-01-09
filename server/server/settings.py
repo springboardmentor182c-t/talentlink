@@ -10,10 +10,22 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+ENV_FILE = BASE_DIR.parent / '.env'
+if ENV_FILE.exists():
+    for raw_line in ENV_FILE.read_text(encoding='utf-8').splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        normalized_key = key.strip()
+        normalized_value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(normalized_key, normalized_value)
 
 
 # Quick-start development settings - unsuitable for production
@@ -146,8 +158,6 @@ WSGI_APPLICATION = 'server.wsgi.application'
 #     }
 # }
 
-import os
-
 # Use environment variables for Postgres credentials when available.
 # If not provided, fall back to a local SQLite DB for easier local development.
 if os.environ.get('POSTGRES_HOST') or os.environ.get('POSTGRES_DB'):
@@ -156,7 +166,7 @@ if os.environ.get('POSTGRES_HOST') or os.environ.get('POSTGRES_DB'):
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.environ.get('POSTGRES_DB', 'Talentlinks'),
             'USER': os.environ.get('POSTGRES_USER', 'postgres'),
-            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'Kumar@psql'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
             'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
             'PORT': os.environ.get('POSTGRES_PORT', '5432'),
         }
@@ -222,3 +232,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000", # Default Create-React-App port
     "http://localhost:3001", # Fallback CRA port
 ]
+
+# Google OAuth (frontend must provide matching client ID)
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')

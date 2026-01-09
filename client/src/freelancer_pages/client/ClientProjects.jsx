@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axiosInstance from "../../utils/axiosInstance";
 import "../../App.css";
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -264,12 +263,6 @@ const ClientProjects = () => {
       alert('Could not update project status. Please try again.');
     } finally {
       setStatusUpdatingId(null);
-    }
-  };
-
-  const handleCancel = () => {
-    if (window.confirm('Are you sure you want to cancel? All changes will be lost.')) {
-      navigate('/projects');
     }
   };
 

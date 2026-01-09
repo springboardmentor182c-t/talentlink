@@ -32,8 +32,16 @@ const ClientDocuments = () => {
 
     const pushRaw = (r) => {
       if (!r) return;
-      if (Array.isArray(r)) r.forEach((it) => candidates.push(it));
-      else candidates.push(r);
+      if (Array.isArray(r)) {
+        r.forEach((it) => candidates.push(it));
+        return;
+      }
+      // unwrap common container shape { documents: [...] } to avoid missing nested arrays
+      if (typeof r === 'object' && Array.isArray(r.documents)) {
+        r.documents.forEach((it) => candidates.push(it));
+        return;
+      }
+      candidates.push(r);
     };
 
     // common places
@@ -50,8 +58,12 @@ const ClientDocuments = () => {
     if (!rawList.length) return [];
 
     return rawList.map((r, idx) => {
-      const url = typeof r === 'string' ? r : (r.url || r.path || r.file || '');
-      const name = (typeof r === 'string' ? url.split('/').pop() : (r.name || (url && url.split('/').pop()) || `file-${idx}`));
+      const url = typeof r === 'string'
+        ? r
+        : (r.url || r.path || r.file || r.document || r.documents || r.file_url || r.filePath || '');
+      const name = (typeof r === 'string'
+        ? url.split('/').pop()
+        : (r.name || r.original_name || r.filename || (url && url.split('/').pop()) || `file-${idx}`));
       const lower = (url || '').toLowerCase();
       const type = lower.endsWith('.pdf') ? 'pdf' : (lower.match(/\.(png|jpg|jpeg|gif)$/i) ? 'image' : 'file');
       return { id: idx, url, name, type, size: r.size || '', date: r.uploaded_at || r.date || '' };

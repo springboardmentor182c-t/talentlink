@@ -17,7 +17,7 @@ User = get_user_model()
 class ProposalViewSet(viewsets.ModelViewSet):
     queryset = ProjectProposal.objects.all().order_by("-created_at")
     serializer_class = ProposalSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Avoid executing user-dependent queries during schema generation
@@ -39,13 +39,15 @@ class ProposalViewSet(viewsets.ModelViewSet):
         if user and getattr(user, 'is_authenticated', False):
             role = (getattr(user, "role", "") or "").lower()
             if role == "freelancer":
-                queryset = queryset.filter(freelancer=user)
-            else:
-                # Treat as client: show proposals for projects posted by this user
-                from apps.projects.models import Project
-                project_ids = Project.objects.filter(client=user).values_list("id", flat=True)
-                queryset = queryset.filter(project_id__in=project_ids)
-        return queryset
+                # Freelancers should only see proposals they submitted
+                return queryset.filter(freelancer=user)
+            # Treat as client: show proposals for projects posted by this user
+            from apps.projects.models import Project
+            project_ids = Project.objects.filter(client=user).values_list("id", flat=True)
+            return queryset.filter(project_id__in=project_ids)
+
+        # Unauthenticated users should not see proposals
+        return queryset.none()
 
     def list(self, request, *args, **kwargs):
         try:

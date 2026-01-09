@@ -1,12 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from 'react-router-dom';
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../../../../context/UserContext";
 import NotificationItem from "../components/NotificationItem";
 import { deleteNotification, getNotifications, markAllRead, markRead, toggleStar } from "../services/notificationService";
+import { profileImageOrFallback } from "../../../../utils/profileImage";
 import "../components/NotificationItem.css";
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
+  const { user } = useUser();
+  const role = (user?.role || localStorage.getItem("role") || "").toLowerCase();
+  const isFreelancer = role === "freelancer";
+  const messagesPath = isFreelancer ? "/freelancer/messages" : "/client/messages";
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("all");
@@ -121,7 +127,7 @@ export default function NotificationsPage() {
           <div style={styles.buttonGroup}>
             {/* --- FIX 1: Point to correct Client Messages route --- */}
             <button 
-              onClick={() => navigate("/client/messages")} 
+              onClick={() => navigate(messagesPath)} 
               style={styles.secondaryBtn}
             >
                Messages
@@ -149,7 +155,7 @@ export default function NotificationsPage() {
                 onToggleRead={toggleRead}
                 onDelete={handleDelete}
                 onToggleFavourite={toggleFavourite}
-                onAvatarClick={() => navigate(resolveTargetRoute(n))}
+                onAvatarClick={() => navigate(resolveTargetRoute(n, messagesPath))}
               />
             ))
           ) : (
@@ -184,6 +190,15 @@ const styles = {
 function mapFromApi(item) {
   const created = item.created_at ? new Date(item.created_at) : null;
   const safeTitle = item.title || "Notification";
+  const actorName = item.actor_name || item.metadata?.actor_name || item.metadata?.sender_name || safeTitle;
+  const rawAvatar =
+    item.metadata?.actor_profile_image ||
+    item.metadata?.profile_image ||
+    item.metadata?.actor_avatar ||
+    item.metadata?.avatar ||
+    item.actor_avatar ||
+    item.actor_image;
+  const avatarUrl = profileImageOrFallback(rawAvatar, actorName || safeTitle, { background: "3b82f6", color: "ffffff" });
   return {
     id: item.id,
     title: safeTitle,
@@ -192,7 +207,7 @@ function mapFromApi(item) {
     category: item.is_starred ? "favourites" : "all",
     time: created ? created.toLocaleTimeString() : "",
     relative: created ? formatRelative(created) : "",
-    avatar: `https://ui-avatars.com/api/?background=3b82f6&color=fff&name=${encodeURIComponent(item.actor_name || safeTitle)}`,
+    avatar: avatarUrl,
     raw: item,
   };
 }
@@ -208,13 +223,13 @@ function formatRelative(dateObj) {
   return `${diffDays}d ago`;
 }
 
-function resolveTargetRoute(item) {
+function resolveTargetRoute(item, messagesPath = "/client/messages") {
   const targetType = item.raw?.target_type;
   const targetId = item.raw?.target_id;
 
   if (targetType === "project" && targetId) return `/projects/${targetId}`;
   if (targetType === "contract") return "/contracts";
-  if (targetType === "conversation") return "/client/messages";
-  if (targetType === "message") return "/client/messages";
-  return "/client/messages";
+  if (targetType === "conversation") return messagesPath;
+  if (targetType === "message") return messagesPath;
+  return messagesPath;
 }

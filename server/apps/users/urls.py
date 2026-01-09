@@ -15,6 +15,8 @@ from .views import (
     ProfileView,
     UserSearchView,
     LogoutView,
+    GoogleAuthView,
+    GoogleConfigView,
 )
 
 urlpatterns = [
@@ -30,6 +32,8 @@ urlpatterns = [
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    path('google-auth/', GoogleAuthView.as_view(), name='google_auth'),
+    path('google-config/', GoogleConfigView.as_view(), name='google_config'),
 
     # Current user profile
     path('profile/', ProfileView.as_view(), name='profile'),

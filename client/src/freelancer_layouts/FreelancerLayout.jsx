@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Box, CssBaseline, ThemeProvider, createTheme, Toolbar } from "@mui/material";
+import { Box, CssBaseline, ThemeProvider, createTheme, Toolbar, useMediaQuery } from "@mui/material";
 import { Outlet } from 'react-router-dom';
 import FreelancerSidebar from "../freelancer_components/sidebar/FreelancerSidebar";
 import FreelancerNavbar from "../freelancer_components/navbar/FreelancerNavbar";
@@ -14,7 +14,10 @@ const drawerWidth = 260;
 export default function FreelancerLayout({ children }) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth >= 1200;
+  });
   const { loading } = useUser();
   const { theme: currentMode } = useTheme(); 
 
@@ -90,6 +93,12 @@ export default function FreelancerLayout({ children }) {
     },
   }), [currentMode]);
 
+  const isDesktop = useMediaQuery(muiTheme.breakpoints.up('lg'));
+
+  useEffect(() => {
+    setIsSidebarOpen((prev) => (prev === isDesktop ? prev : isDesktop));
+  }, [isDesktop]);
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: 'background.default' }}>
@@ -110,22 +119,38 @@ export default function FreelancerLayout({ children }) {
         `}</style>
 
         {/* Sidebar */}
-        <Box
-          className="hide-scrollbar"
-          sx={{
-            width: isSidebarOpen ? `${drawerWidth}px` : '0px',
-            minWidth: isSidebarOpen ? `${drawerWidth}px` : '0px',
-            transition: 'width 0.3s ease',
-            height: '100%',
-            overflowY: 'auto',
-            borderRight: '1px solid',
-            borderColor: 'divider',
-            flexShrink: 0,
-            bgcolor: 'background.paper'
-          }}
-        >
-          {isSidebarOpen && <FreelancerSidebar width={drawerWidth} open={isSidebarOpen} onToggle={toggleSidebar} />}
-        </Box>
+        {isDesktop && (
+          <Box
+            className="hide-scrollbar"
+            sx={{
+              width: isSidebarOpen ? `${drawerWidth}px` : '0px',
+              minWidth: isSidebarOpen ? `${drawerWidth}px` : '0px',
+              transition: 'width 0.3s ease',
+              height: '100%',
+              overflowY: 'auto',
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              flexShrink: 0,
+              bgcolor: 'background.paper'
+            }}
+          >
+            {isSidebarOpen && (
+              <FreelancerSidebar
+                width={drawerWidth}
+                open={isSidebarOpen}
+                onClose={toggleSidebar}
+              />
+            )}
+          </Box>
+        )}
+
+        {!isDesktop && (
+          <FreelancerSidebar
+            width={drawerWidth}
+            open={isSidebarOpen}
+            onClose={toggleSidebar}
+          />
+        )}
 
         {/* Main Content Area */}
         <Box
@@ -143,22 +168,25 @@ export default function FreelancerLayout({ children }) {
             sidebarOpen={isSidebarOpen}
             notifications={notifications}
             sidebarWidth={drawerWidth}
+            isDesktop={isDesktop}
           />
 
           <Box 
             component="main" 
             className="hide-scrollbar"
-            sx={{ flex: 1, overflowY: 'auto', bgcolor: 'background.default' }}
+            sx={{ flex: 1, overflowY: 'auto', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}
           >
             <Toolbar sx={{ mb: { xs: 2, md: 3 } }} />
 
             <Box
               sx={{
                 width: '100%',
-                mx: 'auto',
-                px: { xs: 2, sm: 3, lg: 4 },
+                mx: 0,
+                px: { xs: 1.5, sm: 2, md: 3 },
                 pb: { xs: 4, md: 6 },
                 boxSizing: 'border-box',
+                flex: 1,
+                maxWidth: '100%',
               }}
             >
               <Outlet context={{ setNotifications }} />

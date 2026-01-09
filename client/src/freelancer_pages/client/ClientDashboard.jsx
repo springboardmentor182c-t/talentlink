@@ -6,6 +6,7 @@ import Alert from '@mui/material/Alert';
 import LinearProgress from '@mui/material/LinearProgress';
 // 1. Import useTheme to access dynamic colors
 import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import financeService from '../../services/financeService';
 import { contractService } from '../../services/contractService';
 import axiosInstance from '../../utils/axiosInstance';
@@ -77,6 +78,8 @@ const formatRelativeTime = (value) => {
   if (days < 7) return `${days}d ago`;
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
+
+const CLIENT_FIRST_VISIT_BASE_KEY = 'client_dashboard_seen';
 
 const computeSpendingSeries = (transactions = []) => {
   const buckets = new Map();
@@ -279,26 +282,82 @@ const ClientDashboard = () => {
   const [proposals, setProposals] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [isFirstVisit, setIsFirstVisit] = useState(true);
+  const [firstVisitKey, setFirstVisitKey] = useState(null);
 
   useEffect(() => {
+    if (!user) return;
+
+    const identifier = user.id ?? user.email ?? user.username ?? 'anon';
+    const key = `${CLIENT_FIRST_VISIT_BASE_KEY}:${identifier}`;
+    setFirstVisitKey(key);
+
     try {
-      const pending = localStorage.getItem('pending_welcome');
-      if (pending) {
-        const p = JSON.parse(pending);
-        setWelcome(p);
-        setWelcomeOpen(true);
-      } else {
-        const existing = JSON.parse(localStorage.getItem('local_notifications') || '[]');
-        const firstUnread = existing.find(n => !n.read);
-        if (firstUnread) {
-          setWelcome({ title: firstUnread.title, message: firstUnread.message });
-          setWelcomeOpen(true);
+      const stored = localStorage.getItem(key);
+      setIsFirstVisit(stored !== '1');
+    } catch (e) {
+      setIsFirstVisit(true);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (welcome) {
+      return;
+    }
+
+    try {
+      const pendingRaw = localStorage.getItem('pending_welcome');
+      if (pendingRaw) {
+        localStorage.removeItem('pending_welcome');
+        let pendingData = {};
+        try {
+          pendingData = JSON.parse(pendingRaw) || {};
+        } catch (parseError) {
+          pendingData = {};
         }
+
+        const displayName = (user?.name || localStorage.getItem('user_name') || '').trim();
+        const variant = pendingData.variant || null;
+        const message = variant === 'new'
+          ? null
+          : pendingData.message || (displayName ? `Welcome back, ${displayName}!` : 'Welcome back!');
+
+        if (variant === 'new') {
+          setIsFirstVisit(true);
+        } else if (variant) {
+          setIsFirstVisit(false);
+        }
+
+        setWelcome({ title: 'Welcome to TalentLink', message: message || undefined });
+        setWelcomeOpen(true);
+        return;
+      }
+
+      const displayName = (user?.name || localStorage.getItem('user_name') || '').trim();
+      if (displayName) {
+        setWelcome({ title: 'Welcome to TalentLink'});
+        setWelcomeOpen(true);
+        return;
+      }
+
+      const existing = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+      const firstUnread = existing.find(n => !n.read);
+      if (firstUnread) {
+        setWelcome({ title: firstUnread.title, message: firstUnread.message });
+        setWelcomeOpen(true);
+        setIsFirstVisit(false);
       }
     } catch (e) {
       // ignore
     }
-  }, []);
+  }, [user?.name, welcome]);
+
+  useEffect(() => {
+    if (!firstVisitKey || !isFirstVisit) return;
+    try {
+      localStorage.setItem(firstVisitKey, '1');
+    } catch (e) {}
+  }, [firstVisitKey, isFirstVisit]);
 
   const loadDashboard = useCallback(async () => {
     const requests = [
@@ -431,15 +490,71 @@ const ClientDashboard = () => {
   
   // 2. Get the current theme
   const theme = useTheme();
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
+  const pageContainerStyle = useMemo(() => ({
+    ...styles.pageContainer,
+    padding: isMobile ? '16px 14px' : '24px',
+  }), [isMobile]);
+
+  const headerStyle = useMemo(() => ({
+    ...styles.header,
+    alignItems: isMobile ? 'flex-start' : 'center',
+    gap: isMobile ? '12px' : '16px',
+  }), [isMobile]);
+
+  const headerActionsStyle = useMemo(() => ({
+    ...styles.headerActions,
+    flexWrap: isMobile ? 'wrap' : 'nowrap',
+    width: isMobile ? '100%' : 'auto',
+    justifyContent: isMobile ? 'flex-start' : 'flex-end',
+  }), [isMobile]);
+
+  const statsGridStyle = useMemo(() => ({
+    ...styles.statsGrid,
+    gap: isMobile ? '16px' : '20px',
+    alignItems: 'stretch',
+  }), [isMobile]);
+
+  const statCardStyle = useMemo(() => ({
+    ...styles.statCard,
+    padding: isMobile ? '16px' : '20px',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    gap: '12px',
+  }), [isMobile]);
+
+  const gridStyle = useMemo(() => ({
+    ...styles.grid,
+    flexDirection: isMobile ? 'column' : 'row',
+    gap: isMobile ? '16px' : '25px',
+    alignItems: 'stretch',
+  }), [isMobile]);
+
+  const columnStyle = useMemo(() => ({
+    ...styles.column,
+    width: '100%',
+    gap: isMobile ? '16px' : '20px',
+  }), [isMobile]);
+
+  const cardHeaderStyle = useMemo(() => ({
+    ...styles.cardHeader,
+    flexDirection: isMobile ? 'column' : 'row',
+    alignItems: isMobile ? 'flex-start' : 'flex-start',
+    gap: isMobile ? '12px' : '0',
+  }), [isMobile]);
 
   const handlePostJob = () => {
     navigate('/client/projects'); 
   };
 
   // 3. Create Dynamic Styles based on theme
-  const themeStyles = {
+  const themeStyles = useMemo(() => ({
     card: {
         ...styles.card,
+        padding: isMobile ? '16px' : '25px',
         backgroundColor: theme.palette.background.paper,
         borderColor: theme.palette.divider,
         color: theme.palette.text.primary,
@@ -450,11 +565,12 @@ const ClientDashboard = () => {
     chartText: theme.palette.mode === 'dark' ? "#94a3b8" : "#94a3b8",
     select: {
         ...styles.select,
+        padding: isMobile ? '6px 8px' : '6px 10px',
         backgroundColor: theme.palette.background.default,
         color: theme.palette.text.primary,
         borderColor: theme.palette.divider
     }
-  };
+  }), [isMobile, theme]);
 
   const spendingSeries = useMemo(() => computeSpendingSeries(transactions), [transactions]);
   const actionItems = useMemo(() => deriveActionItems(proposals, transactions), [proposals, transactions]);
@@ -521,12 +637,13 @@ const ClientDashboard = () => {
   }, [overview, projects, proposals, contracts]);
 
   return (
-    <div style={styles.pageContainer}>
+    <div style={pageContainerStyle}>
       {/* --- Welcome Alert (one-time) --- */}
       {welcome && welcomeOpen && (
         <div style={{ marginBottom: 12 }}>
           <Alert severity="success" onClose={handleWelcomeClose}>
-            <strong>{welcome.title}</strong>: {welcome.message}
+            <strong>{welcome.title || 'Welcome to TalentLink'}</strong>
+            {welcome.message ? `: ${welcome.message}` : null}
           </Alert>
         </div>
       )}
@@ -544,13 +661,12 @@ const ClientDashboard = () => {
       )}
 
       {/* --- Header --- */}
-      <div style={styles.header}>
+      <div style={headerStyle}>
         <div>
-          <p style={{...styles.greeting, color: theme.palette.text.secondary }}>Welcome back, {user?.name || user?.email || 'User'}</p>
-          <h1 style={{...styles.title, color: theme.palette.text.primary }}>Client Overview</h1>
+          <h1 style={{...styles.title, color: theme.palette.text.primary }}>{`${isFirstVisit ? 'Welcome' : 'Welcome Back'}, ${user?.name || user?.email || 'User'}`}</h1>
           <p style={{...styles.subtitle, color: theme.palette.text.secondary }}>Manage your job postings, proposals, and hired talent.</p>
         </div>
-        <div style={styles.headerActions}>
+        <div style={headerActionsStyle}>
           <button
             style={{
               ...styles.secondaryBtn,
@@ -569,7 +685,7 @@ const ClientDashboard = () => {
       </div>
 
       {/* --- Top Stats Row --- */}
-      <div style={styles.statsGrid}>
+      <div style={statsGridStyle}>
         {statsData.length > 0 ? (
           statsData.map(({ key, Icon, title, value, change, color }) => (
             <StatCard
@@ -580,6 +696,7 @@ const ClientDashboard = () => {
               change={change}
               color={color}
               theme={theme}
+              cardStyle={statCardStyle}
             />
           ))
         ) : (
@@ -590,11 +707,11 @@ const ClientDashboard = () => {
       </div>
 
       {/* --- Middle Section: Chart & Deadlines --- */}
-      <div style={styles.grid}>
+      <div style={gridStyle}>
         
         {/* Main Chart */}
-        <div style={{...themeStyles.card, flex: 2}}>
-          <div style={styles.cardHeader}>
+        <div style={{...themeStyles.card, flex: isMobile ? '1 1 100%' : 2}}>
+          <div style={cardHeaderStyle}>
             <div>
               <h2 style={{...styles.cardTitle, ...themeStyles.textPrimary}}>Spending History</h2>
               <div style={{...styles.subTitle, ...themeStyles.textSecondary}}>Payments to freelancers over last 6 months</div>
@@ -641,10 +758,10 @@ const ClientDashboard = () => {
         </div>
 
         {/* Right Side: Deadlines & Hiring Status */}
-        <div style={{...styles.column, flex: 1}}>
+        <div style={{...columnStyle, flex: isMobile ? '1 1 100%' : 1}}>
           
           {/* Deadlines Widget */}
-          <div style={{...themeStyles.card, marginBottom: '20px'}}>
+          <div style={{...themeStyles.card, marginBottom: isMobile ? '16px' : '20px'}}>
             <h2 style={{...styles.cardTitle, ...themeStyles.textPrimary}}>Actions Required</h2>
             <div style={styles.list}>
               {actionItems.length > 0 ? (
@@ -746,9 +863,9 @@ const ClientDashboard = () => {
 };
 
 // --- Helper Component: Stat Card ---
-const StatCard = ({ icon, title, value, change, color, theme }) => (
+const StatCard = ({ icon, title, value, change, color, theme, cardStyle }) => (
   <div style={{
-      ...styles.statCard, 
+      ...(cardStyle || styles.statCard), 
       backgroundColor: theme.palette.background.paper,
       borderColor: theme.palette.divider,
       boxShadow: theme.shadows[1]

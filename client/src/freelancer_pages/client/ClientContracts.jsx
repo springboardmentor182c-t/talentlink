@@ -239,7 +239,7 @@ const ClientContracts = () => {
         <div className="client-page-container">
             <style>{`
                 .client-page-container { padding: 40px; background-color: #f8fafc; min-height: 100vh; }
-                .page-header h1 { font-size: 26px; color: #1e293b; margin-bottom: 20px; }
+                .page-header h1 { font-size: 26px; color: #1e293b; margin-bottom: 20px; font-weight: 700; }
                 .contracts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
                 .contract-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
                 .contract-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 5px; }

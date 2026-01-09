@@ -1,8 +1,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useUser } from '../../context/UserContext';
-import { performLogout } from '../../utils/logout';
-import { profileImageOrFallback } from '../../utils/profileImage';
+import { resolveProfileImage } from '../../utils/profileImage';
 import {
   FaChevronDown, FaUser, FaCog, FaSignOutAlt,
   FaCloudUploadAlt, FaSearch,
@@ -19,7 +18,23 @@ import Brightness4Icon from '@mui/icons-material/Brightness4'; // Moon
 import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
 import { useSearch } from '../../context/SearchContext';
 
-  const ClientNavbar = ({ onNotificationClick, onSidebarToggle, onDelete, onToggleFavourite, notifications = [], sidebarOpen = true }) => {
+const getInitials = (name) => {
+  if (!name) return 'U';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'U';
+  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+const pickResolvedImage = (...sources) => {
+  for (const source of sources) {
+    const resolved = resolveProfileImage(source);
+    if (resolved) return resolved;
+  }
+  return null;
+};
+
+  const ClientNavbar = ({ onNotificationClick, onSidebarToggle, onDelete, onToggleFavourite, notifications = [], sidebarOpen = true, isDesktop = true }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const searchWrapperRef = useRef(null);
@@ -35,7 +50,7 @@ import { useSearch } from '../../context/SearchContext';
   // 2. Theme Logic
   const { theme, toggleTheme } = useAppTheme(); // From your Context
   const muiTheme = useMuiTheme(); // From Material UI (for colors)
-  const suggestions = useMemo(() => getSuggestions('client', 10), [getSuggestions, searchTerm]);
+  const suggestions = useMemo(() => getSuggestions('client', 10), [getSuggestions]);
   const suggestionStyles = useMemo(() => ({
     panel: {
       position: 'absolute',
@@ -142,12 +157,15 @@ import { useSearch } from '../../context/SearchContext';
   };
 
   // Dynamic Styles based on Theme
+  const navPadding = isDesktop ? '0 30px' : '0 16px';
+
   const dynamicStyles = {
     navbar: {
       ...styles.navbar,
       backgroundColor: muiTheme.palette.background.paper,
       borderBottom: `1px solid ${muiTheme.palette.divider}`,
       color: muiTheme.palette.text.primary,
+      padding: navPadding,
     },
     searchContainer: {
       ...styles.searchContainer,
@@ -325,13 +343,14 @@ import { useSearch } from '../../context/SearchContext';
                 <IconButton
                   onClick={onNotificationClick}
                   sx={{ border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}
+                  aria-label="Notifications"
                 >
                   {unread > 0 ? (
                     <Badge badgeContent={unread} color="error">
-                      <NotificationsNoneIcon sx={{ color: 'text.secondary' }} />
+                      <NotificationsNoneIcon sx={{ color: 'text.primary' }} />
                     </Badge>
                   ) : (
-                    <NotificationsNoneIcon sx={{ color: 'text.secondary' }} />
+                    <NotificationsNoneIcon sx={{ color: 'text.primary' }} />
                   )}
                 </IconButton>
               );
@@ -345,11 +364,20 @@ import { useSearch } from '../../context/SearchContext';
               {(() => {
                 const displayName = user?.name || user?.email || "Client";
                 const saved = localStorage.getItem('client_avatar') || localStorage.getItem('freelancer_avatar');
-                const src = saved || user?.avatar || profileImageOrFallback(null, displayName, { background: '0f172a' });
-                const initials = displayName.split(/\s+/).map((part) => part[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+                const src = pickResolvedImage(saved, user?.avatar);
+                const initials = getInitials(displayName);
+                const hasSrc = Boolean(src);
                 return (
-                  <Avatar src={src || undefined} style={styles.avatar}>
-                    {!src && initials}
+                  <Avatar
+                    src={hasSrc ? src : undefined}
+                    style={{
+                      ...styles.avatar,
+                      backgroundColor: hasSrc ? 'transparent' : muiTheme.palette.primary.main,
+                      color: hasSrc ? undefined : '#ffffff',
+                      borderColor: muiTheme.palette.divider
+                    }}
+                  >
+                    {initials}
                   </Avatar>
                 );
               })()}

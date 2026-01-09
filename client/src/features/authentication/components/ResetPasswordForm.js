@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { resetPasswordConfirm } from '../services/password'; 
 
 const ResetPasswordForm = () => {
-    const navigate = useNavigate();
     const location = useLocation();
     
     const [email, setEmail] = useState(location.state?.email || '');

@@ -148,10 +148,4 @@ function App() {
   );
 }
 
-const phStyle = {
-  padding: '40px',
-  fontSize: '24px',
-  fontWeight: 'bold',
-  color: '#475569'
-};
 export default App;

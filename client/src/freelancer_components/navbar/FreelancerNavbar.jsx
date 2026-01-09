@@ -21,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import { performLogout } from "../../utils/logout";
 import { useTheme } from "../../context/ThemeContext";
-import { profileImageOrFallback } from "../../utils/profileImage";
+import { resolveProfileImage } from "../../utils/profileImage";
 import { useSearch } from "../../context/SearchContext";
 
 export default function FreelancerNavbar({
@@ -34,8 +34,9 @@ export default function FreelancerNavbar({
   notifications = [],
   sidebarOpen = true,
   sidebarWidth = 240, // Match Layout width
+  isDesktop = true,
 }) {
-  const { user, logout } = useUser(); 
+  const { user } = useUser(); 
   const navigate = useNavigate();
   
   // 3. Get Theme Controls
@@ -53,7 +54,7 @@ export default function FreelancerNavbar({
   const searchWrapperRef = useRef(null);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
-  const suggestions = useMemo(() => getSuggestions('freelancer', 10), [getSuggestions, searchTerm]);
+  const suggestions = useMemo(() => getSuggestions('freelancer', 10), [getSuggestions]);
   const suggestionPaperSx = useMemo(() => ({
     position: 'absolute',
     top: 'calc(100% + 8px)',
@@ -91,7 +92,6 @@ export default function FreelancerNavbar({
     }
   });
   const [tempName, setTempName] = useState("");
-  const [tempFile, setTempFile] = useState(null);
   const [preview, setPreview] = useState("");
 
   // Load "Freelancer Only" data on mount
@@ -110,7 +110,7 @@ export default function FreelancerNavbar({
     } else if (user?.avatar) {
       setFreelancerAvatar(user.avatar);
     }
-  }, []);
+  }, [user?.name, user?.avatar]);
 
   useEffect(() => {
     if (!localStorage.getItem("freelancer_name") && user?.name) {
@@ -167,11 +167,15 @@ export default function FreelancerNavbar({
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setTempFile(file);
-      const url = URL.createObjectURL(file);
-      setPreview(url);
-    }
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        setPreview(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSearchChange = (event) => {
@@ -244,27 +248,32 @@ export default function FreelancerNavbar({
     : 'Start typing to discover quick links.';
 
   const handleSave = () => {
-    // 1. Update Local State
-    setFreelancerName(tempName);
-    setFreelancerAvatar(preview);
+    const nextName = tempName || freelancerName;
+    setFreelancerName(nextName);
 
-    // 2. Save to separate LocalStorage keys
-    localStorage.setItem("freelancer_name", tempName);
-    localStorage.setItem("freelancer_avatar", preview);
-    // Mark that a user-uploaded avatar exists. Navbars will use initials until this flag is set.
-    localStorage.setItem("avatar_uploaded", "1");
+    if (preview) {
+      setFreelancerAvatar(preview);
+      localStorage.setItem("freelancer_avatar", preview);
+      localStorage.setItem("avatar_uploaded", "1");
+    }
 
+    localStorage.setItem("freelancer_name", nextName);
     setOpenModal(false);
+    setPreview("");
   };
 
   function getInitials(name) {
-    if (!name) return "U";
-    const parts = name.trim().split(/\s+/);
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return 'U';
     if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
   if (!user) return null; 
+
+  const computedOffset = isDesktop && sidebarOpen ? `${sidebarWidth}px` : 0;
+  const appBarWidth = isDesktop && sidebarOpen ? `calc(100% - ${sidebarWidth}px)` : '100%';
 
   return (
     <>
@@ -279,8 +288,9 @@ export default function FreelancerNavbar({
           borderColor: "divider",
           color: "text.primary",
           zIndex: (theme) => theme.zIndex.drawer + 1,
-          width: { sm: sidebarOpen ? `calc(100% - ${sidebarWidth}px)` : '100%' },
-          ml: { sm: sidebarOpen ? `${sidebarWidth}px` : 0 },
+          left: computedOffset,
+          width: appBarWidth,
+          right: 0,
           transition: "all 0.3s ease"
         }}
       >
@@ -375,13 +385,14 @@ export default function FreelancerNavbar({
                 <IconButton
                   onClick={onNotificationClick}
                   sx={{ border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}
+                  aria-label="Notifications"
                 >
                   {unread > 0 ? (
                     <Badge badgeContent={unread} color="error">
-                      <NotificationsNoneIcon sx={{ color: 'text.secondary' }} />
+                      <NotificationsNoneIcon sx={{ color: 'text.primary' }} />
                     </Badge>
                   ) : (
-                    <NotificationsNoneIcon sx={{ color: 'text.secondary' }} />
+                    <NotificationsNoneIcon sx={{ color: 'text.primary' }} />
                   )}
                 </IconButton>
               );
@@ -400,14 +411,31 @@ export default function FreelancerNavbar({
               {/* USE SEPARATE STATE HERE */}
               {(() => {
                 const displayName = freelancerName || user?.name || user?.email || "Freelancer";
-                const savedAvatar = localStorage.getItem("freelancer_avatar");
-                const src = savedAvatar || freelancerAvatar || user?.avatar || profileImageOrFallback(null, displayName, { background: "2563eb" });
+                const storedAvatar = localStorage.getItem("freelancer_avatar");
+                const candidates = [
+                  preview,
+                  freelancerAvatar,
+                  storedAvatar,
+                  user?.avatar
+                ];
+                const src = candidates
+                  .map((candidate) => resolveProfileImage(candidate))
+                  .find(Boolean);
+                const hasSrc = Boolean(src);
                 return (
                   <Avatar
-                    src={src || undefined}
-                    sx={{ width: 40, height: 40, border: '2px solid white', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
+                    src={hasSrc ? src : undefined}
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      border: '2px solid',
+                      borderColor: 'divider',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                      bgcolor: hasSrc ? 'transparent' : 'primary.main',
+                      color: hasSrc ? 'inherit' : 'common.white'
+                    }}
                   >
-                    {!src && getInitials(displayName)}
+                    {getInitials(displayName)}
                   </Avatar>
                 );
               })()}

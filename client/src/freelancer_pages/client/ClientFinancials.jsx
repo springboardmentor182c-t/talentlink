@@ -31,8 +31,6 @@ const ClientFinancials = () => {
   const [payDialogOpen, setPayDialogOpen] = useState(false);
   const [payInvoiceId, setPayInvoiceId] = useState(null);
   const [payForm, setPayForm] = useState({ amount: '', payment_type: 'full' });
-  const [settleDialogOpen, setSettleDialogOpen] = useState(false);
-  const [settleInvoiceId, setSettleInvoiceId] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -273,32 +271,6 @@ const ClientFinancials = () => {
         </div>
       )}
 
-      {settleDialogOpen && (
-        <div style={{position:'fixed', top:0,left:0,right:0,bottom:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div style={{background:'white',padding:20,borderRadius:8,width:420}}>
-            <h3>Settle Invoice</h3>
-            <div style={{marginTop:8, fontSize:13, color:'#374151'}}>Are you sure you want to mark this invoice as settled? This will set the paid amount to the invoice total.</div>
-            <div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:12}}>
-              <button onClick={() => { setSettleDialogOpen(false); setSettleInvoiceId(null); }}>Cancel</button>
-              <button onClick={async () => {
-                if (!settleInvoiceId) return;
-                setActionLoading(true);
-                try {
-                  await financeService.clientTransactionAction(settleInvoiceId, { action: 'settle' });
-                  await reloadTransactions();
-                } catch (err) {
-                  console.error(err);
-                } finally {
-                  setActionLoading(false);
-                  setSettleDialogOpen(false);
-                  setSettleInvoiceId(null);
-                }
-              }}>{actionLoading ? 'Processing...' : 'Settle'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Transactions Table */}
       <div style={styles.card}>
         <div style={styles.cardHeader}>
@@ -327,7 +299,9 @@ const ClientFinancials = () => {
               </tr>
             </thead>
             <tbody>
-              {transactions && transactions.length ? transactions.map((t) => (
+              {transactions && transactions.length ? transactions.map((t) => {
+                const refKey = t.invoice_id || t.id;
+                return (
                 <tr key={t.id} style={styles.tr}>
                   <td style={styles.td}>{resolveInvoiceId(t)}</td>
                   <td style={styles.td}>{formatDisplayDate(t.created_at || t.date)}</td>
@@ -346,15 +320,22 @@ const ClientFinancials = () => {
                   </td>
                   <td style={styles.td}>
                     {t.status === 'pending' && (
-                      <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
-                        <input ref={(el) => (fileRefs.current[t.id] = el)} type="file" />
-                        <button style={styles.linkBtn} onClick={() => handleUploadProof(t.invoice_id || t.id)}>Upload Proof</button>
+                      <div style={{display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap'}}>
+                        <input ref={(el) => { fileRefs.current[refKey] = el; }} type="file" />
+                        <button style={styles.linkBtn} onClick={() => handleUploadProof(refKey)}>Upload Proof</button>
+                        {(t.proof_url || t.proof || t.receipt_url) && (
+                          <button
+                            style={{ ...styles.linkBtn, borderStyle: 'dashed' }}
+                            onClick={() => window.open(t.proof_url || t.proof || t.receipt_url, '_blank')}
+                          >
+                            View Proof
+                          </button>
+                        )}
                       </div>
                     )}
                     {t.status === 'pending' && (
                       <div style={{display:'flex', gap:8, marginTop:8}}>
                         <button style={styles.linkBtn} onClick={() => handleClientAction(t.invoice_id || t.id, 'pay')}>Pay</button>
-                        <button style={styles.linkBtn} onClick={() => { setSettleInvoiceId(t.invoice_id || t.id); setSettleDialogOpen(true); }}>Settle</button>
                         <button style={styles.linkBtn} onClick={() => handleClientAction(t.invoice_id || t.id, 'reject')}>Reject</button>
                         <button style={styles.linkBtn} onClick={() => handleClientAction(t.invoice_id || t.id, 'hold')}>Hold</button>
                       </div>
@@ -367,7 +348,9 @@ const ClientFinancials = () => {
                           onClick={async () => {
                             setActionLoading(true);
                             try {
-                              await financeService.clientTransactionAction(t.invoice_id || t.id, { action: 'settle' });
+                              const remaining = Math.max(0, Number(t.amount || 0) - Number(t.paid_amount || 0));
+                              const amountToPay = remaining || Number(t.amount || 0) || '';
+                              await financeService.clientTransactionAction(t.invoice_id || t.id, { action: 'pay', amount: amountToPay, payment_type: 'full' });
                               await reloadTransactions();
                             } catch (err) {
                               console.error(err);
@@ -380,15 +363,23 @@ const ClientFinancials = () => {
                           Mark as Paid
                         </button>
                         <button style={styles.linkBtn} onClick={() => handleClientAction(t.invoice_id || t.id, 'pay')}>Pay</button>
-                        <button style={styles.linkBtn} onClick={() => { setSettleInvoiceId(t.invoice_id || t.id); setSettleDialogOpen(true); }}>Settle</button>
                       </div>
                     )}
-                    {t.download_url && (
-                      <button style={styles.linkBtn} onClick={() => window.open(t.download_url, '_blank')}>Download</button>
+                    {(t.download_url || t.proof_url || t.proof || t.receipt_url) && (
+                      <div style={{display:'flex', gap:8, flexWrap:'wrap', marginTop: t.status === 'pending' ? 8 : 0}}>
+                        {t.download_url && (
+                          <button style={styles.linkBtn} onClick={() => window.open(t.download_url, '_blank')}>Download</button>
+                        )}
+                        {(t.proof_url || t.proof || t.receipt_url) && (
+                          <button style={{ ...styles.linkBtn, borderStyle: 'dashed' }} onClick={() => window.open(t.proof_url || t.proof || t.receipt_url, '_blank')}>
+                            View Proof
+                          </button>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>
-              )) : (
+              );}) : (
                 <tr><td colSpan={7} style={{padding:20}}>No transactions found</td></tr>
               )}
             </tbody>
@@ -414,29 +405,29 @@ const styles = {
   container: {
     width: '100%',
     margin: 0,
-    padding: '24px',
+    padding: '32px',
     boxSizing: 'border-box',
     background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)',
     minHeight: '100%',
   },
-  pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1e293b', marginBottom: '25px' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' },
-  statCard: { backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '15px' },
-  iconBox: { width: '48px', height: '48px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  statTitle: { fontSize: '13px', color: '#64748b', fontWeight: '600' },
-  statAmount: { fontSize: '24px', fontWeight: 'bold', color: '#1e293b' },
+  pageTitle: { fontSize: '26px', fontWeight: 'bold', color: '#1e293b', marginBottom: '28px' },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' },
+  statCard: { backgroundColor: 'white', padding: '24px', borderRadius: '14px', boxShadow: '0 4px 12px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '16px' },
+  iconBox: { width: '56px', height: '56px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  statTitle: { fontSize: '14px', color: '#64748b', fontWeight: '600' },
+  statAmount: { fontSize: '26px', fontWeight: 'bold', color: '#1e293b' },
   statSub: { fontSize: '12px', color: '#94a3b8' },
-  card: { backgroundColor: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
-  cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-  cardTitle: { fontSize: '18px', fontWeight: 'bold', color: '#1e293b' },
-  outlineBtn: { padding: '8px 16px', border: '1px solid #e2e8f0', backgroundColor: 'transparent', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#475569', fontSize: '13px', fontWeight: '500' },
+  card: { backgroundColor: 'white', padding: '32px', borderRadius: '14px', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' },
+  cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' },
+  cardTitle: { fontSize: '20px', fontWeight: 'bold', color: '#1e293b' },
+  outlineBtn: { padding: '12px 18px', border: '1px solid #e2e8f0', backgroundColor: 'transparent', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#475569', fontSize: '14px', fontWeight: '600' },
   table: { width: '100%', borderCollapse: 'collapse' },
   tHeadRow: { borderBottom: '2px solid #f1f5f9' },
-  th: { textAlign: 'left', padding: '12px 10px', fontSize: '13px', color: '#64748b', fontWeight: '600' },
+  th: { textAlign: 'left', padding: '14px 12px', fontSize: '13px', color: '#64748b', fontWeight: '700', letterSpacing: '0.01em' },
   tr: { borderBottom: '1px solid #f8fafc' },
-  td: { padding: '14px 10px', fontSize: '14px', color: '#334155' },
-  badge: { padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' },
-  linkBtn: { background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }
+  td: { padding: '16px 12px', fontSize: '14px', color: '#334155' },
+  badge: { padding: '6px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '700' },
+  linkBtn: { background: 'none', border: '1px solid #e2e8f0', color: '#1d4ed8', cursor: 'pointer', fontSize: '14px', fontWeight: '600', padding: '8px 12px', borderRadius: '10px' }
 };
 
 export default ClientFinancials;
