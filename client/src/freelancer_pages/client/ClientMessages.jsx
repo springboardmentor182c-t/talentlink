@@ -29,6 +29,7 @@ const STATUS_LABELS = {
 const styles = messagingStyles;
 
 const ClientMessages = () => {
+  const [isMobile, setIsMobile] = useState(false);
   const [freelancers, setFreelancers] = useState([]);
   const [selectedKey, setSelectedKey] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -107,6 +108,15 @@ const ClientMessages = () => {
   useEffect(() => {
     fetchFreelancers();
   }, [fetchFreelancers]);
+
+  useEffect(() => {
+    // Track viewport to toggle desktop vs mobile layout
+    const mq = window.matchMedia('(max-width: 900px)');
+    const handler = (event) => setIsMobile(event.matches);
+    handler(mq);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   useEffect(() => {
     if (freelancers.length && !freelancers.some((f) => f.userKey === selectedKey)) {
@@ -217,6 +227,11 @@ const ClientMessages = () => {
       } catch (err) {
         console.error('Error loading conversation', err);
         if (isActive) {
+          const status = err?.response?.status;
+          if (status === 401) {
+            setMessageError('Session expired. Please sign in again.');
+            return null;
+          }
           const detail = err?.response?.data?.detail || 'Unable to load messages.';
           setMessageError(detail);
         }
@@ -241,6 +256,7 @@ const ClientMessages = () => {
     if (!selectedKey) return null;
     return freelancers.find((freelancer) => freelancer.userKey === selectedKey) || null;
   }, [freelancers, selectedKey]);
+  const isTalentLinkSelected = selectedFreelancer?.userKey === 'talentlink';
   const activeConversation = selectedFreelancer ? conversationMap[selectedFreelancer.userKey] : null;
   const serverMessages = useMemo(() => activeConversation?.messages || [], [activeConversation]);
 
@@ -355,12 +371,19 @@ const ClientMessages = () => {
     return [];
   };
 
+  const experienceBadge = (freelancer) => {
+    const count = freelancer?.proposals?.length || 0;
+    if (count <= 2) return 'Beginner · 0-2 projects';
+    if (count <= 5) return 'Intermediate · 3-5 projects';
+    return 'Experienced · 6+ projects';
+  };
+
   const isThreadLoading = selectedFreelancer ? messageLoadingKey === selectedFreelancer.userKey : false;
   const isSending = selectedFreelancer ? sendingKey === selectedFreelancer.userKey : false;
 
   return (
     <div style={styles.page}>
-      <div style={styles.layout}>
+      <div style={isMobile ? styles.layoutMobile : styles.layoutDesktop}>
         <aside style={styles.sidebar}>
           <div style={styles.sidebarHeader}>
             Freelancers who applied
@@ -385,6 +408,7 @@ const ClientMessages = () => {
           <div style={styles.list}>
             {filteredFreelancers.map((freelancer) => {
               const isActive = freelancer.userKey === selectedKey;
+              const isTalentLink = freelancer.userKey === 'talentlink';
               return (
                 <button
                   key={freelancer.userKey}
@@ -400,9 +424,11 @@ const ClientMessages = () => {
                   <div style={styles.meta}>
                     <div style={styles.primaryText}>{freelancer.name}</div>
                     <div style={styles.secondaryText}>{freelancer.email || 'Email not shared'}</div>
-                    <div style={styles.secondaryText}>{formatCurrency(freelancer.bidAmount)} bid</div>
+                    {!isTalentLink && (
+                      <div style={styles.secondaryText}>{formatCurrency(freelancer.bidAmount)} bid</div>
+                    )}
                   </div>
-                  <span style={styles.statusPill}>{STATUS_LABELS[freelancer.status] || 'Pending'}</span>
+                  <span style={styles.statusPill}>{isTalentLink ? 'Admin' : (STATUS_LABELS[freelancer.status] || 'Pending')}</span>
                 </button>
               );
             })}
@@ -418,42 +444,64 @@ const ClientMessages = () => {
                   <div>
                     <div style={styles.detailName}>{selectedFreelancer.name}</div>
                     <div style={styles.detailSub}>{selectedFreelancer.email || 'Email pending'}</div>
-                    <div style={styles.detailSub}>{selectedFreelancer.profile?.city || selectedFreelancer.profile?.country || 'Location not shared'}</div>
-                  </div>
-                </div>
-                <div style={styles.detailChips}>
-                  <div style={styles.detailChip}><span>Bid</span><strong>{formatCurrency(selectedFreelancer.bidAmount)}</strong></div>
-                  {selectedFreelancer.completionTime && (
-                    <div style={styles.detailChip}><span>Timeline</span><strong>{selectedFreelancer.completionTime}</strong></div>
-                  )}
-                  <div style={styles.detailChip}><span>Status</span><strong>{STATUS_LABELS[selectedFreelancer.status] || 'Pending'}</strong></div>
-                </div>
-              </header>
-
-              <div style={styles.profileGrid}>
-                <div style={styles.card}>
-                  <h4 style={styles.cardTitle}>About</h4>
-                  <p style={styles.cardText}>
-                    {selectedFreelancer.profile?.bio || selectedFreelancer.coverLetter || 'No description available yet.'}
-                  </p>
-                  {selectedFreelancer.profile?.hourly_rate && (
-                    <p style={{ ...styles.cardText, marginTop: '12px' }}>
-                      Preferred hourly rate: {formatCurrency(selectedFreelancer.profile.hourly_rate)}
-                    </p>
-                  )}
-                </div>
-                <div style={styles.card}>
-                  <h4 style={styles.cardTitle}>Skills</h4>
-                  <div style={styles.skillsWrap}>
-                    {skillsFor(selectedFreelancer.profile).map((skill) => (
-                      <span key={skill} style={styles.skillChip}>{skill}</span>
-                    ))}
-                    {!skillsFor(selectedFreelancer.profile).length && (
-                      <span style={styles.cardText}>Skills not provided.</span>
+                    {isTalentLinkSelected ? (
+                      <div style={styles.detailSub}>Admin</div>
+                    ) : null}
+                    {!isTalentLinkSelected && (
+                      <div style={styles.detailSub}>{experienceBadge(selectedFreelancer)}</div>
                     )}
                   </div>
                 </div>
-              </div>
+                {!isTalentLinkSelected && (
+                  <div style={styles.detailChips}>
+                    <div style={styles.detailChip}><span>Bid</span><strong>{formatCurrency(selectedFreelancer.bidAmount)}</strong></div>
+                    {selectedFreelancer.completionTime && (
+                      <div style={styles.detailChip}><span>Timeline</span><strong>{selectedFreelancer.completionTime}</strong></div>
+                    )}
+                    <div style={styles.detailChip}><span>Status</span><strong>{STATUS_LABELS[selectedFreelancer.status] || 'Pending'}</strong></div>
+                  </div>
+                )}
+              </header>
+
+              {isTalentLinkSelected ? (
+                <div style={{ ...styles.card, marginTop: '24px' }}>
+                  <h4 style={styles.cardTitle}>Welcome to TalentLink</h4>
+                  <p style={styles.cardText}>
+                    We are glad to have you on board. Use this space to reach the TalentLink admins for help with hiring, contracts, or product guidance.
+                  </p>
+                </div>
+              ) : (
+                <div style={styles.profileGrid}>
+                  <div style={styles.card}>
+                    <h4 style={styles.cardTitle}>About</h4>
+                    <p style={styles.cardText}>
+                      {selectedFreelancer.profile?.bio || selectedFreelancer.coverLetter || 'No description available yet.'}
+                    </p>
+                    {selectedFreelancer.profile?.hourly_rate && (
+                      <p style={{ ...styles.cardText, marginTop: '12px' }}>
+                        Preferred hourly rate: {formatCurrency(selectedFreelancer.profile.hourly_rate)}
+                      </p>
+                    )}
+                  </div>
+                  <div style={styles.card}>
+                    <h4 style={styles.cardTitle}>Skills</h4>
+                    <div style={styles.skillsWrap}>
+                      {skillsFor(selectedFreelancer.profile).map((skill) => (
+                        <span key={skill} style={styles.skillChip}>{skill}</span>
+                      ))}
+                      {!skillsFor(selectedFreelancer.profile).length && (
+                        <span style={styles.cardText}>Skills not provided.</span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={styles.card}>
+                    <h4 style={styles.cardTitle}>Project Experience</h4>
+                    <p style={{ ...styles.cardText, whiteSpace: 'pre-wrap' }}>
+                      {selectedFreelancer.profile?.works || 'No project experience added yet.'}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div style={styles.chatSection}>
                 <div style={styles.messages}>

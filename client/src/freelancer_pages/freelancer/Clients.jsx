@@ -30,57 +30,39 @@ export default function Clients() {
   }, []);
 
   const openProfile = async (profile) => {
-    // profile may already be full object or minimal; fetch detail if needed
     if (!profile) return;
+    setSelected(profile);
     setDetailLoading(true);
     try {
       const id = profile.id;
-      const userId = profile.user || profile.user_id || profile.userId || profile.userId;
+      const userId = profile.user || profile.user_id || profile.userId;
       let detail = { ...profile };
 
-      // If profile already has substantial fields, use it
-      const hasDetail = !!(profile.bio || profile.title || profile.company || profile.email || profile.phone || profile.skills);
-
-      if (!hasDetail) {
-        // Try multiple ways to fetch a rich profile, prefer profile id, then user id, then listProfiles filter
-        if (id) {
-          try {
-            const d1 = await profileService.client.getProfileById(id);
-            if (d1) detail = { ...detail, ...d1 };
-          } catch (e) {
-            // ignore and continue
-            console.debug('getProfileById failed', id, e?.message || e);
-          }
+      if (id) {
+        try {
+          const full = await profileService.client.getProfileById(id);
+          if (full) detail = { ...detail, ...full };
+        } catch (error) {
+          console.debug('getProfileById failed', id);
         }
+      }
 
-        if ((!detail.bio && !detail.title && !detail.email) && userId) {
-          try {
-            const d2 = await profileService.client.getProfileByUserId(userId);
-            if (d2) detail = { ...detail, ...d2 };
-          } catch (e) {
-            console.debug('getProfileByUserId failed', userId, e?.message || e);
-          }
+      if (!detail.email && userId) {
+        try {
+          const fallback = await profileService.client.getProfileByUserId(userId);
+          if (fallback) detail = { ...detail, ...fallback };
+        } catch (error) {
+          console.debug('getProfileByUserId failed', userId);
         }
+      }
 
-        // As a last attempt, try listProfiles filtered by possible ids (some APIs return arrays)
-        if ((!detail.bio && !detail.title && !detail.email) && (userId || id)) {
-          try {
-            const list = await profileService.client.listProfiles({ user_id: userId || id });
-            const arr = list?.results || list || [];
-            if (arr && arr.length > 0) detail = { ...detail, ...arr[0] };
-          } catch (e) {
-            console.debug('listProfiles filter failed', e?.message || e);
-          }
-        }
-
-        // If still missing, try freelancer service as a fallback (some data might live there)
-        if ((!detail.bio && !detail.title && !detail.email) && userId) {
-          try {
-            const f = await profileService.freelancer.getProfileByUserId(userId);
-            if (f) detail = { ...detail, ...f };
-          } catch (e) {
-            console.debug('freelancer.getProfileByUserId fallback failed', userId, e?.message || e);
-          }
+      if (!detail.email && (userId || id)) {
+        try {
+          const list = await profileService.client.listProfiles({ user_id: userId || id });
+          const arr = list?.results || list || [];
+          if (arr && arr.length > 0) detail = { ...detail, ...arr[0] };
+        } catch (error) {
+          console.debug('listProfiles filter failed');
         }
       }
 
@@ -114,18 +96,16 @@ export default function Clients() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100%',
         width: '100%',
-        background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)',
         boxSizing: 'border-box',
-        px: { xs: 2, md: 4, lg: 6 },
-        py: { xs: 3, md: 6 }
+        px: { xs: 2, sm: 3, lg: 4 },
+        py: { xs: 3, md: 4 },
+        bgcolor: 'background.default'
       }}
     >
       <Box
         sx={{
-          maxWidth: '1380px',
-          mx: 'auto',
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -151,13 +131,13 @@ export default function Clients() {
           filteredClients.length === 0 ? (
             <Box sx={{ textAlign: 'center', p: 6, color: 'text.secondary' }}>No clients match that search.</Box>
           ) : (
-            <Grid container spacing={3}>
+            <Grid container spacing={{ xs: 2, md: 3 }}>
               {filteredClients.map((c) => (
-                <Grid item xs={12} sm={6} md={3} key={c.id || c.user || JSON.stringify(c)}>
+                <Grid item xs={12} sm={6} md={4} lg={3} key={c.id || c.user || JSON.stringify(c)}>
                   <Card sx={{ p: 3, textAlign: 'center', height: '100%' }}>
                     <Avatar sx={{ width: 64, height: 64, margin: '0 auto', mb: 2 }} src={c.profile_image || c.avatar || undefined}>{!(c.profile_image || c.avatar) && (c.first_name ? (c.first_name[0] + (c.last_name ? c.last_name[0] : '')).toUpperCase() : 'C')}</Avatar>
                     <Typography variant="h6">{c.name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.company || 'Client'}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{c.title || c.company || ''}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{c.company || c.company_name || c.title || ''}</Typography>
                     <Button variant="outlined" size="small" fullWidth onClick={() => openProfile(c)}>View Profile</Button>
                   </Card>
                 </Grid>
@@ -178,22 +158,55 @@ export default function Clients() {
                   {!selected.profile_image && !selected.avatar && (selected.first_name ? (selected.first_name[0] + (selected.last_name ? selected.last_name[0] : '')).toUpperCase() : 'C')}
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{selected.name || `${selected.first_name || ''} ${selected.last_name || ''}`.trim() || 'Client'}</Typography>
-                  {selected.title || selected.company ? (
-                    <Typography variant="body2" color="text.secondary">{[selected.title, selected.company].filter(Boolean).join(' • ')}</Typography>
-                  ) : null}
+                  <Typography variant="h6">{selected.name || `${selected.first_name || ''} ${selected.last_name || ''}`.trim() || selected.company_name || 'Client'}</Typography>
+                  {selected.company_name && (
+                    <Typography variant="body2" color="text.secondary">{selected.company_name}</Typography>
+                  )}
                 </Box>
               </Box>
 
               {/* Contact & Metadata */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-                {selected.email && <Box><Typography variant="caption" color="text.secondary">Email</Typography><Typography variant="body2">{selected.email}</Typography></Box>}
-                {selected.phone && <Box><Typography variant="caption" color="text.secondary">Phone</Typography><Typography variant="body2">{selected.phone}</Typography></Box>}
-                {selected.location && <Box><Typography variant="caption" color="text.secondary">Location</Typography><Typography variant="body2">{selected.location}</Typography></Box>}
-                {selected.website && <Box><Typography variant="caption" color="text.secondary">Website</Typography><Typography variant="body2"><a href={selected.website} target="_blank" rel="noreferrer">{selected.website}</a></Typography></Box>}
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                {selected.email && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Email</Typography>
+                    <Typography variant="body2">{selected.email}</Typography>
+                  </Box>
+                )}
+                {selected.phone && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Phone</Typography>
+                    <Typography variant="body2">{selected.phone}</Typography>
+                  </Box>
+                )}
+                {selected.location && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Location</Typography>
+                    <Typography variant="body2">{selected.location}</Typography>
+                  </Box>
+                )}
+                {selected.website && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Website</Typography>
+                    <Typography variant="body2"><a href={selected.website} target="_blank" rel="noreferrer">{selected.website}</a></Typography>
+                  </Box>
+                )}
               </Box>
 
-              {/* Bio */}
+              {selected.company_name && (
+                <Box>
+                  <Typography variant="subtitle2">Company</Typography>
+                  <Typography variant="body2">{selected.company_name}</Typography>
+                </Box>
+              )}
+
+              {selected.company_description && (
+                <Box>
+                  <Typography variant="subtitle2">Company Description</Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{selected.company_description}</Typography>
+                </Box>
+              )}
+
               {selected.bio && (
                 <Box>
                   <Typography variant="subtitle2">About</Typography>
@@ -201,10 +214,16 @@ export default function Clients() {
                 </Box>
               )}
 
-              {/* Skills / Expertise */}
+              {selected.projects && (
+                <Box>
+                  <Typography variant="subtitle2">Projects</Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{selected.projects}</Typography>
+                </Box>
+              )}
+
               {selected.skills && (
                 <Box>
-                  <Typography variant="subtitle2">Skills</Typography>
+                  <Typography variant="subtitle2">Skills Needed</Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
                     {selected.skills.split(',').map((s, i) => (
                       <Box key={i} sx={{ px: 1.5, py: 0.5, bgcolor: 'grey.100', borderRadius: 1, fontSize: 12 }}>{s.trim()}</Box>
@@ -213,11 +232,24 @@ export default function Clients() {
                 </Box>
               )}
 
-              {/* Documents / Portfolio */}
+              {selected.works && (
+                <Box>
+                  <Typography variant="subtitle2">Recent Work</Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{selected.works}</Typography>
+                </Box>
+              )}
+
+              {selected.documents && (
+                <Box>
+                  <Typography variant="subtitle2">Documents</Typography>
+                  <a href={selected.documents} target="_blank" rel="noreferrer">{selected.documents.split('/').pop()}</a>
+                </Box>
+              )}
+
               {selected.portfolio_links && (
                 <Box>
-                  <Typography variant="subtitle2">Portfolio</Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+                  <Typography variant="subtitle2">Portfolio Links</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     {selected.portfolio_links.split(',').map((link, i) => (
                       <a key={i} href={link.trim()} target="_blank" rel="noreferrer">{link.trim()}</a>
                     ))}
@@ -225,17 +257,13 @@ export default function Clients() {
                 </Box>
               )}
 
-              {selected.documents && (
-                <Box>
-                  <Typography variant="subtitle2">Documents</Typography>
-                  <a href={selected.documents.startsWith('http') ? selected.documents : selected.documents} target="_blank" rel="noreferrer">{selected.documents.split('/').pop()}</a>
-                </Box>
-              )}
-
-              {/* Metadata */}
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                {selected.created_at && <Typography variant="caption" color="text.secondary">Joined: {new Date(selected.created_at).toLocaleDateString()}</Typography>}
-                {selected.company && <Typography variant="caption" color="text.secondary">Company: {selected.company}</Typography>}
+                {selected.created_at && (
+                  <Typography variant="caption" color="text.secondary">Joined: {new Date(selected.created_at).toLocaleDateString()}</Typography>
+                )}
+                {selected.updated_at && (
+                  <Typography variant="caption" color="text.secondary">Updated: {new Date(selected.updated_at).toLocaleDateString()}</Typography>
+                )}
               </Box>
             </Box>
           )}

@@ -9,6 +9,8 @@ class Notification(models.Model):
         ("message_received", "Message Received"),
         ("contract_created", "Contract Created"),
         ("contract_updated", "Contract Updated"),
+        ("expense_logged", "Expense Logged"),
+        ("payment_recorded", "Payment Recorded"),
     ]
 
     user = models.ForeignKey(

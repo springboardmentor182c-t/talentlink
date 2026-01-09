@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { verifyUserOtp } from '../services/verify';
 
 const VerifyOtpForm = () => {
@@ -11,8 +11,6 @@ const VerifyOtpForm = () => {
     // New state to handle the Success View
     const [isSuccess, setIsSuccess] = useState(false);
     
-    const navigate = useNavigate();
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');

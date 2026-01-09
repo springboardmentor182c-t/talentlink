@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import profileService from "../../services/profileService";
 import { profileImageOrFallback } from "../../utils/profileImage";
@@ -27,6 +28,9 @@ const STATUS_LABELS = {
 };
 
 const FreelancerMessages = () => {
+  const location = useLocation();
+  const clientHint = location.state?.clientHint;
+  const [isMobile, setIsMobile] = useState(false);
   const [clients, setClients] = useState([]);
   const [selectedKey, setSelectedKey] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -112,10 +116,30 @@ const FreelancerMessages = () => {
   }, [fetchClients]);
 
   useEffect(() => {
+    // Track viewport to switch layout between desktop and mobile
+    const mq = window.matchMedia("(max-width: 900px)");
+    const handler = (event) => setIsMobile(event.matches);
+    handler(mq);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
     if (clients.length && !clients.some((client) => client.clientKey === selectedKey)) {
       setSelectedKey(clients[0].clientKey);
     }
   }, [clients, selectedKey]);
+
+  useEffect(() => {
+    if (!clientHint || !clients.length) return;
+    const match = clients.find((client) => {
+      const key = client.clientKey;
+      return key === clientHint || key === `client-${clientHint}` || client.email === clientHint || client.name === clientHint;
+    });
+    if (match) {
+      setSelectedKey(match.clientKey);
+    }
+  }, [clientHint, clients]);
 
   useEffect(() => {
     setMessageError("");
@@ -221,6 +245,11 @@ const FreelancerMessages = () => {
       } catch (err) {
         console.error("Error loading conversation", err);
         if (isActive) {
+          const status = err?.response?.status;
+          if (status === 401) {
+            setMessageError("Session expired. Please sign in again.");
+            return null;
+          }
           const detail = err?.response?.data?.detail || "Unable to load messages.";
           setMessageError(detail);
         }
@@ -242,6 +271,7 @@ const FreelancerMessages = () => {
     if (!selectedKey) return null;
     return clients.find((client) => client.clientKey === selectedKey) || null;
   }, [clients, selectedKey]);
+  const isTalentLinkSelected = selectedClient?.clientKey === 'talentlink';
 
   const proposalMessages = useMemo(() => {
     if (!selectedClient) return [];
@@ -364,7 +394,7 @@ const FreelancerMessages = () => {
   return (
     <>
       <div style={styles.page}>
-        <div style={styles.layout}>
+        <div style={isMobile ? styles.layoutMobile : styles.layoutDesktop}>
         <aside style={styles.sidebar}>
           <div style={styles.sidebarHeader}>Clients you contacted</div>
           <div style={styles.searchBar}>
@@ -387,6 +417,7 @@ const FreelancerMessages = () => {
           <div style={styles.list}>
             {filteredClients.map((client) => {
               const isActive = client.clientKey === selectedKey;
+              const isTalentLink = client.clientKey === 'talentlink';
               return (
                 <button
                   key={client.clientKey}
@@ -402,9 +433,11 @@ const FreelancerMessages = () => {
                   <div style={styles.meta}>
                     <div style={styles.primaryText}>{client.name}</div>
                     <div style={styles.secondaryText}>{client.email || "Email not shared"}</div>
-                    <div style={styles.secondaryText}>{client.lastProject}</div>
+                    {!isTalentLink && (
+                      <div style={styles.secondaryText}>{client.lastProject}</div>
+                    )}
                   </div>
-                  <span style={styles.statusPill}>{STATUS_LABELS[client.status] || "Pending"}</span>
+                  <span style={styles.statusPill}>{isTalentLink ? 'Admin' : (STATUS_LABELS[client.status] || "Pending")}</span>
                 </button>
               );
             })}
@@ -420,39 +453,54 @@ const FreelancerMessages = () => {
                   <div>
                     <div style={styles.detailName}>{selectedClient.name}</div>
                     <div style={styles.detailSub}>{selectedClient.email || "Contact not shared"}</div>
-                    <div style={styles.detailSub}>{selectedClient.lastProject}</div>
+                    {isTalentLinkSelected ? (
+                      <div style={styles.detailSub}>Admin</div>
+                    ) : (
+                      <div style={styles.detailSub}>{selectedClient.lastProject}</div>
+                    )}
                   </div>
                 </div>
-                <div style={styles.detailChips}>
-                  <div style={styles.detailChip}><span>Status</span><strong>{STATUS_LABELS[selectedClient.status] || "Pending"}</strong></div>
-                  <div style={styles.detailChip}><span>Opportunities</span><strong>{selectedClient.proposals.length}</strong></div>
-                  <div style={styles.detailChip}><span>Last activity</span><strong>{formatTime(selectedClient.createdAt)}</strong></div>
-                </div>
+                {!isTalentLinkSelected && (
+                  <div style={styles.detailChips}>
+                    <div style={styles.detailChip}><span>Status</span><strong>{STATUS_LABELS[selectedClient.status] || "Pending"}</strong></div>
+                    <div style={styles.detailChip}><span>Opportunities</span><strong>{selectedClient.proposals.length}</strong></div>
+                    <div style={styles.detailChip}><span>Last activity</span><strong>{formatTime(selectedClient.createdAt)}</strong></div>
+                  </div>
+                )}
               </header>
 
               <div style={styles.detailBody}>
-                <div style={styles.profileGrid}>
-                  <div style={styles.card}>
-                    <h4 style={styles.cardTitle}>About this client</h4>
+                {isTalentLinkSelected ? (
+                  <div style={{ ...styles.card, width: '100%' }}>
+                    <h4 style={styles.cardTitle}>Welcome to TalentLink</h4>
                     <p style={styles.cardText}>
-                      {latestProposal?.client_notes || `You last reached out about ${selectedClient.lastProject}. Keep the client updated on milestones and next steps.`}
-                    </p>
-                    <p style={{ ...styles.cardText, marginTop: "12px" }}>
-                      {selectedClient.email ? `Preferred contact: ${selectedClient.email}` : "Contact details pending."}
+                      Our team is here to help you connect with great opportunities. Use this channel to reach the TalentLink admins whenever you need assistance.
                     </p>
                   </div>
-                  <div style={styles.card}>
-                    <h4 style={styles.cardTitle}>Projects discussed</h4>
-                    <div style={styles.skillsWrap}>
-                      {projectTags.map((tag) => (
-                        <span key={tag} style={styles.skillChip}>{tag}</span>
-                      ))}
-                      {!projectTags.length && (
-                        <span style={styles.cardText}>No project history yet.</span>
-                      )}
+                ) : (
+                  <div style={styles.profileGrid}>
+                    <div style={styles.card}>
+                      <h4 style={styles.cardTitle}>About this client</h4>
+                      <p style={styles.cardText}>
+                        {latestProposal?.client_notes || `You last reached out about ${selectedClient.lastProject}. Keep the client updated on milestones and next steps.`}
+                      </p>
+                      <p style={{ ...styles.cardText, marginTop: "12px" }}>
+                        {selectedClient.email ? `Preferred contact: ${selectedClient.email}` : "Contact details pending."}
+                      </p>
+                    </div>
+                    <div style={styles.card}>
+                      <h4 style={styles.cardTitle}>Projects discussed</h4>
+                      <div style={styles.skillsWrap}>
+                        {projectTags.map((tag) => (
+                          <span key={tag} style={styles.skillChip}>{tag}</span>
+                        ))}
+                        {!projectTags.length && (
+                          <span style={styles.cardText}>No project history yet.</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div style={styles.chatSection}>
                   <div style={styles.messages}>

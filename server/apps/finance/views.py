@@ -6,6 +6,7 @@ from django.db.models import Sum, Count
 from django.db.models import Sum, Count, F, Case, When, Value, DecimalField
 from .models import Expense, Transaction, PayoutRequest
 from .serializers import ExpenseSerializer, TransactionSerializer, PayoutRequestSerializer
+from apps.notifications.models import create_notification
 from django.utils.crypto import get_random_string
 from decimal import Decimal
 
@@ -44,6 +45,26 @@ def freelancer_transactions(request):
         return Response({'detail': 'client and amount required'}, status=status.HTTP_400_BAD_REQUEST)
     invoice_id = get_random_string(8).upper()
     tx = Transaction.objects.create(invoice_id=invoice_id, client_id=client_id, freelancer=user, amount=amount, description=description, status='pending')
+    try:
+        if tx.client:
+            create_notification(
+                user=tx.client,
+                actor=user,
+                verb="expense_logged",
+                title=f"Invoice {tx.invoice_id} created",
+                body=description or f"{user.email} created an invoice for {tx.amount}",
+                target_type="transaction",
+                target_id=tx.id,
+                metadata={
+                    "invoice_id": tx.invoice_id,
+                    "amount": str(tx.amount),
+                    "actor_name": getattr(user, "name", None) or getattr(user, "email", ""),
+                    "actor_profile_image": getattr(getattr(user, "profile", None), "profile_image", None),
+                },
+            )
+    except Exception:
+        # Avoid breaking invoice creation if notifications fail
+        pass
     return Response(TransactionSerializer(tx, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
@@ -62,7 +83,26 @@ def expenses_list_create(request):
     # pass the authenticated user to serializer.save() instead
     serializer = ExpenseSerializer(data=data, context={'request': request})
     if serializer.is_valid():
-        serializer.save(user=user)
+        expense = serializer.save(user=user)
+        try:
+            if expense.client:
+                create_notification(
+                    user=expense.client,
+                    actor=user,
+                    verb="expense_logged",
+                    title="Expense recorded",
+                    body=f"{user.email} logged {expense.item} for {expense.amount}",
+                    target_type="expense",
+                    target_id=expense.id,
+                    metadata={
+                        "amount": str(expense.amount),
+                        "item": expense.item,
+                        "actor_name": getattr(user, "name", None) or getattr(user, "email", ""),
+                        "actor_profile_image": getattr(getattr(user, "profile", None), "profile_image", None),
+                    },
+                )
+        except Exception:
+            pass
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -133,6 +173,27 @@ def client_transactions(request):
     else:
         status_val = 'pending'
     tx = Transaction.objects.create(invoice_id=invoice_id, client=user, freelancer_id=freelancer_id, amount=amt, description=description, status=status_val, paid_amount=paid, payment_type=payment_type)
+    try:
+        if tx.freelancer:
+            create_notification(
+                user=tx.freelancer,
+                actor=user,
+                verb="payment_recorded",
+                title=f"Payment update for {tx.invoice_id}",
+                body=description or f"{user.email} recorded a payment of {paid if paid else amt}",
+                target_type="transaction",
+                target_id=tx.id,
+                metadata={
+                    "invoice_id": tx.invoice_id,
+                    "amount": str(tx.amount),
+                    "paid_amount": str(tx.paid_amount),
+                    "status": tx.status,
+                    "actor_name": getattr(user, "name", None) or getattr(user, "email", ""),
+                    "actor_profile_image": getattr(getattr(user, "profile", None), "profile_image", None),
+                },
+            )
+    except Exception:
+        pass
     return Response(TransactionSerializer(tx, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
@@ -159,6 +220,27 @@ def client_transaction_action(request, invoice_id):
         else:
             tx.status = 'partial'
         tx.save()
+        try:
+            if tx.freelancer:
+                create_notification(
+                    user=tx.freelancer,
+                    actor=user,
+                    verb="payment_recorded",
+                    title=f"Payment received for {tx.invoice_id}",
+                    body=f"{user.email} paid {amt}. Status: {tx.status}",
+                    target_type="transaction",
+                    target_id=tx.id,
+                    metadata={
+                        "invoice_id": tx.invoice_id,
+                        "amount": str(tx.amount),
+                        "paid_amount": str(tx.paid_amount),
+                        "status": tx.status,
+                        "actor_name": getattr(user, "name", None) or getattr(user, "email", ""),
+                        "actor_profile_image": getattr(getattr(user, "profile", None), "profile_image", None),
+                    },
+                )
+        except Exception:
+            pass
         return Response(TransactionSerializer(tx, context={'request': request}).data)
     elif action == 'settle':
         # Mark invoice as fully paid/settled by client (manual settlement)

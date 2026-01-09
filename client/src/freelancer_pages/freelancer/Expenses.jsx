@@ -49,7 +49,7 @@ export default function Expenses() {
       // reload
       const res = await financeService.getExpenses().catch(() => null);
       if (res) setExpenses(res);
-      setForm({ item: '', date: '', category: '', amount: '', receipt: null });
+      setForm({ item: '', date: '', category: '', amount: '', receipt: null, client: '' });
       setAdding(false);
     } catch (err) {
       console.error(err);
@@ -87,15 +87,16 @@ export default function Expenses() {
           <Card sx={{ p: 3 }}>
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <TextField label="Item" value={form.item} onChange={(e) => setForm({ ...form, item: e.target.value })} required />
-                <TextField label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} InputLabelProps={{ shrink: true }} required />
-                <TextField label="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} required />
-                <TextField label="Amount" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
+                <TextField label="Item" value={form.item} onChange={(e) => setForm({ ...form, item: e.target.value })} required sx={{ flex: '1 1 220px', minWidth: 200 }} />
+                <TextField label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} InputLabelProps={{ shrink: true }} required sx={{ flex: '1 1 180px', minWidth: 180 }} />
+                <TextField label="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} required sx={{ flex: '1 1 200px', minWidth: 200 }} />
+                <TextField label="Amount" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required sx={{ flex: '1 1 180px', minWidth: 160 }} />
                 <Autocomplete
                   freeSolo
                   options={clientOptions}
                   getOptionLabel={(opt) => opt?.email || ''}
                   inputValue={clientInput}
+                  sx={{ flex: '2 1 340px', minWidth: { xs: '100%', sm: 280 }, maxWidth: 460 }}
                   onInputChange={(_e, newInput) => {
                     setClientInput(newInput);
                     if (clientSearchTimeout.current) clearTimeout(clientSearchTimeout.current);
@@ -114,9 +115,15 @@ export default function Expenses() {
                     if (value && value.id) setForm({ ...form, client: value.id });
                     else setForm({ ...form, client: '' });
                   }}
-                  renderInput={(params) => <TextField {...params} label="Client (email)" />}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Client (email)"
+                      placeholder="Search by client email"
+                    />
+                  )}
                 />
-                <input type="file" onChange={(e) => setForm({ ...form, receipt: e.target.files[0] })} />
+                <input type="file" onChange={(e) => setForm({ ...form, receipt: e.target.files[0] })} style={{ minWidth: '180px' }} />
               </Box>
               <Box sx={{ mt: 3 }}>
                 <Button type="submit" variant="contained">Save Expense</Button>
@@ -132,24 +139,29 @@ export default function Expenses() {
                 <TableRow>
                   <TableCell sx={{ color: 'text.secondary' }}>Item</TableCell>
                   <TableCell sx={{ color: 'text.secondary' }}>Date</TableCell>
+                  <TableCell sx={{ color: 'text.secondary' }}>Client</TableCell>
                   <TableCell sx={{ color: 'text.secondary' }}>Category</TableCell>
                   <TableCell align="right" sx={{ color: 'text.secondary' }}>Amount</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={4} sx={{ p: 3 }}>Loading...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} sx={{ p: 3 }}>Loading...</TableCell></TableRow>
                 ) : expenses && expenses.length ? (
                   expenses.map((row) => (
                     <TableRow key={row.id}>
                       <TableCell fontWeight={500}>{row.item}</TableCell>
                       <TableCell color="text.secondary">{row.date}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.client_email || '—'}</Typography>
+                        <Typography variant="caption" color="text.secondary">{row.client_name || ''}</Typography>
+                      </TableCell>
                       <TableCell><Chip label={row.category} size="small" /></TableCell>
                       <TableCell align="right" sx={{ fontWeight: 600, color: 'error.main' }}>- {row.amount}</TableCell>
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow><TableCell colSpan={4} sx={{ p: 3 }}>No expenses found</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} sx={{ p: 3 }}>No expenses found</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>

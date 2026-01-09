@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaHome, 
@@ -19,19 +19,39 @@ import {
 // Adjust the path "../../App.css" if your folder structure is different
 import '../../App.css'; 
 import { performLogout } from '../../utils/logout';
+import { useMediaQuery, useTheme as useMuiTheme } from '@mui/material';
 
-const ClientSidebar = ({ isOpen = true, onToggle }) => {
+const ClientSidebar = ({ isOpen = true, onToggle, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const muiTheme = useMuiTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   
   // --- STATE FOR MOBILE MENU ---
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  useEffect(() => {
+    if (isMobile) {
+      setIsMobileOpen(isOpen);
+    } else {
+      setIsMobileOpen(false);
+    }
+  }, [isMobile, isOpen]);
+
   const toggleMobileMenu = () => {
-    setIsMobileOpen(!isMobileOpen);
+    if (typeof onToggle === 'function') {
+      onToggle();
+    }
+  };
+
+  const closeMobileMenu = () => {
+    if (isMobile && isMobileOpen && typeof onClose === 'function') {
+      onClose();
+    }
   };
 
   const handleLogout = async () => {
+    closeMobileMenu();
     await performLogout();
     navigate('/login');
   };
@@ -138,7 +158,7 @@ const ClientSidebar = ({ isOpen = true, onToggle }) => {
 
       {/* --- OVERLAY (Mobile Only) --- */}
       {isMobileOpen && (
-        <div className="sidebar-overlay" onClick={() => setIsMobileOpen(false)} />
+        <div className="sidebar-overlay" onClick={closeMobileMenu} />
       )}
 
       {/* --- SIDEBAR CONTAINER --- */}
@@ -163,7 +183,7 @@ const ClientSidebar = ({ isOpen = true, onToggle }) => {
             <div style={styles.subText}>CLIENT PORTAL</div>
           </div>
           {/* Close Button (Mobile Only) */}
-          <button className="mobile-close-btn" onClick={() => setIsMobileOpen(false)}>
+          <button className="mobile-close-btn" onClick={closeMobileMenu}>
             <FaTimes />
           </button>
         </div>
@@ -173,7 +193,7 @@ const ClientSidebar = ({ isOpen = true, onToggle }) => {
           <div style={styles.sectionLabel}>MENU</div>
           
           {/* Menu Items (Clicking one closes menu on mobile) */}
-          <div onClick={() => setIsMobileOpen(false)}>
+          <div onClick={closeMobileMenu}>
             {menuItems.map((item) => (
               <NavItem
                 key={item.to}
@@ -188,7 +208,7 @@ const ClientSidebar = ({ isOpen = true, onToggle }) => {
           {/* --- SETTINGS SECTION --- */}
           <div style={{ ...styles.sectionLabel, marginTop: '20px' }}>PREFERENCES</div>
           
-          <div onClick={() => setIsMobileOpen(false)}>
+          <div onClick={closeMobileMenu}>
               <NavItem to="/client/settings" icon={<FaCog />} label="Settings" isActive={location.pathname === '/client/settings'} />
               <NavItem to="/client/help" icon={<FaQuestionCircle />} label="Help Center" isActive={location.pathname === '/client/help'} />
           </div>

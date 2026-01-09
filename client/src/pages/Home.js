@@ -13,9 +13,7 @@ const Home = () => {
   const navigate = useNavigate();
   const [showContact, setShowContact] = useState(false); // State for Contact Form
 
-  // Prevent default link behavior
-  const handleContactClick = (e) => {
-    e.preventDefault();
+  const handleContactClick = () => {
     setShowContact(true);
   };
 
@@ -111,26 +109,62 @@ const Home = () => {
             <div className="footer-col">
                 <h4>For Clients</h4>
                 <ul>
-                    <li><a href="#">How to Hire</a></li>
-                    <li><a href="#">Talent Marketplace</a></li>
-                    <li><a href="#">Payment Services</a></li>
+                    <li>
+                      <button type="button" className="footer-link-button" onClick={() => navigate('/signup')}>
+                        How to Hire
+                      </button>
+                    </li>
+                    <li>
+                      <button type="button" className="footer-link-button" onClick={() => navigate('/signup')}>
+                        Talent Marketplace
+                      </button>
+                    </li>
+                    <li>
+                      <button type="button" className="footer-link-button" onClick={() => navigate('/signup')}>
+                        Payment Services
+                      </button>
+                    </li>
                 </ul>
             </div>
             <div className="footer-col">
                 <h4>For Talent</h4>
                 <ul>
-                    <li><a href="#">How to Find Work</a></li>
-                    <li><a href="#">Direct Contracts</a></li>
-                    <li><a href="#">Opportunity Feed</a></li>
+                    <li>
+                      <button type="button" className="footer-link-button" onClick={() => navigate('/signup')}>
+                        How to Find Work
+                      </button>
+                    </li>
+                    <li>
+                      <button type="button" className="footer-link-button" onClick={() => navigate('/signup')}>
+                        Direct Contracts
+                      </button>
+                    </li>
+                    <li>
+                      <button type="button" className="footer-link-button" onClick={() => navigate('/signup')}>
+                        Opportunity Feed
+                      </button>
+                    </li>
                 </ul>
             </div>
             <div className="footer-col">
                 <h4>Company</h4>
                 <ul>
-                    <li><a href="#">About Us</a></li>
-                    <li><a href="#">Careers</a></li>
+                    <li>
+                      <button type="button" className="footer-link-button" onClick={() => navigate('/')}>
+                        About Us
+                      </button>
+                    </li>
+                    <li>
+                      <button type="button" className="footer-link-button" onClick={() => navigate('/')}>
+                        Careers
+                      </button>
+                    </li>
                     {/* TRIGGER POPUP ON CLICK */}
-                    <li><a href="#" onClick={handleContactClick}>Contact Support</a></li>
+                    <li>
+                      <button type="button" className="footer-link-button" onClick={handleContactClick}>
+                        Contact Support
+                      </button>
+                    </li>
                 </ul>
             </div>
         </div>

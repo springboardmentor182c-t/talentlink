@@ -400,6 +400,77 @@ a {
   display: block;
 }
 
+/* --- Mobile Adjustments --- */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 4%;
+    height: 64px;
+    gap: 12px;
+  }
+
+  .navbar-links {
+    gap: 16px;
+  }
+
+  .navbar-auth {
+    gap: 10px;
+  }
+
+  .logo-text {
+    font-size: 1.25rem;
+  }
+
+  .page-container {
+    padding: 16px;
+  }
+
+  .card,
+  .glass-card {
+    width: 92%;
+    max-width: 520px;
+    padding: 24px 18px;
+    margin: 12px auto;
+    border-radius: 14px;
+  }
+
+  .glass-card h2,
+  .card h2 {
+    font-size: 22px;
+  }
+
+  .glass-card p,
+  .card p {
+    font-size: 14px;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-group label {
+    font-size: 0.85rem;
+  }
+
+  .form-input {
+    padding: 12px;
+    font-size: 0.95rem;
+  }
+
+  .btn-primary {
+    font-size: 0.95rem;
+    padding: 12px;
+  }
+
+  .login-page-background,
+  .signup-page-background,
+  .forgot-password-background,
+  .verify-page-background {
+    min-height: auto;
+    padding: 18px 12px 32px;
+    align-items: flex-start;
+  }
+}
+
 .success-msg {
   color: #28a745;
   font-weight: 500;
@@ -1207,5 +1278,83 @@ a {
   .sidebar-overlay.active {
       pointer-events: auto;
       opacity: 1;
+  }
+
+  /* Prevent horizontal scroll and ensure media scales */
+  html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  img, picture, video, canvas, svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Navbar / header spacing */
+  .navbar {
+    padding: 0 16px;
+    height: 64px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Form controls and buttons scale to width */
+  input, select, textarea, button {
+    font-size: 16px;
+  }
+
+  .form-group,
+  form .form-group {
+    width: 100%;
+  }
+
+  .btn,
+  .btn-primary,
+  .btn-outline,
+  .nav-btn-primary,
+  .nav-btn-ghost,
+  .secondaryBtn,
+  .hire-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Table containers should scroll within viewport */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  thead, tbody, tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  th, td {
+    padding: 10px 8px;
+    word-break: break-word;
+  }
+
+  /* Cards and modals fit viewport */
+  .card, .glass-card, .modal-content {
+    width: 100%;
+    max-width: none;
+    padding: 24px;
+  }
+
+  .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Footer stacks columns */
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
 }

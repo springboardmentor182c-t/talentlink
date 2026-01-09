@@ -3,10 +3,22 @@ from .models import Expense, Transaction, PayoutRequest
 
 
 class ExpenseSerializer(serializers.ModelSerializer):
+    client_email = serializers.SerializerMethodField()
+    client_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Expense
-        fields = ['id', 'user', 'client', 'item', 'date', 'category', 'amount', 'receipt', 'created_at']
+        fields = ['id', 'user', 'client', 'client_email', 'client_name', 'item', 'date', 'category', 'amount', 'receipt', 'created_at']
         read_only_fields = ['id', 'user', 'created_at']
+
+    def get_client_email(self, obj):
+        return getattr(obj.client, 'email', None)
+
+    def get_client_name(self, obj):
+        first = getattr(obj.client, 'first_name', '') or ''
+        last = getattr(obj.client, 'last_name', '') or ''
+        full = (first + ' ' + last).strip()
+        return full or None
 
 
 class TransactionSerializer(serializers.ModelSerializer):

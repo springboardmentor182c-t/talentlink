@@ -59,9 +59,19 @@ export default function FreelancerSidebar({ width = 260, open = true, onClose })
   const activeText = "#ffffff"; 
   const inactiveText = "#94a3b8"; 
 
+  const handleNavigate = (path) => {
+    navigate(path);
+    if (variant === 'temporary' && typeof onClose === 'function') {
+      onClose();
+    }
+  };
+
   const handleLogout = async () => {
     await performLogout();
     navigate('/login');
+    if (variant === 'temporary' && typeof onClose === 'function') {
+      onClose();
+    }
   };
 
   // For mobile screens use a temporary Drawer so it overlays content and can be closed.
@@ -131,7 +141,7 @@ export default function FreelancerSidebar({ width = 260, open = true, onClose })
           return (
             <ListItemButton
               key={item.text}
-              onClick={() => navigate(item.path)} 
+              onClick={() => handleNavigate(item.path)} 
               selected={isActive} 
               sx={{
                 borderRadius: 2,
@@ -190,7 +200,7 @@ export default function FreelancerSidebar({ width = 260, open = true, onClose })
           return (
             <ListItemButton
               key={item.text}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigate(item.path)}
               selected={isActive}
               sx={{
                 borderRadius: 2,

@@ -16,7 +16,7 @@ import { useUser } from "../../context/UserContext";
 import financeService from "../../services/financeService";
 import { contractService } from "../../services/contractService";
 import axiosInstance from "../../utils/axiosInstance";
-import { exportToCSV } from "../../utils/exportUtils";
+import { useNavigate } from "react-router-dom";
 
 const toNumber = (value) => {
   if (value === null || value === undefined) return 0;
@@ -135,7 +135,6 @@ const computeSeries = (transactions = [], period = 'Daily') => {
 const deriveStatsData = (overview, transactions = [], contracts = [], proposals = []) => {
   const totalIncome = toNumber(overview?.total_income);
   const netProfit = toNumber(overview?.net_profit);
-  const totalExpenses = toNumber(overview?.total_expenses);
   const pendingInvoices = Number(overview?.pending_invoices || 0);
 
   const activeContracts = contracts.filter((contract) => {
@@ -258,11 +257,15 @@ const deriveLatestClients = (transactions = []) => {
     const key = tx?.client || tx?.client_email || tx?.client_name;
     if (!key) return;
     const createdAt = tx?.created_at ? new Date(tx.created_at) : null;
+    const clientId = tx?.client || null;
+    const email = tx?.client_email || '';
     const latest = byClient.get(key);
     if (!latest || (createdAt && createdAt > latest.createdAt)) {
       byClient.set(key, {
         id: key,
         name: tx?.client_name || tx?.client_email || 'Client',
+        clientId,
+        email,
         project: tx?.description || 'Recent engagement',
         status: (tx?.status || '').toLowerCase(),
         createdAt: createdAt || new Date(0),
@@ -309,6 +312,7 @@ const deriveRecentTransactions = (transactions = []) =>
 export default function FreelancerDashboard() {
   // 2. State to handle the active time range
   const [timeRange, setTimeRange] = useState("Daily");
+  const navigate = useNavigate();
   const { user } = useUser();
 
   // Welcome / Notification state
@@ -376,25 +380,48 @@ export default function FreelancerDashboard() {
   }, []);
 
   useEffect(() => {
+    if (welcome) {
+      return;
+    }
     try {
-      const pending = localStorage.getItem('pending_welcome');
-      if (pending) {
-        const p = JSON.parse(pending);
-        setWelcome(p);
-        setWelcomeOpen(true);
-      } else {
-        // fallback: show first unread from local_notifications
-        const existing = JSON.parse(localStorage.getItem('local_notifications') || '[]');
-        const firstUnread = existing.find(n => !n.read);
-        if (firstUnread) {
-          setWelcome({ title: firstUnread.title, message: firstUnread.message });
-          setWelcomeOpen(true);
+      const pendingRaw = localStorage.getItem('pending_welcome');
+      if (pendingRaw) {
+        localStorage.removeItem('pending_welcome');
+        let pendingData = {};
+        try {
+          pendingData = JSON.parse(pendingRaw) || {};
+        } catch (parseError) {
+          pendingData = {};
         }
+
+        const displayName = (user?.name || localStorage.getItem('user_name') || '').trim();
+        const variant = pendingData.variant || null;
+        const message = variant === 'new'
+          ? null
+          : pendingData.message || (displayName ? `Welcome back, ${displayName}!` : 'Welcome back!');
+
+        setWelcome({ title: 'Welcome to TalentLink', message: message || undefined });
+        setWelcomeOpen(true);
+        return;
+      }
+
+      const displayName = (user?.name || localStorage.getItem('user_name') || '').trim();
+      if (displayName) {
+        setWelcome({ title: 'Welcome to TalentLink ' });
+        setWelcomeOpen(true);
+        return;
+      }
+
+      const existing = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+      const firstUnread = existing.find((n) => !n.read);
+      if (firstUnread) {
+        setWelcome({ title: firstUnread.title, message: firstUnread.message });
+        setWelcomeOpen(true);
       }
     } catch (e) {
       // ignore
     }
-  }, []);
+  }, [user?.name, welcome]);
 
   useEffect(() => {
     let active = true;
@@ -480,33 +507,20 @@ export default function FreelancerDashboard() {
   const latestClients = useMemo(() => deriveLatestClients(transactionsData), [transactionsData]);
   const recentTransactions = useMemo(() => deriveRecentTransactions(transactionsData), [transactionsData]);
 
-  const handleExportTransactions = useCallback(() => {
-    if (!recentTransactions.length) {
-      console.warn('No transactions available for export');
-      return;
-    }
+  const handleMessagesClick = useCallback(
+    (client) => {
+      const clientHint = client?.clientId || client?.email || client?.id;
+      navigate('/freelancer/messages', clientHint ? { state: { clientHint } } : undefined);
+    },
+    [navigate]
+  );
 
-    const rows = recentTransactions.map((row) => ({
-      invoice_id: row.id,
-      client: row.client,
-      date: row.date,
-      amount: row.amount,
-      status: row.status.replace(/\b\w/g, (char) => char.toUpperCase()),
-    }));
-
-    exportToCSV({
-      filename: 'freelancer-transactions.csv',
-      data: rows,
-      columns: [
-        { key: 'invoice_id', label: 'Invoice ID' },
-        { key: 'client', label: 'Client' },
-        { key: 'date', label: 'Date' },
-        { key: 'amount', label: 'Amount' },
-        { key: 'status', label: 'Status' },
-      ],
-    });
-  }, [recentTransactions]);
+  const handleFindWork = useCallback(() => {
+    navigate('/freelancer/projects');
+  }, [navigate]);
   const hasChartData = chartSeries.length > 0;
+  const primaryCardHeight = { xs: 'auto', md: 420, xl: 500 };
+  const secondaryCardHeight = { xs: 'auto', md: 360, xl: 420 };
 
   // Helper style for active/inactive buttons
   const getButtonStyle = (range) => ({
@@ -521,13 +535,19 @@ export default function FreelancerDashboard() {
       sx={{
         width: '100%',
         boxSizing: 'border-box',
-        px: { xs: 2, md: 3 },
-        py: { xs: 2, md: 3 }
+        px: { xs: 1.5, md: 3 },
+        py: { xs: 2, md: 3 },
+        minHeight: 'calc(100vh - 96px)',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)'
       }}
     >
+      <Box sx={{ maxWidth: '100%', width: '100%', mx: 'auto', display: 'flex', flexDirection: 'column' }}>
       {welcome && welcomeOpen && (
         <Alert severity="success" onClose={handleWelcomeClose} sx={{ mb: 2 }}>
-          <strong>{welcome.title}</strong>: {welcome.message}
+          <strong>{welcome.title || 'Welcome to TalentLink'}</strong>
+          {welcome.message ? `: ${welcome.message}` : null}
         </Alert>
       )}
       {dashboardError && (
@@ -538,20 +558,42 @@ export default function FreelancerDashboard() {
       {dashboardLoading && <LinearProgress sx={{ mb: 2 }} />}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box>
-          <Typography variant="h5">{`Hi ${user?.name || "User"}`}</Typography>
-          <Typography variant="body2" color="text.secondary">This is your Freelance Team dashboard overview</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>{`Welcome${user?.name ? '' : ' Back'}, ${user?.name || 'User'}`}</Typography>
+          <Typography variant="body1" color="text.secondary">Manage your proposals, contracts, and earnings in one place.</Typography>
         </Box>
-        <Button variant="outlined" onClick={refreshDashboard} disabled={dashboardLoading}>
-          Refresh
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Button variant="outlined" onClick={refreshDashboard} disabled={dashboardLoading}>
+            Refresh
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleFindWork}
+          >
+            Find Work
+          </Button>
+        </Box>
       </Box>
       {/* --- Top Stats Row --- */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: 3 }} alignItems="stretch">
         {stats.length > 0 ? stats.map((stat) => (
-          <Grid item xs={12} sm={6} md={3} key={stat.key}>
-            <Card sx={{ p: 2.5, display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <Grid item xs={12} sm={6} md={6} lg={3} key={stat.key} sx={{ display: 'flex' }}>
+            <Card
+              sx={{
+                p: { xs: 2, md: 3 },
+                display: "flex",
+                flexDirection: 'column',
+                justifyContent: "space-between",
+                minHeight: { xs: 'auto', md: 170 },
+                height: '100%',
+                width: '100%',
+                boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
+                border: '1px solid #e2e8f0',
+                borderRadius: 3,
+              }}
+            >
               <Box sx={{ display: "flex", gap: 2 }}>
-                <Avatar sx={{ bgcolor: stat.bgColor, color: stat.iconColor, width: 48, height: 48 }}>
+                <Avatar sx={{ bgcolor: stat.bgColor, color: stat.iconColor, width: 56, height: 56 }}>
                   {stat.icon}
                 </Avatar>
                 <Box>
@@ -576,13 +618,13 @@ export default function FreelancerDashboard() {
         )}
       </Grid>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, md: 3 }} alignItems="stretch" sx={{ flex: 1 }}>
         
         {/* --- ROW 2: Earnings Trend & Active Projects --- */}
 
         {/* Task Progress Chart */}
-        <Grid item xs={12} md={8}>
-          <Card sx={{ p: 3, height: "100%" }}>
+        <Grid item xs={12} md={7} lg={7} sx={{ display: 'flex' }}>
+          <Card sx={{ p: { xs: 2, md: 3 }, height: "100%", minHeight: primaryCardHeight, display: 'flex', flexDirection: 'column', width: '100%', boxShadow: '0 14px 40px rgba(15,23,42,0.08)', border: '1px solid #e2e8f0', borderRadius: 3 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Typography variant="h6">Earnings Trend</Typography>
               
@@ -595,26 +637,28 @@ export default function FreelancerDashboard() {
             </Box>
 
             {hasChartData ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={chartSeries}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#9ca3af' }}
-                    tickFormatter={(value) => formatCurrencyINR(value)}
-                    domain={[0, 'auto']}
-                  />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0px 4px 20px rgba(0,0,0,0.1)' }}
-                    formatter={(value) => [formatCurrencyINR(value), 'Earnings']}
-                  />
-                  <Line type="monotone" dataKey="value" stroke="#4ade80" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} />
-                </LineChart>
-              </ResponsiveContainer>
+              <Box sx={{ flexGrow: 1, minHeight: 320, width: '100%', minWidth: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartSeries}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#9ca3af' }}
+                      tickFormatter={(value) => formatCurrencyINR(value)}
+                      domain={[0, 'auto']}
+                    />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0px 4px 20px rgba(0,0,0,0.1)' }}
+                      formatter={(value) => [formatCurrencyINR(value), 'Earnings']}
+                    />
+                    <Line type="monotone" dataKey="value" stroke="#4ade80" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
             ) : (
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexGrow: 1, minHeight: 260 }}>
                 <Typography variant="body2" color="text.secondary">
                   {dashboardLoading ? 'Loading earnings trend…' : 'No earnings recorded for the selected range.'}
                 </Typography>
@@ -624,13 +668,13 @@ export default function FreelancerDashboard() {
         </Grid>
 
         {/* Active Projects List */}
-        <Grid item xs={12} md={4}>
-          <Card sx={{ p: 3, height: "100%" }}>
+        <Grid item xs={12} md={5} lg={5} sx={{ display: 'flex' }}>
+          <Card sx={{ p: { xs: 2, md: 3 }, height: "100%", minHeight: primaryCardHeight, display: 'flex', flexDirection: 'column', width: '100%', boxShadow: '0 14px 40px rgba(15,23,42,0.08)', border: '1px solid #e2e8f0', borderRadius: 3 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
               <Typography variant="h6">Active Projects</Typography>
               <Button size="small" color="secondary" disabled={activeProjects.length === 0}>See All</Button>
             </Box>
-            <List disablePadding>
+            <List disablePadding sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
               {activeProjects.length > 0 ? (
                 activeProjects.map((project, index) => (
                   <React.Fragment key={project.id}>
@@ -666,17 +710,16 @@ export default function FreelancerDashboard() {
         {/* --- ROW 3: Recent Transactions & Latest Clients --- */}
 
         {/* Recent Transactions */}
-        <Grid item xs={12} md={7}>
-          <Card sx={{ p: 3, height: "100%", display: 'flex', flexDirection: 'column' }}>
+        <Grid item xs={12} md={7} lg={7} sx={{ display: 'flex' }}>
+          <Card sx={{ p: { xs: 2, md: 3 }, height: "100%", display: 'flex', flexDirection: 'column', minHeight: secondaryCardHeight, width: '100%', boxShadow: '0 14px 40px rgba(15,23,42,0.08)', border: '1px solid #e2e8f0', borderRadius: 3 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ReceiptLongIcon color="action" /> Recent Transactions
               </Typography>
-              <Button size="small" color="primary" disabled={recentTransactions.length === 0} onClick={handleExportTransactions}>Export</Button>
             </Box>
             
-            <TableContainer>
-              <Table sx={{ minWidth: 400 }} aria-label="simple table">
+            <TableContainer sx={{ flexGrow: 1, overflowX: 'auto', overflowY: 'auto' }}>
+              <Table sx={{ minWidth: { xs: '100%', sm: 480 } }} aria-label="simple table">
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ color: 'text.secondary', fontWeight: 600 }}>Invoice ID</TableCell>
@@ -725,13 +768,13 @@ export default function FreelancerDashboard() {
         </Grid>
 
         {/* Latest Clients List */}
-        <Grid item xs={12} md={5}>
-           <Card sx={{ p: 3, height: "100%" }}>
+          <Grid item xs={12} md={5} lg={5} sx={{ display: 'flex' }}>
+            <Card sx={{ p: { xs: 2, md: 3 }, height: "100%", display: 'flex', flexDirection: 'column', minHeight: secondaryCardHeight, width: '100%', boxShadow: '0 14px 40px rgba(15,23,42,0.08)', border: '1px solid #e2e8f0', borderRadius: 3 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
               <Typography variant="h6">Latest Clients</Typography>
               <IconButton size="small"><MoreHorizIcon /></IconButton>
             </Box>
-            <List disablePadding>
+            <List disablePadding sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
               {latestClients.length > 0 ? latestClients.map((client) => (
                 <ListItem key={client.id} disableGutters sx={{ py: 1.5 }}>
                   <ListItemAvatar>
@@ -743,10 +786,17 @@ export default function FreelancerDashboard() {
                     primary={<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{client.name}</Typography>}
                     secondary={<Typography variant="caption" color="text.secondary">{client.project}</Typography>}
                   />
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', sm: 'flex-end' }, gap: 1, width: { xs: '100%', sm: 'auto' } }}>
                     <Chip label={client.status} color={client.statusColor} size="small" sx={{ fontWeight: 500, fontSize: 11, height: 24 }} />
                     <Typography variant="caption" color="text.secondary">{formatRelativeTime(client.createdAt)}</Typography>
-                    <Button variant="outlined" size="small" sx={{ py: 0.5, px: 2, fontSize: 11, borderColor: 'divider', color: 'text.secondary' }}>Message</Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{ py: 0.5, px: 2, fontSize: 11, borderColor: 'divider', color: 'text.secondary', width: { xs: '100%', sm: 'auto' } }}
+                      onClick={() => handleMessagesClick(client)}
+                    >
+                      Message
+                    </Button>
                   </Box>
                 </ListItem>
               )) : (
@@ -761,8 +811,10 @@ export default function FreelancerDashboard() {
         </Grid>
       </Grid>
     </Box>
+  </Box>
   );
 }
+
 
 
 

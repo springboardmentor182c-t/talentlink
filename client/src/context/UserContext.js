@@ -75,6 +75,26 @@ export const UserProvider = ({ children }) => {
       });
   }, [storedName, storedEmail, storedRole]);
 
+  const login = (authPayload = {}) => {
+    const rawName = authPayload.name || `${authPayload.first_name || ""} ${authPayload.last_name || ""}`.trim();
+    const resolvedName = rawName || storedName || authPayload.email || storedEmail || "User";
+    const resolvedEmail = authPayload.email || storedEmail || "";
+    const resolvedRole = authPayload.role || storedRole || "User";
+    const avatarCandidate = authPayload.avatar || null;
+    const resolvedAvatar = resolveProfileImage(avatarCandidate) || profileImageOrFallback(null, resolvedName || resolvedEmail || "User");
+
+    setUser({
+      name: resolvedName,
+      email: resolvedEmail,
+      role: resolvedRole,
+      avatar: resolvedAvatar,
+    });
+
+    localStorage.setItem("user_name", resolvedName);
+    localStorage.setItem("user_email", resolvedEmail);
+    localStorage.setItem("role", resolvedRole);
+  };
+
   const updateProfile = (name, avatarFile) => {
     setUser((prev) => ({
       ...prev,
@@ -86,7 +106,7 @@ export const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, updateProfile, loading }}>
+    <UserContext.Provider value={{ user, updateProfile, loading, login }}>
       {children}
     </UserContext.Provider>
   );

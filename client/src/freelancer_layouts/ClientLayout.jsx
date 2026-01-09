@@ -9,13 +9,16 @@ import { getNotifications } from '../notifications/features/notifications/servic
 import '../App.css';
 
 // 1. Import Material UI & Theme Context
-import { Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { Box, CssBaseline, ThemeProvider, createTheme, useMediaQuery } from '@mui/material';
 import { useTheme } from '../context/ThemeContext';
 
 const ClientLayout = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth >= 1200;
+  });
   const sidebarWidth = 260;
   
   const { loading } = useUser();
@@ -83,6 +86,12 @@ const ClientLayout = () => {
     return () => { mounted = false; };
   }, []);
 
+  const isDesktop = useMediaQuery(muiTheme.breakpoints.up('lg'));
+
+  useEffect(() => {
+    setIsSidebarOpen((prev) => (prev === isDesktop ? prev : isDesktop));
+  }, [isDesktop]);
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: 'background.default' }}>
@@ -105,27 +114,30 @@ const ClientLayout = () => {
         `}</style>
 
         {/* 1. Sidebar Wrapper */}
-        <Box
-          className="hide-scrollbar"
-          sx={{
-            width: isSidebarOpen ? `${sidebarWidth}px` : '0px',
-            minWidth: isSidebarOpen ? `${sidebarWidth}px` : '0px',
-            transition: 'width 0.3s ease',
-            height: '100%',
-            overflowY: 'auto',
-            bgcolor: 'background.paper', // Adapts to theme now
-            borderRight: '1px solid',
-            borderColor: 'divider',
-            flexShrink: 0,
-          }}
-        >
-          {isSidebarOpen && (
-            <ClientSidebar
-              isOpen={isSidebarOpen}
-              onToggle={toggleSidebar}
-            />
-          )}
-        </Box>
+        {isDesktop && (
+          <Box
+            className="hide-scrollbar"
+            sx={{
+              width: isSidebarOpen ? `${sidebarWidth}px` : '0px',
+              minWidth: isSidebarOpen ? `${sidebarWidth}px` : '0px',
+              transition: 'width 0.3s ease',
+              height: '100%',
+              overflowY: 'auto',
+              bgcolor: 'background.paper',
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              flexShrink: 0,
+            }}
+          >
+            {isSidebarOpen && (
+              <ClientSidebar
+                isOpen={isSidebarOpen}
+                onToggle={toggleSidebar}
+                onClose={toggleSidebar}
+              />
+            )}
+          </Box>
+        )}
 
         {/* 2. Main Area */}
         <Box
@@ -142,6 +154,7 @@ const ClientLayout = () => {
             onSidebarToggle={toggleSidebar}
             sidebarOpen={isSidebarOpen}
             notifications={notifications}
+            isDesktop={isDesktop}
           />
           
           {/* Content Area */}
@@ -163,6 +176,14 @@ const ClientLayout = () => {
           onItemsChange={setNotifications}
         />
       </Box>
+
+      {!isDesktop && (
+        <ClientSidebar
+          isOpen={isSidebarOpen}
+          onToggle={toggleSidebar}
+          onClose={toggleSidebar}
+        />
+      )}
     </ThemeProvider>
   );
 };
